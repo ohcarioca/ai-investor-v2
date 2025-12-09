@@ -1,0 +1,155 @@
+# Kira AI Investor Agent
+
+Interface conversacional de agente de IA para assistência financeira, desenvolvida com Next.js 16, React 19 e TypeScript.
+
+## Funcionalidades
+
+### Interface Agêntica
+- **Chat conversacional em tempo real** integrado com webhook n8n
+- **Histórico de mensagens** com scroll automático
+- **Estados de loading** com animações durante processamento
+- **Tratamento de erros** com mensagens amigáveis
+
+### Funcionalidades Financeiras (Mockadas)
+- 💰 **Invest in Funds** - Alocação em fundos de crescimento, estáveis ou alto rendimento
+- 🏦 **Wire Transfers** - Recebimento de pagamentos via transferência bancária
+- 💱 **Currency Exchange** - Conversão de USDC para COP, MXN, BRL e outras moedas
+- 📊 **Reports & Receipts** - Geração de relatórios e recibos de transações
+
+### Portfolio Overview
+- **Total Balance**: $24,563.00 (+12.5% vs último mês)
+- **USDC Balance**: $8,450.00 (+3.2% vs último mês)
+- **APY Performance**: Gráfico visual mostrando 6.2% de rendimento
+
+## Stack Tecnológico
+
+- **Framework**: Next.js 16.0.8 (App Router + Turbopack)
+- **UI**: React 19.2.1
+- **Linguagem**: TypeScript 5
+- **Estilização**: Tailwind CSS 4
+- **Ícones**: Lucide React
+- **Qualidade de Código**: ESLint
+
+## Estrutura do Projeto
+
+```
+ai-investor-agent/
+├── app/
+│   ├── page.tsx          # Página principal com lógica de chat
+│   ├── layout.tsx        # Layout raiz
+│   └── globals.css       # Estilos globais
+├── components/
+│   ├── Header.tsx        # Cabeçalho com logo e controles
+│   ├── FeatureCard.tsx   # Cards de funcionalidades
+│   ├── PortfolioOverview.tsx  # Sidebar com dados do portfólio
+│   ├── ChatInput.tsx     # Input de mensagens
+│   ├── ChatMessage.tsx   # Componente individual de mensagem
+│   └── ChatHistory.tsx   # Histórico completo do chat
+├── hooks/
+│   └── useChat.ts        # Hook customizado para gerenciar chat
+└── types/
+    └── chat.ts           # Tipos TypeScript do chat
+```
+
+## Integração com Webhook
+
+O sistema envia todas as mensagens do usuário para o endpoint:
+```
+https://n8n.balampay.com/webhook/investor_agent
+```
+
+### Formato da Requisição
+```typescript
+POST https://n8n.balampay.com/webhook/investor_agent
+Content-Type: application/json
+
+{
+  "message": "mensagem do usuário",
+  "timestamp": "2025-12-09T18:00:00.000Z"
+}
+```
+
+### Formato da Resposta Esperada
+```typescript
+{
+  "response": "resposta do agente"
+}
+```
+
+## Como Executar
+
+### Instalação
+
+```bash
+# Instalar dependências
+npm install
+```
+
+### Desenvolvimento
+
+```bash
+# Iniciar servidor de desenvolvimento
+npm run dev
+```
+
+Acesse [http://localhost:3000](http://localhost:3000) no navegador.
+
+### Build para Produção
+
+```bash
+# Criar build otimizado
+npm run build
+
+# Executar em produção
+npm start
+```
+
+### Linting
+
+```bash
+npm run lint
+```
+
+## Componentes Principais
+
+### useChat Hook
+Hook customizado que gerencia todo o estado do chat:
+- Armazenamento de mensagens
+- Envio de mensagens ao webhook
+- Estados de loading e erro
+- Scroll automático
+
+### ChatHistory
+Exibe o histórico completo de mensagens com:
+- Distinção visual entre usuário e assistente
+- Timestamps
+- Animação de loading durante respostas
+- Auto-scroll para novas mensagens
+
+### PortfolioOverview
+Sidebar com dados mockados do portfólio:
+- Cards de balanço total e USDC
+- Gráfico de performance APY
+- Indicadores de crescimento
+
+## Personalização
+
+### Alterar Endpoint do Webhook
+Edite o arquivo `hooks/useChat.ts`:
+```typescript
+const WEBHOOK_URL = 'sua-url-aqui';
+```
+
+### Modificar Dados do Portfolio
+Edite o arquivo `components/PortfolioOverview.tsx` para alterar valores mockados.
+
+## Design System
+
+### Cores Principais
+- **Purple**: #9333EA (Purple-600)
+- **Pink**: #EC4899 (Pink-500)
+- **Gradiente**: Purple-600 → Pink-500
+
+## Licença
+
+Propriedade de KiraFin

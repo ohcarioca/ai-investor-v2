@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app:*)",
+      "Bash(npx create-next-app@latest ai-investor-agent --typescript --tailwind --app --import-alias \"@/*\" --turbopack --eslint --use-npm)",
+      "Bash(printf:*)",
+      "Bash(yes:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
+    ]
+  }
+}
