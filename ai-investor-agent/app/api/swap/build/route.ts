@@ -82,24 +82,37 @@ export async function POST(request: NextRequest) {
     const fromTokenData = swapData.fromToken || swapData.fromTokenInfo || {};
     const toTokenData = swapData.toToken || swapData.toTokenInfo || {};
 
+    const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
+    const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
+    const toAmount = swapData.toTokenAmount || swapData.toAmount || '0';
+
+    // Calculate exchange rate if not provided
+    let exchangeRate = swapData.exchangeRate || swapData.price || '0';
+    if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
+      // Exchange rate = toAmount / fromAmount (both in human-readable units)
+      const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
+      const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
+      exchangeRate = (toAmountFloat / fromAmountFloat).toString();
+    }
+
     // Also return quote for display
     const quote = {
       fromToken: {
         address: fromToken,
         symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
-        decimals: parseInt(fromTokenData.decimal || fromTokenData.decimals || '18'),
+        decimals: fromDecimals,
         name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
       },
       toToken: {
         address: toToken,
         symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
-        decimals: parseInt(toTokenData.decimal || toTokenData.decimals || '18'),
+        decimals: toDecimals,
         name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
       },
       fromAmount: amount,
-      toAmount: swapData.toTokenAmount || swapData.toAmount || '0',
+      toAmount,
       toAmountMin: swapData.minReceiveAmount || swapData.toAmountMin || '0',
-      exchangeRate: swapData.exchangeRate || swapData.price || '0',
+      exchangeRate,
       priceImpact: swapData.priceImpact || swapData.priceImpactPercentage || '0',
       estimatedGas: swapData.estimatedGas || swapData.gasEstimate || '0',
       route: [],

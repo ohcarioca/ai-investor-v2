@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Settings,
@@ -108,16 +109,16 @@ export default function SwapModal({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
       {/* Modal */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4">
+      <div className="relative w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -199,11 +200,13 @@ export default function SwapModal({
               label="To (estimated)"
               token={toToken}
               amount={
-                quote
-                  ? (
-                      parseFloat(quote.toAmount) /
-                      Math.pow(10, toToken?.decimals || 18)
-                    ).toFixed(6)
+                quote && quote.toAmount
+                  ? (() => {
+                      // Use decimals from the quote response (more accurate)
+                      const decimals = quote.toToken?.decimals || toToken?.decimals || 18;
+                      const amountFloat = parseFloat(quote.toAmount) / Math.pow(10, decimals);
+                      return amountFloat.toFixed(6);
+                    })()
                   : ''
               }
               onAmountChange={() => {}}
@@ -314,4 +317,6 @@ export default function SwapModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

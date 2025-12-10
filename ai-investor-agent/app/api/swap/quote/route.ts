@@ -80,25 +80,38 @@ export async function GET(request: NextRequest) {
     const fromTokenData = quoteData.fromToken || quoteData.fromTokenInfo || {};
     const toTokenData = quoteData.toToken || quoteData.toTokenInfo || {};
 
+    const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
+    const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
+    const toAmount = quoteData.toTokenAmount || quoteData.toAmount || '0';
+
+    // Calculate exchange rate if not provided
+    let exchangeRate = quoteData.exchangeRate || quoteData.price || '0';
+    if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
+      // Exchange rate = toAmount / fromAmount (both in human-readable units)
+      const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
+      const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
+      exchangeRate = (toAmountFloat / fromAmountFloat).toString();
+    }
+
     const quote = {
       fromToken: {
         address: fromToken,
         symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
-        decimals: parseInt(fromTokenData.decimal || fromTokenData.decimals || '18'),
+        decimals: fromDecimals,
         name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
         isNative: fromToken === NATIVE_TOKEN_ADDRESS,
       },
       toToken: {
         address: toToken,
         symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
-        decimals: parseInt(toTokenData.decimal || toTokenData.decimals || '18'),
+        decimals: toDecimals,
         name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
         isNative: toToken === NATIVE_TOKEN_ADDRESS,
       },
       fromAmount: amount,
-      toAmount: quoteData.toTokenAmount || quoteData.toAmount || '0',
+      toAmount,
       toAmountMin: quoteData.minReceiveAmount || quoteData.toAmountMin || '0',
-      exchangeRate: quoteData.exchangeRate || quoteData.price || '0',
+      exchangeRate,
       priceImpact: quoteData.priceImpact || quoteData.priceImpactPercentage || '0',
       estimatedGas: quoteData.estimatedGas || quoteData.gasEstimate || '0',
       route: [], // OKX doesn't expose route details easily
