@@ -6,7 +6,7 @@ import { formatUnits, erc20Abi } from 'viem';
 import type { AccountBalance, Balance } from '@/types/wallet';
 
 /**
- * Token addresses by chain ID
+ * Token addresses - Limited to USDC and SIERRA on Avalanche only
  */
 const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; decimals: number }>> = {
   // Avalanche C-Chain (43114)
@@ -17,39 +17,8 @@ const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; d
       decimals: 6,
     },
     {
-      address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB', // WETH.e on Avalanche
-      symbol: 'WETH.e',
-      decimals: 18,
-    },
-    {
       address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', // SIERRA on Avalanche
       symbol: 'SIERRA',
-      decimals: 18,
-    },
-  ],
-  // Base (8453)
-  8453: [
-    {
-      address: '0x833589fcd6edb6e08f4c7c32d4f71b54bda02913', // USDC on Base
-      symbol: 'USDC',
-      decimals: 6,
-    },
-    {
-      address: '0x4200000000000000000000000000000000000006', // WETH on Base
-      symbol: 'WETH',
-      decimals: 18,
-    },
-  ],
-  // Ethereum Mainnet (1)
-  1: [
-    {
-      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum
-      symbol: 'USDC',
-      decimals: 6,
-    },
-    {
-      address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2', // WETH on Ethereum
-      symbol: 'WETH',
       decimals: 18,
     },
   ],
@@ -85,22 +54,13 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       const balances: Balance[] = [];
       let totalEquity = 0;
 
-      // Get token prices based on symbol
+      // Get token prices - Limited to USDC, SIERRA, AVAX only
       const getTokenPrice = (symbol: string): number => {
         switch (symbol) {
           case 'USDC':
-          case 'USDT':
-          case 'DAI':
-            return 1; // Stablecoins
+            return 1; // Stablecoin
           case 'AVAX':
             return 14.59; // AVAX price (update with real oracle)
-          case 'ETH':
-          case 'WETH':
-          case 'WETH.e':
-            return 3500; // ETH price placeholder
-          case 'BTC':
-          case 'WBTC':
-            return 43000; // BTC price placeholder
           case 'SIERRA':
             return 1; // SIERRA price - update with real price feed
           default:

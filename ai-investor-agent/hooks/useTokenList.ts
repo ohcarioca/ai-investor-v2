@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import type { Token } from '@/types/swap';
 
-// Token list for Avalanche C-Chain
+// Token list for Avalanche C-Chain - Limited to USDC, SIERRA, AVAX only
 const AVALANCHE_TOKENS: Token[] = [
   {
     address: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
@@ -18,24 +18,6 @@ const AVALANCHE_TOKENS: Token[] = [
     symbol: 'USDC',
     name: 'USD Coin',
     decimals: 6,
-  },
-  {
-    address: '0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7',
-    symbol: 'USDT',
-    name: 'Tether USD',
-    decimals: 6,
-  },
-  {
-    address: '0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB',
-    symbol: 'WETH.e',
-    name: 'Wrapped Ether',
-    decimals: 18,
-  },
-  {
-    address: '0x50b7545627a5162F82A992c33b87aDc75187B218',
-    symbol: 'WBTC.e',
-    name: 'Wrapped BTC',
-    decimals: 8,
   },
   {
     address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
