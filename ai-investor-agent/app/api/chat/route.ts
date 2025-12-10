@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { formatUnits } from 'viem';
 import { getConfig, getSystemPrompt, getTimeout } from '@/lib/config';
 import {
   isValidAddress,
@@ -21,11 +22,30 @@ interface Message {
   timestamp: Date;
 }
 
+// Helper functions for token operations
+function getTokenAddress(symbol: string): string {
+  const tokenMap: Record<string, string> = {
+    'AVAX': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+    'USDC': '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+    'SIERRA': '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
+  };
+  return tokenMap[symbol];
+}
+
+function getTokenDecimals(symbol: string): number {
+  const decimalsMap: Record<string, number> = {
+    'AVAX': 18,
+    'USDC': 6,
+    'SIERRA': 18,
+  };
+  return decimalsMap[symbol];
+}
+
 // Function definitions for GPT
 const functions = [
   {
     name: 'get_wallet_balance',
-    description: 'Obtém o saldo completo da carteira conectada, incluindo tokens nativos (AVAX) e ERC20 (USDC, WETH.e, SIERRA). Retorna valores em USD e quantidade de cada token.',
+    description: 'Obtém o saldo completo da carteira conectada, incluindo tokens nativos (AVAX) e ERC20 (USDC, SIERRA). Retorna valores em USD e quantidade de cada token.',
     parameters: {
       type: 'object',
       properties: {
@@ -40,6 +60,35 @@ const functions = [
         },
       },
       required: ['address'],
+    },
+  },
+  {
+    name: 'swap_tokens',
+    description: 'Execute a token swap on Avalanche C-Chain using OKX DEX. Supports USDC, SIERRA, and AVAX only. Returns transaction data for user to sign.',
+    parameters: {
+      type: 'object',
+      properties: {
+        fromToken: {
+          type: 'string',
+          description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
+          enum: ['USDC', 'SIERRA', 'AVAX'],
+        },
+        toToken: {
+          type: 'string',
+          description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
+          enum: ['USDC', 'SIERRA', 'AVAX'],
+        },
+        amount: {
+          type: 'string',
+          description: 'Amount to swap in human-readable format (e.g., "10.5" for 10.5 USDC)',
+        },
+        slippage: {
+          type: 'string',
+          description: 'Slippage tolerance in percentage (default: 0.5)',
+          default: '0.5',
+        },
+      },
+      required: ['fromToken', 'toToken', 'amount'],
     },
   },
 ];
@@ -164,6 +213,118 @@ export async function POST(req: NextRequest) {
             console.log('[Chat API] Fetching balance for:', addressToUse);
             functionResult = await getWalletBalance(addressToUse, functionArgs.chainId || 43114);
             console.log('[Chat API] Balance result:', functionResult);
+          }
+        }
+        else if (functionName === 'swap_tokens') {
+          const { fromToken, toToken, amount, slippage = '0.5' } = functionArgs;
+
+          console.log('[Chat API] swap_tokens called:', { fromToken, toToken, amount, slippage });
+
+          // 1. Validar wallet conectada
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to perform swaps',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              // 2. Converter símbolos para endereços
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+
+              // 3. Converter amount para base units
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // 4. Obter Quote
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
+              } else {
+                // 5. Verificar se precisa de approval (apenas para tokens não-nativos)
+                let needsApproval = false;
+                let approvalTx = null;
+
+                if (fromToken !== 'AVAX') {
+                  const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      chainId: 43114,
+                      tokenAddress: fromTokenAddress,
+                      amount: baseAmount.toString(),
+                      userAddress: walletAddress
+                    })
+                  });
+
+                  const approvalData = await approvalRes.json();
+
+                  if (approvalRes.ok && !approvalData.status.isApproved) {
+                    needsApproval = true;
+                    approvalTx = approvalData.transaction;
+                  }
+                }
+
+                // 6. Construir transação de swap
+                const buildRes = await fetch(`${baseUrl}/api/swap/build`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chainId: 43114,
+                    fromToken: fromTokenAddress,
+                    toToken: toTokenAddress,
+                    amount: baseAmount.toString(),
+                    slippage,
+                    userAddress: walletAddress
+                  })
+                });
+
+                const buildData = await buildRes.json();
+
+                if (!buildRes.ok) {
+                  functionResult = { success: false, error: buildData.error || 'Failed to build swap transaction' };
+                } else {
+                  // 7. Retornar resultado estruturado
+                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+
+                  functionResult = {
+                    success: true,
+                    swap: {
+                      fromToken,
+                      toToken,
+                      fromAmount: amount,
+                      toAmount,
+                      exchangeRate: quoteData.quote.exchangeRate,
+                      priceImpact: quoteData.quote.priceImpact,
+                      needsApproval,
+                      approvalTransaction: approvalTx,
+                      swapTransaction: buildData.transaction,
+                      estimatedGas: quoteData.quote.estimatedGas
+                    }
+                  };
+
+                  console.log('[Chat API] Swap prepared successfully:', functionResult);
+                }
+              }
+            } catch (error) {
+              console.error('[Chat API] Swap error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Swap failed'
+              };
+            }
           }
         }
 
