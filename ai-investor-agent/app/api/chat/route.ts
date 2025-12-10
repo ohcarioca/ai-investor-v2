@@ -3,8 +3,7 @@ import OpenAI from 'openai';
 import { getConfig, getSystemPrompt, getTimeout } from '@/lib/config';
 import {
   isValidAddress,
-  isRealAddress,
-  validateAddressMatch
+  isRealAddress
 } from '@/lib/wallet-validation';
 
 // Initialize OpenAI client
@@ -80,6 +79,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Log wallet address for debugging
+    console.log('[Chat API] Wallet address received:', walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'NOT PROVIDED');
+
     // Format messages for OpenAI (convert to OpenAI format)
     const formattedMessages = messages.map((msg) => ({
       role: msg.role,
@@ -91,10 +93,18 @@ export async function POST(req: NextRequest) {
     const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>('capabilities.natural_language');
     const timeout = getTimeout('chat_response_ms');
 
+    // Build system prompt with wallet context if available
+    let systemPromptWithContext = SYSTEM_PROMPT;
+    if (walletAddress && isValidAddress(walletAddress)) {
+      systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- When the user asks about their balance or wallet, use this address: ${walletAddress}`;
+    } else {
+      systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Wallet Status: NOT CONNECTED\n- If the user asks about balance or wallet operations, inform them they need to connect their wallet first.`;
+    }
+
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || nlConfig.model,
       messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: systemPromptWithContext },
         ...formattedMessages,
       ],
       tools: functions.map(fn => ({
@@ -120,42 +130,40 @@ export async function POST(req: NextRequest) {
         let functionResult;
 
         if (functionName === 'get_wallet_balance') {
-          // CRITICAL: Validate wallet address before use
-          const requestedAddress = functionArgs.address;
+          console.log('[Chat API] get_wallet_balance called with args:', functionArgs);
+          console.log('[Chat API] Connected wallet:', walletAddress);
 
-          // Validate address format
-          if (!isValidAddress(requestedAddress)) {
+          // CRITICAL: Always use the connected wallet address
+          // The GPT provides the address parameter, but we override it with the connected wallet
+          const addressToUse = walletAddress || functionArgs.address;
+
+          // Check if wallet is connected
+          if (!walletAddress) {
             functionResult = {
-              error: 'Invalid wallet address format. Please connect your wallet first.',
+              error: 'Wallet not connected. Please connect your wallet to check balance.',
+              code: 'WALLET_NOT_CONNECTED',
+              message: 'To check your balance, you need to connect your wallet first. Click the wallet button in the top right corner.'
+            };
+          }
+          // Validate address format
+          else if (!isValidAddress(addressToUse)) {
+            functionResult = {
+              error: 'Invalid wallet address format. Please check your wallet connection.',
               code: 'INVALID_ADDRESS'
             };
           }
           // Validate not a placeholder address
-          else if (!isRealAddress(requestedAddress)) {
+          else if (!isRealAddress(addressToUse)) {
             functionResult = {
               error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
               code: 'PLACEHOLDER_ADDRESS'
             };
           }
-          // Validate address matches connected wallet if provided
-          else if (walletAddress) {
-            const validation = validateAddressMatch(walletAddress, requestedAddress);
-            if (!validation.isValid) {
-              functionResult = {
-                error: validation.error,
-                code: validation.errorCode
-              };
-            } else {
-              // Validation passed - use the CONNECTED wallet address
-              functionResult = await getWalletBalance(walletAddress, functionArgs.chainId);
-            }
-          }
-          // No connected wallet provided in request
+          // All validations passed - fetch balance using connected wallet
           else {
-            functionResult = {
-              error: 'Wallet not connected. Please connect your wallet to check balance.',
-              code: 'WALLET_NOT_CONNECTED'
-            };
+            console.log('[Chat API] Fetching balance for:', addressToUse);
+            functionResult = await getWalletBalance(addressToUse, functionArgs.chainId || 43114);
+            console.log('[Chat API] Balance result:', functionResult);
           }
         }
 
