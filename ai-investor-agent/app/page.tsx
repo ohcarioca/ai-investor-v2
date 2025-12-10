@@ -16,20 +16,20 @@ export default function Home() {
       <Header />
 
       {/* Main Content */}
-      <main className="pt-20 pb-32 pr-96 flex flex-col" style={{ height: 'calc(100vh - 5rem)' }}>
+      <main className="pt-20 pb-32 lg:pr-96 flex flex-col" style={{ height: 'calc(100vh - 5rem)' }}>
         {showWelcome ? (
-          <div className="max-w-4xl mx-auto px-6 py-12">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
             {/* Welcome Section */}
-            <div className="text-center mb-16">
+            <div className="text-center mb-12 sm:mb-16">
               <div className="flex justify-center mb-6">
-                <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                  <span className="text-white font-bold text-4xl">K</span>
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-600 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-3xl sm:text-4xl">K</span>
                 </div>
               </div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-4">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 px-4">
                 Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">Kira</span>
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed px-4">
                 Your AI-powered financial assistant. I can help you invest, manage payouts, exchange currencies, and track your portfolio.
               </p>
             </div>

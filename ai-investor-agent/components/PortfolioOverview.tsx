@@ -4,7 +4,7 @@ import { TrendingUp, Copy, ExternalLink } from 'lucide-react';
 
 export default function PortfolioOverview() {
   return (
-    <aside className="fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
+    <aside className="hidden lg:block fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Portfolio Overview</h2>
 
       {/* Total Balance Card */}
