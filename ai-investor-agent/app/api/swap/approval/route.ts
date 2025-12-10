@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Try to get the actual router address from a quote
     try {
       const dummyQuote = await client.dex.getQuote({
-        chainIndex,
+        chainId: chainIndex,
         fromTokenAddress: tokenAddress,
         toTokenAddress: NATIVE_TOKEN_ADDRESS,
         amount: '1000000',
@@ -55,10 +55,10 @@ export async function POST(request: NextRequest) {
       console.log('Dummy quote for approval:', JSON.stringify(dummyQuote, null, 2));
 
       // Extract router address from different possible response formats
-      if (dummyQuote.routerResult?.routerAddress) {
-        spenderAddress = dummyQuote.routerResult.routerAddress;
-      } else if (dummyQuote.data && dummyQuote.data.length > 0) {
-        const dataRouter = dummyQuote.data[0].routerAddress || dummyQuote.data[0].to;
+      const quoteData = dummyQuote.data;
+      if (quoteData && Array.isArray(quoteData) && quoteData.length > 0) {
+        const routeInfo = quoteData[0] as any;
+        const dataRouter = routeInfo?.routerAddress || routeInfo?.to;
         if (dataRouter) {
           spenderAddress = dataRouter;
         }

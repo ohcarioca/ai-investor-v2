@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useAccount } from 'wagmi';
 import { Message, ChatResponse } from '@/types/chat';
 
 const API_URL = '/api/chat';
@@ -9,6 +10,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { address } = useAccount();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -39,6 +41,7 @@ export function useChat() {
         },
         body: JSON.stringify({
           messages: allMessages,
+          walletAddress: address, // Include wallet address for function calling
         }),
         signal: controller.signal,
       });
@@ -106,7 +109,7 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages]);
+  }, [messages, address]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

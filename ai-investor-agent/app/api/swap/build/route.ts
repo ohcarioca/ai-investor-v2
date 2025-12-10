@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     });
 
     const swapResult = await client.dex.getSwapData({
-      chainIndex,
+      chainId: chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount,
@@ -47,15 +47,15 @@ export async function POST(request: NextRequest) {
     console.log('OKX Swap Result:', JSON.stringify(swapResult, null, 2));
 
     // Check if swap data was successfully retrieved - OKX returns data in different formats
-    if (!swapResult || (!swapResult.data && !swapResult.routerResult)) {
+    if (!swapResult || !swapResult.data) {
       return NextResponse.json(
         { error: 'No swap data available for this transaction' },
         { status: 404 }
       );
     }
 
-    // OKX SDK can return data in routerResult or data array
-    const swapData = swapResult.routerResult || (swapResult.data && swapResult.data[0]);
+    // OKX SDK returns data in data array
+    const swapData = Array.isArray(swapResult.data) ? swapResult.data[0] : swapResult.data;
 
     if (!swapData) {
       console.error('No swap data found in response:', swapResult);
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     console.log('Swap Data:', JSON.stringify(swapData, null, 2));
 
     // Extract transaction data with flexible field access
-    const txData = swapData.tx || swapData.transaction || {};
+    const txData = swapData.tx || (swapData as any).transaction || {};
 
     // Transform to our transaction format
     const transaction = {
@@ -79,15 +79,16 @@ export async function POST(request: NextRequest) {
     };
 
     // Extract token data with flexible field names
-    const fromTokenData = swapData.fromToken || swapData.fromTokenInfo || {};
-    const toTokenData = swapData.toToken || swapData.toTokenInfo || {};
+    const swapDataAny = swapData as any;
+    const fromTokenData = swapDataAny.fromToken || swapDataAny.fromTokenInfo || {};
+    const toTokenData = swapDataAny.toToken || swapDataAny.toTokenInfo || {};
 
     const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
     const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
-    const toAmount = swapData.toTokenAmount || swapData.toAmount || '0';
+    const toAmount = swapDataAny.toTokenAmount || swapDataAny.toAmount || '0';
 
     // Calculate exchange rate if not provided
-    let exchangeRate = swapData.exchangeRate || swapData.price || '0';
+    let exchangeRate = swapDataAny.exchangeRate || swapDataAny.price || '0';
     if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
       // Exchange rate = toAmount / fromAmount (both in human-readable units)
       const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
@@ -111,10 +112,10 @@ export async function POST(request: NextRequest) {
       },
       fromAmount: amount,
       toAmount,
-      toAmountMin: swapData.minReceiveAmount || swapData.toAmountMin || '0',
+      toAmountMin: swapDataAny.minReceiveAmount || swapDataAny.toAmountMin || '0',
       exchangeRate,
-      priceImpact: swapData.priceImpact || swapData.priceImpactPercentage || '0',
-      estimatedGas: swapData.estimatedGas || swapData.gasEstimate || '0',
+      priceImpact: swapDataAny.priceImpact || swapDataAny.priceImpactPercentage || '0',
+      estimatedGas: swapDataAny.estimatedGas || swapDataAny.gasEstimate || '0',
       route: [],
     };
 

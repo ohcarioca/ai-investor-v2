@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     });
 
     const quoteResult = await client.dex.getQuote({
-      chainIndex,
+      chainId: chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount,
@@ -55,15 +55,15 @@ export async function GET(request: NextRequest) {
     console.log('OKX Quote Result:', JSON.stringify(quoteResult, null, 2));
 
     // Check if quote was successful - OKX returns data in different formats
-    if (!quoteResult || (!quoteResult.data && !quoteResult.routerResult)) {
+    if (!quoteResult || !quoteResult.data) {
       return NextResponse.json(
         { error: 'No quote available for this token pair' },
         { status: 404 }
       );
     }
 
-    // OKX SDK can return data in routerResult or data array
-    const quoteData = quoteResult.routerResult || (quoteResult.data && quoteResult.data[0]);
+    // OKX SDK returns data in data array
+    const quoteData = Array.isArray(quoteResult.data) ? quoteResult.data[0] : quoteResult.data;
 
     if (!quoteData) {
       console.error('No quote data found in response:', quoteResult);
@@ -77,15 +77,16 @@ export async function GET(request: NextRequest) {
 
     // Transform OKX response to our format
     // OKX SDK may use different field names
-    const fromTokenData = quoteData.fromToken || quoteData.fromTokenInfo || {};
-    const toTokenData = quoteData.toToken || quoteData.toTokenInfo || {};
+    const quoteDataAny = quoteData as any;
+    const fromTokenData = quoteData.fromToken || quoteDataAny.fromTokenInfo || {};
+    const toTokenData = quoteData.toToken || quoteDataAny.toTokenInfo || {};
 
     const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
     const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
-    const toAmount = quoteData.toTokenAmount || quoteData.toAmount || '0';
+    const toAmount = quoteData.toTokenAmount || quoteDataAny.toAmount || '0';
 
     // Calculate exchange rate if not provided
-    let exchangeRate = quoteData.exchangeRate || quoteData.price || '0';
+    let exchangeRate = quoteDataAny.exchangeRate || quoteDataAny.price || '0';
     if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
       // Exchange rate = toAmount / fromAmount (both in human-readable units)
       const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);

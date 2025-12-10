@@ -20,7 +20,8 @@
       "Bash(powershell -Command \"Get-Process -Id 20124 | Stop-Process -Force\")",
       "Bash(wmic process where \"ProcessId=15924\" get CommandLine,ProcessId)",
       "Bash(wmic process where \"ProcessId=20124\" get CommandLine,ProcessId)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
