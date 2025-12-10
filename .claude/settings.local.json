@@ -11,7 +11,15 @@
       "Bash(find:*)",
       "Bash(cat:*)",
       "Bash(npm run build:*)",
-      "Bash(dir \"c:\\Kirafin\\ai-investor-agent\"\" /b)"
+      "Bash(dir \"c:\\Kirafin\\ai-investor-agent\"\" /b)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(powershell -Command \"Get-Process -Id 15924 | Stop-Process -Force\")",
+      "Bash(powershell -Command \"Get-Process -Id 20124 | Stop-Process -Force\")",
+      "Bash(wmic process where \"ProcessId=15924\" get CommandLine,ProcessId)",
+      "Bash(wmic process where \"ProcessId=20124\" get CommandLine,ProcessId)"
     ]
   }
 }

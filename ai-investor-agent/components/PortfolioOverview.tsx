@@ -1,10 +1,13 @@
 'use client';
 
-import { TrendingUp, Copy, ExternalLink, RefreshCw, Wallet } from 'lucide-react';
+import { TrendingUp, Copy, ExternalLink, RefreshCw, Wallet, ArrowLeftRight } from 'lucide-react';
+import { useState } from 'react';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
+import SwapModal from './swap/SwapModal';
 
 export default function PortfolioOverview() {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
+  const [showSwapModal, setShowSwapModal] = useState(false);
 
   // Calculate top balances
   const topBalances = balance?.balances
@@ -67,6 +70,16 @@ export default function PortfolioOverview() {
           </div>
         )}
       </div>
+
+      {/* Swap Button */}
+      <button
+        onClick={() => setShowSwapModal(true)}
+        disabled={!isConnected}
+        className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+      >
+        <ArrowLeftRight className="w-5 h-5" />
+        Swap Tokens
+      </button>
 
       {/* Top Balances */}
       <div className="space-y-3 mb-6">
@@ -135,6 +148,12 @@ export default function PortfolioOverview() {
           <span>Jul</span>
         </div>
       </div>
+
+      {/* Swap Modal */}
+      <SwapModal
+        isOpen={showSwapModal}
+        onClose={() => setShowSwapModal(false)}
+      />
     </aside>
   );
 }
