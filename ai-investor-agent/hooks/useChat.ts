@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Message, ChatResponse } from '@/types/chat';
 
-const WEBHOOK_URL = process.env.NEXT_PUBLIC_WEBHOOK_URL || 'https://n8n.balampay.com/webhook/investor_agent';
+const API_URL = '/api/chat';
 
 export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -29,14 +29,16 @@ export function useChat() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
-      const response = await fetch(WEBHOOK_URL, {
+      // Include full message history for context
+      const allMessages = [...messages, userMessage];
+
+      const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: content.trim(),
-          timestamp: new Date().toISOString(),
+          messages: allMessages,
         }),
         signal: controller.signal,
       });
@@ -104,7 +106,7 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [messages]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);
