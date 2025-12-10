@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, formatUnits, erc20Abi } from 'viem';
 import { avalanche } from 'viem/chains';
+import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
 const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; decimals: number }>> = {
   43114: [
@@ -34,17 +35,26 @@ export async function POST(req: NextRequest) {
   try {
     const { address, chainId } = await req.json();
 
+    // CRITICAL: Validate wallet address (must be from connected wallet)
     if (!address) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { error: 'Wallet address is required. Please connect your wallet.' },
         { status: 400 }
       );
     }
 
-    // Validate address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
+    // Validate address format using wallet validation utility
+    if (!isValidAddress(address)) {
       return NextResponse.json(
-        { error: 'Invalid wallet address format' },
+        { error: 'Invalid wallet address format. Please check your wallet connection.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate not a placeholder or example address
+    if (!isRealAddress(address)) {
+      return NextResponse.json(
+        { error: 'Cannot use placeholder or example addresses. Please connect your real wallet.' },
         { status: 400 }
       );
     }

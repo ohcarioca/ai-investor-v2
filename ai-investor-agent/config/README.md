@@ -2,10 +2,17 @@
 
 This directory contains the configuration system for the AI Investor Agent. The configuration allows you to customize the agent's behavior, features, and appearance without modifying code.
 
+## 🚨 CRITICAL: Wallet Usage Rules
+
+**The agent MUST ALWAYS use the connected wallet address. Never use hardcoded or example addresses.**
+
+See [WALLET_RULES.md](WALLET_RULES.md) for complete details.
+
 ## 📁 Files
 
 - **`agent.config.json`** - Main configuration file (edit this to change agent behavior)
 - **`agent.config.schema.json`** - JSON schema for validation (provides IntelliSense in editors)
+- **`WALLET_RULES.md`** - Critical wallet usage rules (READ THIS FIRST)
 
 ## 🚀 Quick Start
 

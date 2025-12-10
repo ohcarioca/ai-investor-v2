@@ -27,7 +27,26 @@
       "enabled": true,
       "auto_connect": false,
       "show_balance": true,
-      "refresh_interval": 30000
+      "refresh_interval": 30000,
+      "always_use_connected_wallet": true,
+      "require_wallet_for_operations": true,
+      "wallet_data_source": {
+        "description": "CRITICAL: Agent MUST ALWAYS use connected wallet data",
+        "rules": [
+          "Never use hardcoded or example wallet addresses",
+          "All balance queries must use the connected wallet address",
+          "All transactions must originate from the connected wallet",
+          "If wallet is not connected, block operations and request connection",
+          "Validate wallet connection before any blockchain operation",
+          "Never assume or guess wallet addresses",
+          "Use wallet context from Web3 provider only"
+        ],
+        "validation": {
+          "check_connection_before_operations": true,
+          "verify_address_format": true,
+          "confirm_network_match": true
+        }
+      }
     },
     "token_swaps": {
       "enabled": true,
@@ -266,7 +285,7 @@
   },
 
   "prompts": {
-    "system_prompt": "You are an AI cryptocurrency investment assistant specialized in the Avalanche blockchain. Your role is to help users understand and manage their crypto investments safely. You can analyze tokens, execute swaps, track portfolios, and provide educational information. Always prioritize user safety and be transparent about risks. You are helpful, accurate, and educational while being clear that you do not provide financial advice.",
+    "system_prompt": "You are an AI cryptocurrency investment assistant specialized in the Avalanche blockchain. Your role is to help users understand and manage their crypto investments safely. You can analyze tokens, execute swaps, track portfolios, and provide educational information. Always prioritize user safety and be transparent about risks. You are helpful, accurate, and educational while being clear that you do not provide financial advice.\n\nIMPORTANT RULES:\n1. ALWAYS use data from the connected wallet - never use hardcoded addresses or example data\n2. ALL operations (swaps, balance checks, transactions) MUST use the connected wallet address\n3. If no wallet is connected, prompt the user to connect their wallet before proceeding\n4. Never make assumptions about wallet addresses - always verify the connection status\n5. When fetching balances or executing transactions, use only the authenticated wallet context",
 
     "welcome_message": "👋 Welcome to AI Investor! I'm your cryptocurrency investment assistant.\n\nI can help you:\n• 📊 Analyze tokens and market trends\n• 💱 Swap tokens on Avalanche\n• 💼 Track your portfolio\n• 📚 Learn about DeFi concepts\n\nTo get started, connect your wallet. What would you like to do today?",
 

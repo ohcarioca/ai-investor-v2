@@ -6,16 +6,33 @@ import {
 } from '@/lib/okx-server';
 import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
 import { avalanche } from 'viem/chains';
+import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { chainId, tokenAddress, amount, userAddress } = body;
 
-    // Validation
+    // CRITICAL: Validate all required parameters
     if (!chainId || !tokenAddress || !amount || !userAddress) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing required parameters. All approval parameters and wallet address are required.' },
+        { status: 400 }
+      );
+    }
+
+    // CRITICAL: Validate user wallet address (must be from connected wallet)
+    if (!isValidAddress(userAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid wallet address format. Please check your wallet connection.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate not a placeholder or example address
+    if (!isRealAddress(userAddress)) {
+      return NextResponse.json(
+        { error: 'Cannot use placeholder or example addresses. Token approval must use your connected wallet.' },
         { status: 400 }
       );
     }

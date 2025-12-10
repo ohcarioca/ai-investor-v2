@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { getConfig, getSystemPrompt, getTimeout } from '@/lib/config';
+import {
+  isValidAddress,
+  isRealAddress,
+  validateAddressMatch
+} from '@/lib/wallet-validation';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -115,9 +120,43 @@ export async function POST(req: NextRequest) {
         let functionResult;
 
         if (functionName === 'get_wallet_balance') {
-          // Use provided wallet address or fallback to function argument
-          const address = walletAddress || functionArgs.address;
-          functionResult = await getWalletBalance(address, functionArgs.chainId);
+          // CRITICAL: Validate wallet address before use
+          const requestedAddress = functionArgs.address;
+
+          // Validate address format
+          if (!isValidAddress(requestedAddress)) {
+            functionResult = {
+              error: 'Invalid wallet address format. Please connect your wallet first.',
+              code: 'INVALID_ADDRESS'
+            };
+          }
+          // Validate not a placeholder address
+          else if (!isRealAddress(requestedAddress)) {
+            functionResult = {
+              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
+              code: 'PLACEHOLDER_ADDRESS'
+            };
+          }
+          // Validate address matches connected wallet if provided
+          else if (walletAddress) {
+            const validation = validateAddressMatch(walletAddress, requestedAddress);
+            if (!validation.isValid) {
+              functionResult = {
+                error: validation.error,
+                code: validation.errorCode
+              };
+            } else {
+              // Validation passed - use the CONNECTED wallet address
+              functionResult = await getWalletBalance(walletAddress, functionArgs.chainId);
+            }
+          }
+          // No connected wallet provided in request
+          else {
+            functionResult = {
+              error: 'Wallet not connected. Please connect your wallet to check balance.',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          }
         }
 
         // Send function result back to GPT

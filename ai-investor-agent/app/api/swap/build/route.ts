@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOKXClient, CHAIN_INDEX_MAP } from '@/lib/okx-server';
+import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,10 +8,26 @@ export async function POST(request: NextRequest) {
     const { chainId, fromToken, toToken, amount, slippage, userAddress } =
       body;
 
-    // Validation
+    // CRITICAL: Validate all required parameters
     if (!chainId || !fromToken || !toToken || !amount || !userAddress) {
       return NextResponse.json(
-        { error: 'Missing required parameters' },
+        { error: 'Missing required parameters. All swap parameters and wallet address are required.' },
+        { status: 400 }
+      );
+    }
+
+    // CRITICAL: Validate user wallet address (must be from connected wallet)
+    if (!isValidAddress(userAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid wallet address format. Please check your wallet connection.' },
+        { status: 400 }
+      );
+    }
+
+    // Validate not a placeholder or example address
+    if (!isRealAddress(userAddress)) {
+      return NextResponse.json(
+        { error: 'Cannot use placeholder or example addresses. This transaction must use your connected wallet.' },
         { status: 400 }
       );
     }
