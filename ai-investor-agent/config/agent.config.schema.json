@@ -1,0 +1,257 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Investor Agent Configuration",
+  "description": "Configuration schema for AI Investor Agent behavior and features",
+  "type": "object",
+  "required": ["version", "agent", "capabilities", "behavior", "blockchain", "tokens"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Configuration version"
+    },
+    "lastUpdated": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Last update timestamp"
+    },
+    "agent": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Agent display name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Agent version"
+        },
+        "description": {
+          "type": "string"
+        },
+        "personality": {
+          "type": "object",
+          "properties": {
+            "tone": {
+              "type": "string",
+              "enum": ["professional", "professional-friendly", "casual", "formal"]
+            },
+            "style": {
+              "type": "string",
+              "enum": ["concise", "educational", "detailed", "minimalist"]
+            },
+            "verbosity": {
+              "type": "string",
+              "enum": ["minimal", "balanced", "verbose"]
+            },
+            "emoji_usage": {
+              "type": "string",
+              "enum": ["none", "minimal", "moderate", "frequent"]
+            }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "natural_language": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "model": { "type": "string" },
+            "temperature": { "type": "number", "minimum": 0, "maximum": 2 },
+            "max_tokens": { "type": "integer", "minimum": 1 },
+            "context_window": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "wallet_management": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "auto_connect": { "type": "boolean" },
+            "show_balance": { "type": "boolean" },
+            "refresh_interval": { "type": "integer", "minimum": 1000 }
+          }
+        },
+        "token_swaps": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "require_confirmation": { "type": "boolean" },
+            "show_preview": { "type": "boolean" },
+            "default_slippage": { "type": "number", "minimum": 0, "maximum": 50 },
+            "max_slippage": { "type": "number", "minimum": 0, "maximum": 50 },
+            "min_slippage": { "type": "number", "minimum": 0, "maximum": 50 }
+          }
+        },
+        "portfolio_tracking": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "auto_refresh": { "type": "boolean" },
+            "refresh_interval": { "type": "integer", "minimum": 1000 },
+            "show_usd_values": { "type": "boolean" },
+            "show_24h_change": { "type": "boolean" }
+          }
+        },
+        "market_analysis": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "show_price_impact": { "type": "boolean" },
+            "show_liquidity_info": { "type": "boolean" },
+            "risk_warnings": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "behavior": {
+      "type": "object",
+      "properties": {
+        "financial_advice": {
+          "type": "object",
+          "properties": {
+            "can_recommend": { "type": "boolean" },
+            "can_predict_prices": { "type": "boolean" },
+            "must_show_disclaimer": { "type": "boolean" },
+            "disclaimer_frequency": {
+              "type": "string",
+              "enum": ["never", "once", "per_session", "per_advice", "always"]
+            },
+            "risk_level_disclosure": {
+              "type": "string",
+              "enum": ["never", "on_request", "always"]
+            }
+          }
+        },
+        "transaction_safety": {
+          "type": "object",
+          "properties": {
+            "require_user_confirmation": { "type": "boolean" },
+            "show_transaction_preview": { "type": "boolean" },
+            "validate_balances": { "type": "boolean" },
+            "check_network": { "type": "boolean" },
+            "warn_high_price_impact": { "type": "boolean" },
+            "price_impact_warning_threshold": { "type": "number", "minimum": 0 },
+            "price_impact_block_threshold": { "type": "number", "minimum": 0 },
+            "max_retries": { "type": "integer", "minimum": 0 },
+            "retry_delay_ms": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "error_handling": {
+          "type": "object",
+          "properties": {
+            "show_technical_details": { "type": "boolean" },
+            "provide_solutions": { "type": "boolean" },
+            "auto_retry": { "type": "boolean" },
+            "log_errors": { "type": "boolean" },
+            "user_friendly_messages": { "type": "boolean" }
+          }
+        },
+        "conversation": {
+          "type": "object",
+          "properties": {
+            "max_history_length": { "type": "integer", "minimum": 1 },
+            "clear_on_disconnect": { "type": "boolean" },
+            "persist_across_sessions": { "type": "boolean" },
+            "show_typing_indicator": { "type": "boolean" },
+            "response_delay_ms": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "blockchain": {
+      "type": "object",
+      "required": ["networks", "default_network_id"],
+      "properties": {
+        "networks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["chain_id", "name", "native_currency"],
+            "properties": {
+              "chain_id": { "type": "integer" },
+              "name": { "type": "string" },
+              "native_currency": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "symbol": { "type": "string" },
+                  "decimals": { "type": "integer" }
+                }
+              },
+              "rpc_urls": {
+                "type": "array",
+                "items": { "type": "string", "format": "uri" }
+              },
+              "block_explorer": { "type": "string", "format": "uri" },
+              "enabled": { "type": "boolean" },
+              "default": { "type": "boolean" }
+            }
+          }
+        },
+        "default_network_id": { "type": "integer" },
+        "require_network_validation": { "type": "boolean" },
+        "auto_switch_network": { "type": "boolean" }
+      }
+    },
+    "tokens": {
+      "type": "object",
+      "required": ["supported"],
+      "properties": {
+        "supported": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["symbol", "name", "address", "decimals", "chain_id"],
+            "properties": {
+              "symbol": { "type": "string" },
+              "name": { "type": "string" },
+              "address": { "type": "string" },
+              "decimals": { "type": "integer", "minimum": 0 },
+              "is_native": { "type": "boolean" },
+              "chain_id": { "type": "integer" },
+              "enabled": { "type": "boolean" },
+              "icon_url": { "type": "string", "format": "uri" },
+              "coingecko_id": { "type": "string" }
+            }
+          }
+        },
+        "default_from_token": { "type": "string" },
+        "default_to_token": { "type": "string" },
+        "show_token_prices": { "type": "boolean" },
+        "cache_prices": { "type": "boolean" },
+        "price_cache_duration": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "properties": {
+        "system_prompt": { "type": "string" },
+        "welcome_message": { "type": "string" },
+        "disclaimer": { "type": "string" },
+        "error_messages": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "confirmation_prompts": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "maintenance": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "boolean" },
+        "message": { "type": "string" },
+        "allowed_ips": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "estimated_duration_minutes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,317 @@
+{
+  "$schema": "./agent.config.schema.json",
+  "version": "1.0.0",
+  "lastUpdated": "2025-12-10T19:20:00Z",
+
+  "agent": {
+    "name": "AI Investor",
+    "version": "1.0.0",
+    "description": "Cryptocurrency investment assistant for Avalanche blockchain",
+    "personality": {
+      "tone": "professional-friendly",
+      "style": "educational",
+      "verbosity": "balanced",
+      "emoji_usage": "minimal"
+    }
+  },
+
+  "capabilities": {
+    "natural_language": {
+      "enabled": true,
+      "model": "gpt-4o",
+      "temperature": 0.7,
+      "max_tokens": 500,
+      "context_window": 4096
+    },
+    "wallet_management": {
+      "enabled": true,
+      "auto_connect": false,
+      "show_balance": true,
+      "refresh_interval": 30000
+    },
+    "token_swaps": {
+      "enabled": true,
+      "require_confirmation": true,
+      "show_preview": true,
+      "default_slippage": 0.5,
+      "max_slippage": 5.0,
+      "min_slippage": 0.1
+    },
+    "portfolio_tracking": {
+      "enabled": true,
+      "auto_refresh": true,
+      "refresh_interval": 30000,
+      "show_usd_values": true,
+      "show_24h_change": false
+    },
+    "market_analysis": {
+      "enabled": true,
+      "show_price_impact": true,
+      "show_liquidity_info": true,
+      "risk_warnings": true
+    }
+  },
+
+  "behavior": {
+    "financial_advice": {
+      "can_recommend": false,
+      "can_predict_prices": false,
+      "must_show_disclaimer": true,
+      "disclaimer_frequency": "per_session",
+      "risk_level_disclosure": "always"
+    },
+    "transaction_safety": {
+      "require_user_confirmation": true,
+      "show_transaction_preview": true,
+      "validate_balances": true,
+      "check_network": true,
+      "warn_high_price_impact": true,
+      "price_impact_warning_threshold": 5.0,
+      "price_impact_block_threshold": 15.0,
+      "max_retries": 3,
+      "retry_delay_ms": 1000
+    },
+    "error_handling": {
+      "show_technical_details": false,
+      "provide_solutions": true,
+      "auto_retry": true,
+      "log_errors": true,
+      "user_friendly_messages": true
+    },
+    "conversation": {
+      "max_history_length": 10,
+      "clear_on_disconnect": false,
+      "persist_across_sessions": false,
+      "show_typing_indicator": true,
+      "response_delay_ms": 0
+    }
+  },
+
+  "blockchain": {
+    "networks": [
+      {
+        "chain_id": 43114,
+        "name": "Avalanche C-Chain",
+        "native_currency": {
+          "name": "AVAX",
+          "symbol": "AVAX",
+          "decimals": 18
+        },
+        "rpc_urls": [
+          "https://api.avax.network/ext/bc/C/rpc",
+          "https://avalanche-c-chain.publicnode.com"
+        ],
+        "block_explorer": "https://snowtrace.io",
+        "enabled": true,
+        "default": true
+      }
+    ],
+    "default_network_id": 43114,
+    "require_network_validation": true,
+    "auto_switch_network": false
+  },
+
+  "tokens": {
+    "supported": [
+      {
+        "symbol": "AVAX",
+        "name": "Avalanche",
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18,
+        "is_native": true,
+        "chain_id": 43114,
+        "enabled": true,
+        "icon_url": "https://cryptologos.cc/logos/avalanche-avax-logo.png",
+        "coingecko_id": "avalanche-2"
+      },
+      {
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "address": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+        "decimals": 6,
+        "is_native": false,
+        "chain_id": 43114,
+        "enabled": true,
+        "icon_url": "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+        "coingecko_id": "usd-coin"
+      },
+      {
+        "symbol": "SIERRA",
+        "name": "Sierra Token",
+        "address": "0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7",
+        "decimals": 18,
+        "is_native": false,
+        "chain_id": 43114,
+        "enabled": true,
+        "icon_url": "",
+        "coingecko_id": ""
+      }
+    ],
+    "default_from_token": "USDC",
+    "default_to_token": "SIERRA",
+    "show_token_prices": true,
+    "cache_prices": true,
+    "price_cache_duration": 60000
+  },
+
+  "dex": {
+    "provider": "okx",
+    "aggregator": {
+      "enabled": true,
+      "min_sources": 1,
+      "timeout_ms": 5000
+    },
+    "routing": {
+      "max_hops": 3,
+      "prefer_direct_routes": true,
+      "optimize_for": "best_price"
+    }
+  },
+
+  "ui": {
+    "theme": {
+      "mode": "light",
+      "primary_color": "#9333ea",
+      "accent_color": "#ec4899"
+    },
+    "onboarding": {
+      "show_welcome_message": true,
+      "show_tutorial": false,
+      "auto_open_wallet_modal": true,
+      "highlight_features": true
+    },
+    "notifications": {
+      "enabled": true,
+      "position": "top-right",
+      "duration_ms": 5000,
+      "show_success": true,
+      "show_errors": true,
+      "show_warnings": true,
+      "show_info": true
+    },
+    "loading_states": {
+      "show_spinners": true,
+      "show_progress_steps": true,
+      "show_estimated_time": false,
+      "minimum_display_time_ms": 500
+    }
+  },
+
+  "security": {
+    "validation": {
+      "validate_addresses": true,
+      "validate_amounts": true,
+      "check_contract_verified": false,
+      "warn_unverified_tokens": true
+    },
+    "limits": {
+      "max_transaction_amount_usd": null,
+      "min_transaction_amount_usd": 0.01,
+      "daily_transaction_limit": null,
+      "require_approval_above_usd": null
+    },
+    "privacy": {
+      "store_wallet_address": false,
+      "store_transaction_history": false,
+      "analytics_enabled": false,
+      "share_anonymous_usage": false
+    }
+  },
+
+  "api": {
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 60,
+      "burst_size": 10
+    },
+    "caching": {
+      "enabled": true,
+      "quote_cache_duration": 10000,
+      "balance_cache_duration": 5000,
+      "price_cache_duration": 30000
+    },
+    "timeouts": {
+      "chat_response_ms": 30000,
+      "quote_fetch_ms": 5000,
+      "transaction_submit_ms": 60000,
+      "balance_fetch_ms": 5000
+    },
+    "retries": {
+      "enabled": true,
+      "max_attempts": 3,
+      "backoff_multiplier": 2,
+      "initial_delay_ms": 1000
+    }
+  },
+
+  "features": {
+    "experimental": {
+      "multi_chain_swaps": false,
+      "limit_orders": false,
+      "price_alerts": false,
+      "portfolio_analytics": false,
+      "social_trading": false
+    },
+    "beta": {
+      "advanced_charts": false,
+      "transaction_history": false,
+      "export_reports": false
+    },
+    "coming_soon": {
+      "staking": false,
+      "lending": false,
+      "yield_farming": false,
+      "nft_support": false
+    }
+  },
+
+  "prompts": {
+    "system_prompt": "You are an AI cryptocurrency investment assistant specialized in the Avalanche blockchain. Your role is to help users understand and manage their crypto investments safely. You can analyze tokens, execute swaps, track portfolios, and provide educational information. Always prioritize user safety and be transparent about risks. You are helpful, accurate, and educational while being clear that you do not provide financial advice.",
+
+    "welcome_message": "👋 Welcome to AI Investor! I'm your cryptocurrency investment assistant.\n\nI can help you:\n• 📊 Analyze tokens and market trends\n• 💱 Swap tokens on Avalanche\n• 💼 Track your portfolio\n• 📚 Learn about DeFi concepts\n\nTo get started, connect your wallet. What would you like to do today?",
+
+    "disclaimer": "⚠️ Important: This is not financial advice. Cryptocurrency investments carry significant risk. Always do your own research and only invest what you can afford to lose.",
+
+    "error_messages": {
+      "wallet_not_connected": "Please connect your wallet to continue.",
+      "wrong_network": "Please switch to Avalanche C-Chain network.",
+      "insufficient_balance": "Insufficient balance to complete this transaction.",
+      "transaction_failed": "Transaction failed. Please try again.",
+      "api_error": "Unable to fetch data. Please check your connection and try again.",
+      "unknown_error": "An unexpected error occurred. Please try again."
+    },
+
+    "confirmation_prompts": {
+      "swap": "Please review the swap details carefully before confirming:",
+      "approval": "This token needs approval before swapping. Approve now?",
+      "high_price_impact": "⚠️ Warning: This swap has a high price impact ({{impact}}%). Are you sure you want to continue?",
+      "network_switch": "Please switch to {{network}} network to continue."
+    }
+  },
+
+  "analytics": {
+    "enabled": false,
+    "track_events": [],
+    "track_errors": true,
+    "track_performance": false,
+    "anonymize_data": true
+  },
+
+  "logging": {
+    "level": "info",
+    "console_logging": true,
+    "file_logging": false,
+    "include_timestamps": true,
+    "include_stack_traces": true,
+    "log_api_calls": false,
+    "log_transactions": true,
+    "log_user_actions": false
+  },
+
+  "maintenance": {
+    "mode": false,
+    "message": "AI Investor is currently undergoing maintenance. Please check back soon.",
+    "allowed_ips": [],
+    "estimated_duration_minutes": 0
+  }
+}

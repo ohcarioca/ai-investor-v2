@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { getConfig, getSystemPrompt, getTimeout } from '@/lib/config';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const SYSTEM_PROMPT = `Você é um agente especializado em investimentos, focado em:
-- Análise de mercado de criptomoedas
-- Estratégias de investimento
-- Gestão de portfolio
-- Educação financeira
-
-Responda de forma clara, profissional e educativa.
-Use linguagem acessível mas precisa.
-Sempre que possível, forneça exemplos práticos e relevantes para o contexto de criptomoedas.
-
-Quando o usuário perguntar sobre o saldo da carteira, use a função get_wallet_balance para obter informações atualizadas.`;
+// Load system prompt from configuration
+const SYSTEM_PROMPT = getSystemPrompt();
 
 interface Message {
   id: string;
@@ -90,8 +82,12 @@ export async function POST(req: NextRequest) {
     }));
 
     // Call OpenAI API with function calling
+    // Get configuration values
+    const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>('capabilities.natural_language');
+    const timeout = getTimeout('chat_response_ms');
+
     const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || 'gpt-4o',
+      model: process.env.OPENAI_MODEL || nlConfig.model,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...formattedMessages,
@@ -101,8 +97,8 @@ export async function POST(req: NextRequest) {
         function: fn,
       })),
       tool_choice: 'auto',
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: nlConfig.temperature,
+      max_tokens: nlConfig.max_tokens,
     });
 
     let responseMessage = completion.choices[0]?.message;
