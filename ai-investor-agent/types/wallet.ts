@@ -19,6 +19,19 @@ export interface WalletError {
   message: string;
 }
 
+export interface Balance {
+  currency: string;
+  available: number;
+  frozen: number;
+  usdValue: number;
+}
+
+export interface AccountBalance {
+  balances: Balance[];
+  totalEquity: number;
+  lastUpdated: Date;
+}
+
 declare global {
   interface Window {
     ethereum?: any;

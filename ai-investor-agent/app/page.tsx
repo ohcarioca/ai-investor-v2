@@ -35,23 +35,11 @@ export default function Home() {
             </div>
 
             {/* Feature Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
               <FeatureCard
                 icon="💰"
                 title="Invest in Funds"
                 description="Allocate your USDT/USDC to growth, stable, or high-yield funds"
-              />
-
-              <FeatureCard
-                icon="🏦"
-                title="Wire Transfers"
-                description="Receive payins via wire with your dedicated bank account info"
-              />
-
-              <FeatureCard
-                icon="💱"
-                title="Currency Exchange"
-                description="Convert USDC to COP, MXN, BRL and other currencies instantly"
               />
 
               <FeatureCard
