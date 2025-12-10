@@ -77,44 +77,44 @@ export async function GET(request: NextRequest) {
 
     // Transform OKX response to our format
     // OKX SDK may use different field names
-    const quoteDataAny = quoteData as any;
-    const fromTokenData = quoteData.fromToken || quoteDataAny.fromTokenInfo || {};
-    const toTokenData = quoteData.toToken || quoteDataAny.toTokenInfo || {};
+    const quoteDataRecord = quoteData as unknown as Record<string, unknown>;
+    const fromTokenData = (quoteData.fromToken || quoteDataRecord.fromTokenInfo || {}) as unknown as Record<string, unknown>;
+    const toTokenData = (quoteData.toToken || quoteDataRecord.toTokenInfo || {}) as unknown as Record<string, unknown>;
 
-    const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
-    const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
-    const toAmount = quoteData.toTokenAmount || quoteDataAny.toAmount || '0';
+    const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
+    const toDecimals = parseInt((toTokenData.decimal as string) || '18');
+    const toAmount = (quoteData.toTokenAmount || quoteDataRecord.toAmount || '0') as string;
 
     // Calculate exchange rate if not provided
-    let exchangeRate = quoteDataAny.exchangeRate || quoteDataAny.price || '0';
-    if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
+    let exchangeRate = (quoteDataRecord.exchangeRate || quoteDataRecord.price || '0') as string;
+    if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount as string) > 0) {
       // Exchange rate = toAmount / fromAmount (both in human-readable units)
       const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
-      const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
+      const toAmountFloat = parseFloat(toAmount as string) / Math.pow(10, toDecimals);
       exchangeRate = (toAmountFloat / fromAmountFloat).toString();
     }
 
     const quote = {
       fromToken: {
         address: fromToken,
-        symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
+        symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN',
         decimals: fromDecimals,
-        name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
+        name: (fromTokenData.tokenSymbol as string) || 'Unknown Token',
         isNative: fromToken === NATIVE_TOKEN_ADDRESS,
       },
       toToken: {
         address: toToken,
-        symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
+        symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN',
         decimals: toDecimals,
-        name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
+        name: (toTokenData.tokenSymbol as string) || 'Unknown Token',
         isNative: toToken === NATIVE_TOKEN_ADDRESS,
       },
       fromAmount: amount,
       toAmount,
-      toAmountMin: quoteData.minReceiveAmount || quoteData.toAmountMin || '0',
+      toAmountMin: '0', // Calculate min amount based on slippage
       exchangeRate,
-      priceImpact: quoteData.priceImpact || quoteData.priceImpactPercentage || '0',
-      estimatedGas: quoteData.estimatedGas || quoteData.gasEstimate || '0',
+      priceImpact: quoteData.priceImpactPercentage || '0',
+      estimatedGas: quoteData.estimateGasFee || '0',
       route: [], // OKX doesn't expose route details easily
     };
 

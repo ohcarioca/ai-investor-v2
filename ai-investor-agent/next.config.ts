@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
       config.externals.push('pino-pretty', 'lokijs', 'encoding');
     }
 
+    // Fix for React Native dependencies in browser environment
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@react-native-async-storage/async-storage': false,
+    };
+
+    // Fallback for Node.js modules in browser
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
     return config;
   },
 

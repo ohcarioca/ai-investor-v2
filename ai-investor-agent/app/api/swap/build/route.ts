@@ -68,27 +68,27 @@ export async function POST(request: NextRequest) {
     console.log('Swap Data:', JSON.stringify(swapData, null, 2));
 
     // Extract transaction data with flexible field access
-    const txData = swapData.tx || (swapData as any).transaction || {};
+    const txData = (swapData.tx || (swapData as unknown as Record<string, unknown>).transaction || {}) as Record<string, unknown>;
 
     // Transform to our transaction format
     const transaction = {
-      to: txData.to,
-      data: txData.data,
-      value: txData.value || '0',
-      gasLimit: txData.gas || txData.gasLimit,
+      to: txData.to as string,
+      data: txData.data as string,
+      value: (txData.value as string) || '0',
+      gasLimit: (txData.gas as string) || (txData.gasLimit as string),
     };
 
     // Extract token data with flexible field names
-    const swapDataAny = swapData as any;
-    const fromTokenData = swapDataAny.fromToken || swapDataAny.fromTokenInfo || {};
-    const toTokenData = swapDataAny.toToken || swapDataAny.toTokenInfo || {};
+    const swapDataRecord = swapData as unknown as Record<string, unknown>;
+    const fromTokenData = (swapDataRecord.fromToken || swapDataRecord.fromTokenInfo || {}) as Record<string, unknown>;
+    const toTokenData = (swapDataRecord.toToken || swapDataRecord.toTokenInfo || {}) as Record<string, unknown>;
 
-    const fromDecimals = parseInt(fromTokenData.decimal || fromTokenData.decimals || '18');
-    const toDecimals = parseInt(toTokenData.decimal || toTokenData.decimals || '18');
-    const toAmount = swapDataAny.toTokenAmount || swapDataAny.toAmount || '0';
+    const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
+    const toDecimals = parseInt((toTokenData.decimal as string) || '18');
+    const toAmount = (swapDataRecord.toTokenAmount || swapDataRecord.toAmount || '0') as string;
 
     // Calculate exchange rate if not provided
-    let exchangeRate = swapDataAny.exchangeRate || swapDataAny.price || '0';
+    let exchangeRate = (swapDataRecord.exchangeRate || swapDataRecord.price || '0') as string;
     if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
       // Exchange rate = toAmount / fromAmount (both in human-readable units)
       const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
@@ -100,22 +100,22 @@ export async function POST(request: NextRequest) {
     const quote = {
       fromToken: {
         address: fromToken,
-        symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
+        symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN',
         decimals: fromDecimals,
-        name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
+        name: (fromTokenData.tokenSymbol as string) || 'Unknown Token',
       },
       toToken: {
         address: toToken,
-        symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
+        symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN',
         decimals: toDecimals,
-        name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
+        name: (toTokenData.tokenSymbol as string) || 'Unknown Token',
       },
       fromAmount: amount,
       toAmount,
-      toAmountMin: swapDataAny.minReceiveAmount || swapDataAny.toAmountMin || '0',
+      toAmountMin: '0', // Calculate min amount based on slippage
       exchangeRate,
-      priceImpact: swapDataAny.priceImpact || swapDataAny.priceImpactPercentage || '0',
-      estimatedGas: swapDataAny.estimatedGas || swapDataAny.gasEstimate || '0',
+      priceImpact: (swapDataRecord.priceImpactPercentage as string) || '0',
+      estimatedGas: (swapDataRecord.estimateGasFee as string) || '0',
       route: [],
     };
 

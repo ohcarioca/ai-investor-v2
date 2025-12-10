@@ -34,7 +34,9 @@ export default function TokenInput({
   const { data: balance } = useBalance({
     address,
     token: token?.isNative ? undefined : (token?.address as `0x${string}`),
-    enabled: !!address && !!token,
+    query: {
+      enabled: !!address && !!token,
+    },
   });
 
   const formattedBalance = balance

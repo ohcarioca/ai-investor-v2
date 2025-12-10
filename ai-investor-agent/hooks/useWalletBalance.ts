@@ -166,7 +166,7 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
     } finally {
       setIsLoading(false);
     }
-  }, [address, isConnected, publicClient, nativeBalance]);
+  }, [address, isConnected, publicClient, nativeBalance, chain?.id]);
 
   const refetch = useCallback(async () => {
     await refetchNative();

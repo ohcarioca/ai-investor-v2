@@ -41,7 +41,9 @@ export default function SwapButton({
     token: fromToken?.isNative
       ? undefined
       : (fromToken?.address as `0x${string}`),
-    enabled: !!address && !!fromToken,
+    query: {
+      enabled: !!address && !!fromToken,
+    },
   });
 
   // Determine button state and text

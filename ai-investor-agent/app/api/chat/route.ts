@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     }));
 
     // Call OpenAI API with function calling
-    let completion = await openai.chat.completions.create({
+    const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },

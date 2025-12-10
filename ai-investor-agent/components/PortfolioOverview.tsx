@@ -19,7 +19,9 @@ export default function PortfolioOverview() {
   const { data: sierraBalanceData } = useBalance({
     address,
     token: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7' as `0x${string}`, // SIERRA token address
-    enabled: !!address && isConnected,
+    query: {
+      enabled: !!address && isConnected,
+    },
   });
 
   const sierraAmount = sierraBalanceData

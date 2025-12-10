@@ -57,10 +57,10 @@ export async function POST(request: NextRequest) {
       // Extract router address from different possible response formats
       const quoteData = dummyQuote.data;
       if (quoteData && Array.isArray(quoteData) && quoteData.length > 0) {
-        const routeInfo = quoteData[0] as any;
-        const dataRouter = routeInfo?.routerAddress || routeInfo?.to;
+        const routeInfo = quoteData[0] as unknown as Record<string, unknown>;
+        const dataRouter = (routeInfo?.routerAddress as string | undefined) || (routeInfo?.to as string | undefined);
         if (dataRouter) {
-          spenderAddress = dataRouter;
+          spenderAddress = dataRouter as `0x${string}`;
         }
       }
     } catch (error) {

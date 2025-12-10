@@ -7,5 +7,5 @@ export interface Message {
 
 export interface ChatResponse {
   response: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }

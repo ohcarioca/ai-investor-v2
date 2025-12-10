@@ -98,7 +98,9 @@ function TokenListItem({
   const { data: balance } = useBalance({
     address,
     token: token.isNative ? undefined : (token.address as `0x${string}`),
-    enabled: !!address,
+    query: {
+      enabled: !!address,
+    },
   });
 
   const formattedBalance = balance

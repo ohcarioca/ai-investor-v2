@@ -1,25 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useAccount } from 'wagmi';
 import { Wallet } from 'lucide-react';
 
 export default function WalletButton() {
   const { isConnected } = useAccount();
-  const [shouldAutoOpen, setShouldAutoOpen] = useState(false);
+  const openConnectModalRef = useRef<(() => void) | null>(null);
+  const hasCheckedAutoOpen = useRef(false);
 
   useEffect(() => {
-    // Auto-open modal on first visit
-    const hasConnected = localStorage.getItem('wallet_connected');
-    if (!isConnected && !hasConnected) {
-      setShouldAutoOpen(true);
+    // Save connection state
+    if (isConnected) {
+      localStorage.setItem('wallet_connected', 'true');
     }
   }, [isConnected]);
 
-  useEffect(() => {
-    if (isConnected) {
-      localStorage.setItem('wallet_connected', 'true');
+  // Auto-open modal on first visit
+  const handleAutoOpen = useCallback(() => {
+    if (hasCheckedAutoOpen.current) return;
+    hasCheckedAutoOpen.current = true;
+
+    const hasConnected = localStorage.getItem('wallet_connected');
+    if (!isConnected && !hasConnected && openConnectModalRef.current) {
+      openConnectModalRef.current();
     }
   }, [isConnected]);
 
@@ -34,13 +39,13 @@ export default function WalletButton() {
       }) => {
         const connected = mounted && account && chain;
 
-        // Auto-open modal
-        useEffect(() => {
-          if (shouldAutoOpen && !connected && mounted) {
-            openConnectModal();
-            setShouldAutoOpen(false);
-          }
-        }, [shouldAutoOpen, connected, mounted]);
+        // Store the openConnectModal function in ref
+        openConnectModalRef.current = openConnectModal;
+
+        // Trigger auto-open check when mounted
+        if (mounted && !connected) {
+          handleAutoOpen();
+        }
 
         if (!mounted) {
           return null;
