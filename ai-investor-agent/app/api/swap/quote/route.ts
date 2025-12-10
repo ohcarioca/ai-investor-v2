@@ -35,46 +35,72 @@ export async function GET(request: NextRequest) {
 
     // Call OKX SDK
     const client = getOKXClient();
+
+    console.log('Fetching quote with params:', {
+      chainIndex,
+      fromTokenAddress: fromToken,
+      toTokenAddress: toToken,
+      amount,
+      slippage,
+    });
+
     const quoteResult = await client.dex.getQuote({
       chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount,
-      slippagePercent: slippage,
+      slippage: slippage,
     });
 
-    // Check if quote was successful
-    if (!quoteResult.data || quoteResult.data.length === 0) {
+    console.log('OKX Quote Result:', JSON.stringify(quoteResult, null, 2));
+
+    // Check if quote was successful - OKX returns data in different formats
+    if (!quoteResult || (!quoteResult.data && !quoteResult.routerResult)) {
       return NextResponse.json(
         { error: 'No quote available for this token pair' },
         { status: 404 }
       );
     }
 
-    const quoteData = quoteResult.data[0];
+    // OKX SDK can return data in routerResult or data array
+    const quoteData = quoteResult.routerResult || (quoteResult.data && quoteResult.data[0]);
+
+    if (!quoteData) {
+      console.error('No quote data found in response:', quoteResult);
+      return NextResponse.json(
+        { error: 'No quote data available' },
+        { status: 404 }
+      );
+    }
+
+    console.log('Quote Data:', JSON.stringify(quoteData, null, 2));
 
     // Transform OKX response to our format
+    // OKX SDK may use different field names
+    const fromTokenData = quoteData.fromToken || quoteData.fromTokenInfo || {};
+    const toTokenData = quoteData.toToken || quoteData.toTokenInfo || {};
+
     const quote = {
       fromToken: {
         address: fromToken,
-        symbol: quoteData.fromToken.symbol,
-        decimals: parseInt(quoteData.fromToken.decimal),
-        name: quoteData.fromToken.symbol,
+        symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
+        decimals: parseInt(fromTokenData.decimal || fromTokenData.decimals || '18'),
+        name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
         isNative: fromToken === NATIVE_TOKEN_ADDRESS,
       },
       toToken: {
         address: toToken,
-        symbol: quoteData.toToken.symbol,
-        decimals: parseInt(quoteData.toToken.decimal),
-        name: quoteData.toToken.symbol,
+        symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
+        decimals: parseInt(toTokenData.decimal || toTokenData.decimals || '18'),
+        name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
         isNative: toToken === NATIVE_TOKEN_ADDRESS,
       },
       fromAmount: amount,
-      toAmount: quoteData.toTokenAmount,
-      toAmountMin: quoteData.minReceiveAmount,
-      exchangeRate: quoteData.exchangeRate,
-      priceImpact: quoteData.priceImpact || '0',
-      estimatedGas: quoteData.estimatedGas,
+      toAmount: quoteData.toTokenAmount || quoteData.toAmount || '0',
+      toAmountMin: quoteData.minReceiveAmount || quoteData.toAmountMin || '0',
+      exchangeRate: quoteData.exchangeRate || quoteData.price || '0',
+      priceImpact: quoteData.priceImpact || quoteData.priceImpactPercentage || '0',
+      estimatedGas: quoteData.estimatedGas || quoteData.gasEstimate || '0',
       route: [], // OKX doesn't expose route details easily
     };
 

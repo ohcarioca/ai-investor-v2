@@ -71,12 +71,23 @@ export function useSwapExecution() {
 
         const { transaction } = await response.json();
 
+        console.log('Executing swap transaction:', {
+          to: transaction.to,
+          value: transaction.value,
+          gasLimit: transaction.gasLimit,
+        });
+
+        // Add 20% safety margin to gas limit to avoid out of gas errors
+        const gasWithMargin = transaction.gasLimit
+          ? BigInt(Math.floor(Number(transaction.gasLimit) * 1.2))
+          : undefined;
+
         // Send transaction via wagmi
         sendTransaction({
           to: transaction.to as `0x${string}`,
           data: transaction.data as `0x${string}`,
           value: BigInt(transaction.value),
-          gas: BigInt(transaction.gasLimit),
+          gas: gasWithMargin,
         });
       } catch (err) {
         setSwapState({

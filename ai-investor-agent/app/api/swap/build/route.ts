@@ -25,53 +25,83 @@ export async function POST(request: NextRequest) {
 
     // Get swap transaction data from OKX SDK
     const client = getOKXClient();
+
+    console.log('Building swap with params:', {
+      chainIndex,
+      fromTokenAddress: fromToken,
+      toTokenAddress: toToken,
+      amount,
+      slippage: slippage || '0.5',
+      userWalletAddress: userAddress,
+    });
+
     const swapResult = await client.dex.getSwapData({
       chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount,
-      slippagePercent: slippage || '0.5',
+      slippage: slippage || '0.5',
       userWalletAddress: userAddress,
     });
 
-    // Check if swap data was successfully retrieved
-    if (!swapResult.data || swapResult.data.length === 0) {
+    console.log('OKX Swap Result:', JSON.stringify(swapResult, null, 2));
+
+    // Check if swap data was successfully retrieved - OKX returns data in different formats
+    if (!swapResult || (!swapResult.data && !swapResult.routerResult)) {
       return NextResponse.json(
         { error: 'No swap data available for this transaction' },
         { status: 404 }
       );
     }
 
-    const swapData = swapResult.data[0];
+    // OKX SDK can return data in routerResult or data array
+    const swapData = swapResult.routerResult || (swapResult.data && swapResult.data[0]);
+
+    if (!swapData) {
+      console.error('No swap data found in response:', swapResult);
+      return NextResponse.json(
+        { error: 'No swap data available' },
+        { status: 404 }
+      );
+    }
+
+    console.log('Swap Data:', JSON.stringify(swapData, null, 2));
+
+    // Extract transaction data with flexible field access
+    const txData = swapData.tx || swapData.transaction || {};
 
     // Transform to our transaction format
     const transaction = {
-      to: swapData.tx.to,
-      data: swapData.tx.data,
-      value: swapData.tx.value || '0',
-      gasLimit: swapData.tx.gas,
+      to: txData.to,
+      data: txData.data,
+      value: txData.value || '0',
+      gasLimit: txData.gas || txData.gasLimit,
     };
+
+    // Extract token data with flexible field names
+    const fromTokenData = swapData.fromToken || swapData.fromTokenInfo || {};
+    const toTokenData = swapData.toToken || swapData.toTokenInfo || {};
 
     // Also return quote for display
     const quote = {
       fromToken: {
         address: fromToken,
-        symbol: swapData.fromToken.symbol,
-        decimals: parseInt(swapData.fromToken.decimal),
-        name: swapData.fromToken.symbol,
+        symbol: fromTokenData.symbol || fromTokenData.tokenSymbol || 'UNKNOWN',
+        decimals: parseInt(fromTokenData.decimal || fromTokenData.decimals || '18'),
+        name: fromTokenData.name || fromTokenData.symbol || fromTokenData.tokenSymbol || 'Unknown Token',
       },
       toToken: {
         address: toToken,
-        symbol: swapData.toToken.symbol,
-        decimals: parseInt(swapData.toToken.decimal),
-        name: swapData.toToken.symbol,
+        symbol: toTokenData.symbol || toTokenData.tokenSymbol || 'UNKNOWN',
+        decimals: parseInt(toTokenData.decimal || toTokenData.decimals || '18'),
+        name: toTokenData.name || toTokenData.symbol || toTokenData.tokenSymbol || 'Unknown Token',
       },
       fromAmount: amount,
-      toAmount: swapData.toTokenAmount,
-      toAmountMin: swapData.minReceiveAmount,
-      exchangeRate: swapData.exchangeRate,
-      priceImpact: swapData.priceImpact || '0',
-      estimatedGas: swapData.estimatedGas,
+      toAmount: swapData.toTokenAmount || swapData.toAmount || '0',
+      toAmountMin: swapData.minReceiveAmount || swapData.toAmountMin || '0',
+      exchangeRate: swapData.exchangeRate || swapData.price || '0',
+      priceImpact: swapData.priceImpact || swapData.priceImpactPercentage || '0',
+      estimatedGas: swapData.estimatedGas || swapData.gasEstimate || '0',
       route: [],
     };
 

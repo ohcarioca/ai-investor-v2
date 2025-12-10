@@ -91,7 +91,13 @@ export function useTokenApproval() {
           throw new Error('No approval transaction data');
         }
 
+        console.log('Executing approval transaction:', {
+          to: approvalData.transaction.to,
+          value: approvalData.transaction.value,
+        });
+
         // Send approval transaction via wagmi
+        // Let wagmi estimate gas automatically for approval
         sendTransaction({
           to: approvalData.transaction.to as `0x${string}`,
           data: approvalData.transaction.data as `0x${string}`,

@@ -4,7 +4,7 @@ import {
   CHAIN_INDEX_MAP,
   NATIVE_TOKEN_ADDRESS,
 } from '@/lib/okx-server';
-import { createPublicClient, http, erc20Abi } from 'viem';
+import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
 import { avalanche } from 'viem/chains';
 
 export async function POST(request: NextRequest) {
@@ -33,26 +33,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Get OKX router address (spender)
+    // OKX DEX Aggregator router address for Avalanche C-Chain
+    // This is the standard OKX router that handles token approvals
+    const OKX_ROUTER_AVALANCHE = getAddress('0x4a1a4e0a296e391ab60f49e35ee8bc3c16fe67b1');
+
     const client = getOKXClient();
     const chainIndex = CHAIN_INDEX_MAP[parseInt(chainId)];
 
-    // Fetch a dummy quote to get router address
-    const dummyQuote = await client.dex.getQuote({
-      chainIndex,
-      fromTokenAddress: tokenAddress,
-      toTokenAddress: NATIVE_TOKEN_ADDRESS,
-      amount: '1000000',
-      slippagePercent: '0.5',
-    });
+    let spenderAddress = OKX_ROUTER_AVALANCHE;
 
-    if (!dummyQuote.data || dummyQuote.data.length === 0) {
-      return NextResponse.json(
-        { error: 'Unable to determine router address' },
-        { status: 500 }
-      );
+    // Try to get the actual router address from a quote
+    try {
+      const dummyQuote = await client.dex.getQuote({
+        chainIndex,
+        fromTokenAddress: tokenAddress,
+        toTokenAddress: NATIVE_TOKEN_ADDRESS,
+        amount: '1000000',
+        slippage: '0.5',
+      });
+
+      console.log('Dummy quote for approval:', JSON.stringify(dummyQuote, null, 2));
+
+      // Extract router address from different possible response formats
+      if (dummyQuote.routerResult?.routerAddress) {
+        spenderAddress = dummyQuote.routerResult.routerAddress;
+      } else if (dummyQuote.data && dummyQuote.data.length > 0) {
+        const dataRouter = dummyQuote.data[0].routerAddress || dummyQuote.data[0].to;
+        if (dataRouter) {
+          spenderAddress = dataRouter;
+        }
+      }
+    } catch (error) {
+      console.warn('Could not fetch router from quote, using default:', error);
+      // Will use the default OKX_ROUTER_AVALANCHE
     }
 
-    const spenderAddress = dummyQuote.data[0].routerAddress;
+    console.log('Using router/spender address:', spenderAddress);
 
     // Check current allowance using viem
     const publicClient = createPublicClient({
