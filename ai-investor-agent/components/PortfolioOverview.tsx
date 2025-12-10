@@ -1,19 +1,30 @@
 'use client';
 
-import { TrendingUp, Copy, ExternalLink, RefreshCw, Wallet, ArrowLeftRight } from 'lucide-react';
+import { Copy, RefreshCw, Wallet, ArrowLeftRight } from 'lucide-react';
 import { useState } from 'react';
+import { useBalance, useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import SwapModal from './swap/SwapModal';
 
 export default function PortfolioOverview() {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const { address } = useAccount();
 
-  // Calculate top balances
-  const topBalances = balance?.balances
-    .filter(b => b.usdValue > 1) // Only show balances > $1
-    .sort((a, b) => b.usdValue - a.usdValue)
-    .slice(0, 5); // Top 5
+  // Calculate USDC balance only for Total Balance display
+  const usdcBalance = balance?.balances.find(b => b.currency === 'USDC');
+  const totalUSDC = usdcBalance?.usdValue || 0;
+
+  // Get SIERRA balance directly using Wagmi's useBalance (same as modal)
+  const { data: sierraBalanceData } = useBalance({
+    address,
+    token: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7' as `0x${string}`, // SIERRA token address
+    enabled: !!address && isConnected,
+  });
+
+  const sierraAmount = sierraBalanceData
+    ? parseFloat(sierraBalanceData.formatted)
+    : 0;
 
   return (
     <aside className="hidden lg:block fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
@@ -61,7 +72,7 @@ export default function PortfolioOverview() {
           {isLoading ? (
             <div className="animate-pulse bg-gray-300 h-10 w-40 rounded" />
           ) : (
-            `$${balance?.totalEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}`
+            `$${totalUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           )}
         </div>
         {balance && (
@@ -71,83 +82,29 @@ export default function PortfolioOverview() {
         )}
       </div>
 
+      {/* Total Invested Card */}
+      <div className="bg-purple-50 rounded-xl p-5 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-purple-700 font-medium">Total Invested</span>
+        </div>
+        <div className="text-2xl font-bold text-purple-900">
+          {isLoading ? (
+            <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
+          ) : (
+            `${sierraAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SIERRA`
+          )}
+        </div>
+      </div>
+
       {/* Swap Button */}
       <button
         onClick={() => setShowSwapModal(true)}
         disabled={!isConnected}
-        className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mb-4"
+        className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         <ArrowLeftRight className="w-5 h-5" />
         Swap Tokens
       </button>
-
-      {/* Top Balances */}
-      <div className="space-y-3 mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Holdings</h3>
-        {isLoading ? (
-          // Loading skeleton
-          [1, 2, 3].map(i => (
-            <div key={i} className="bg-gray-50 rounded-xl p-4 animate-pulse">
-              <div className="flex justify-between items-center">
-                <div className="bg-gray-300 h-4 w-16 rounded" />
-                <div className="bg-gray-300 h-4 w-24 rounded" />
-              </div>
-            </div>
-          ))
-        ) : topBalances && topBalances.length > 0 ? (
-          topBalances.map(bal => (
-            <div key={bal.currency} className="bg-gray-50 rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold text-gray-900">{bal.currency}</span>
-                <button className="p-1 hover:bg-gray-200 rounded transition-colors" aria-label={`View ${bal.currency} details`}>
-                  <ExternalLink className="w-3 h-3 text-purple-600" />
-                </button>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">
-                  {bal.available.toFixed(8)}
-                </span>
-                <span className="text-sm font-medium text-gray-900">
-                  ${bal.usdValue.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="text-center text-gray-500 text-sm py-4">
-            No balances available
-          </div>
-        )}
-      </div>
-
-      {/* APY Performance Chart - Keep as mock for now */}
-      <div className="bg-gray-50 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm text-gray-600">APY Performance</span>
-          <span className="text-lg font-bold text-purple-600">6.2%</span>
-        </div>
-
-        {/* Simple Chart Visualization */}
-        <div className="relative h-32 flex items-end justify-between gap-1">
-          {[45, 48, 52, 50, 55, 58, 62, 65, 70, 68, 72, 75].map((height, index) => (
-            <div
-              key={index}
-              className="flex-1 bg-gradient-to-t from-purple-400 to-purple-300 rounded-t"
-              style={{ height: `${height}%` }}
-            />
-          ))}
-        </div>
-
-        {/* Chart Labels */}
-        <div className="flex justify-between mt-3 text-xs text-gray-500">
-          <span>Feb</span>
-          <span>Mar</span>
-          <span>Apr</span>
-          <span>May</span>
-          <span>Jun</span>
-          <span>Jul</span>
-        </div>
-      </div>
 
       {/* Swap Modal */}
       <SwapModal

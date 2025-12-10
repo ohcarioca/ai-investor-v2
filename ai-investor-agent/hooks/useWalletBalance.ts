@@ -21,6 +21,11 @@ const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; d
       symbol: 'WETH.e',
       decimals: 18,
     },
+    {
+      address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', // SIERRA on Avalanche
+      symbol: 'SIERRA',
+      decimals: 18,
+    },
   ],
   // Base (8453)
   8453: [
@@ -96,6 +101,8 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
           case 'BTC':
           case 'WBTC':
             return 43000; // BTC price placeholder
+          case 'SIERRA':
+            return 1; // SIERRA price - update with real price feed
           default:
             return 0;
         }
@@ -131,19 +138,18 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
           });
 
           const formattedBalance = parseFloat(formatUnits(tokenBalance, token.decimals));
+          const tokenPrice = getTokenPrice(token.symbol);
+          const usdValue = formattedBalance * tokenPrice;
 
-          if (formattedBalance > 0) {
-            const tokenPrice = getTokenPrice(token.symbol);
-            const usdValue = formattedBalance * tokenPrice;
+          // Always add token to balances, even if balance is 0
+          balances.push({
+            currency: token.symbol,
+            available: formattedBalance,
+            frozen: 0,
+            usdValue,
+          });
 
-            balances.push({
-              currency: token.symbol,
-              available: formattedBalance,
-              frozen: 0,
-              usdValue,
-            });
-            totalEquity += usdValue;
-          }
+          totalEquity += usdValue;
         } catch (tokenError) {
           console.warn(`Failed to fetch ${token.symbol} balance:`, tokenError);
         }
