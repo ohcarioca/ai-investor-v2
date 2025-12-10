@@ -7,7 +7,7 @@ import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; decimals: number }>> = {
   43114: [
     { address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', symbol: 'USDC', decimals: 6 },
-    { address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', symbol: 'SIERRA', decimals: 18 },
+    { address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', symbol: 'SIERRA', decimals: 6 },
   ],
 };
 

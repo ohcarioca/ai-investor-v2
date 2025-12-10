@@ -23,7 +23,7 @@ const AVALANCHE_TOKENS: Token[] = [
     address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
     symbol: 'SIERRA',
     name: 'SIERRA',
-    decimals: 18,
+    decimals: 6,
   },
 ];
 

@@ -22,7 +22,8 @@
       "Bash(wmic process where \"ProcessId=20124\" get CommandLine,ProcessId)",
       "Bash(grep:*)",
       "Bash(npx tsc:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(node -e:*)"
     ]
   }
 }

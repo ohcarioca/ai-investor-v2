@@ -158,7 +158,7 @@
         "symbol": "SIERRA",
         "name": "Sierra Token",
         "address": "0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7",
-        "decimals": 18,
+        "decimals": 6,
         "is_native": false,
         "chain_id": 43114,
         "enabled": true,

@@ -19,7 +19,7 @@ const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; d
     {
       address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', // SIERRA on Avalanche
       symbol: 'SIERRA',
-      decimals: 18,
+      decimals: 6,
     },
   ],
 };

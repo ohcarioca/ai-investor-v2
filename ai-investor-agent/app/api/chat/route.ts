@@ -36,7 +36,7 @@ function getTokenDecimals(symbol: string): number {
   const decimalsMap: Record<string, number> = {
     'AVAX': 18,
     'USDC': 6,
-    'SIERRA': 18,
+    'SIERRA': 6,
   };
   return decimalsMap[symbol];
 }
