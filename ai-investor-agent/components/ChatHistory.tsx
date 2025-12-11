@@ -8,9 +8,10 @@ import { Loader2 } from 'lucide-react';
 interface ChatHistoryProps {
   messages: Message[];
   isLoading: boolean;
+  onSwapSuccess?: (txHash: string, toAmount: string, fromToken: string, toToken: string) => void;
 }
 
-export default function ChatHistory({ messages, isLoading }: ChatHistoryProps) {
+export default function ChatHistory({ messages, isLoading, onSwapSuccess }: ChatHistoryProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,7 +26,11 @@ export default function ChatHistory({ messages, isLoading }: ChatHistoryProps) {
     <div className="flex-1 overflow-y-auto px-6 py-8">
       <div className="max-w-4xl mx-auto">
         {messages.map((message) => (
-          <ChatMessage key={message.id} message={message} />
+          <ChatMessage
+            key={message.id}
+            message={message}
+            onSwapSuccess={onSwapSuccess}
+          />
         ))}
 
         {isLoading && (

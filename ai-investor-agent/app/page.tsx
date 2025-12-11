@@ -8,7 +8,7 @@ import ChatHistory from '@/components/ChatHistory';
 import { useChat } from '@/hooks/useChat';
 
 export default function Home() {
-  const { messages, isLoading, sendMessage } = useChat();
+  const { messages, isLoading, sendMessage, notifySwapSuccess } = useChat();
   const showWelcome = messages.length === 0;
 
   return (
@@ -50,7 +50,11 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <ChatHistory messages={messages} isLoading={isLoading} />
+          <ChatHistory
+            messages={messages}
+            isLoading={isLoading}
+            onSwapSuccess={notifySwapSuccess}
+          />
         )}
       </main>
 

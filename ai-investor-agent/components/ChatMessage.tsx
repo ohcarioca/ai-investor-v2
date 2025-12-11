@@ -1,12 +1,26 @@
 import { Message } from '@/types/chat';
 import { User, Bot } from 'lucide-react';
+import SwapApprovalCard from './SwapApprovalCard';
 
 interface ChatMessageProps {
   message: Message;
+  onSwapSuccess?: (txHash: string, toAmount: string, fromToken: string, toToken: string) => void;
 }
 
-export default function ChatMessage({ message }: ChatMessageProps) {
+export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps) {
   const isUser = message.role === 'user';
+
+  // Handler para swap success
+  const handleSwapSuccess = (txHash: string, toAmount: string) => {
+    if (message.swapData && onSwapSuccess) {
+      onSwapSuccess(
+        txHash,
+        toAmount,
+        message.swapData.fromToken,
+        message.swapData.toToken
+      );
+    }
+  };
 
   return (
     <div className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
@@ -26,6 +40,15 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         >
           <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
         </div>
+
+        {/* Render SwapApprovalCard if swapData is present */}
+        {!isUser && message.swapData && (
+          <SwapApprovalCard
+            swapData={message.swapData}
+            onSwapSuccess={handleSwapSuccess}
+          />
+        )}
+
         <div className={`text-xs text-gray-400 mt-2 ${isUser ? 'text-right' : 'text-left'}`}>
           {message.timestamp.toLocaleTimeString('pt-BR', {
             hour: '2-digit',

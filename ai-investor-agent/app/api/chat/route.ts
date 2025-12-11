@@ -64,7 +64,7 @@ const functions = [
   },
   {
     name: 'swap_tokens',
-    description: 'Execute a token swap on Avalanche C-Chain using OKX DEX. Supports USDC, SIERRA, and AVAX only. Returns transaction data for user to sign.',
+    description: 'Get a quote for a token swap on Avalanche C-Chain using OKX DEX. This shows the user the exchange rate and asks for confirmation. After user confirms, call confirm_swap to build the transactions.',
     parameters: {
       type: 'object',
       properties: {
@@ -81,6 +81,35 @@ const functions = [
         amount: {
           type: 'string',
           description: 'Amount to swap in human-readable format (e.g., "10.5" for 10.5 USDC)',
+        },
+        slippage: {
+          type: 'string',
+          description: 'Slippage tolerance in percentage (default: 0.5)',
+          default: '0.5',
+        },
+      },
+      required: ['fromToken', 'toToken', 'amount'],
+    },
+  },
+  {
+    name: 'confirm_swap',
+    description: 'Confirm and build swap transactions after user approves the quote. Call this only after the user confirms they want to proceed with the swap (e.g., says "yes", "sim", "proceed", etc.).',
+    parameters: {
+      type: 'object',
+      properties: {
+        fromToken: {
+          type: 'string',
+          description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
+          enum: ['USDC', 'SIERRA', 'AVAX'],
+        },
+        toToken: {
+          type: 'string',
+          description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
+          enum: ['USDC', 'SIERRA', 'AVAX'],
+        },
+        amount: {
+          type: 'string',
+          description: 'Amount to swap in human-readable format',
         },
         slippage: {
           type: 'string',
@@ -166,6 +195,7 @@ export async function POST(req: NextRequest) {
     });
 
     let responseMessage = completion.choices[0]?.message;
+    let swapDataResult = null; // Store swap data for response
 
     // Handle function calls
     if (responseMessage?.tool_calls && responseMessage.tool_calls.length > 0) {
@@ -218,7 +248,73 @@ export async function POST(req: NextRequest) {
         else if (functionName === 'swap_tokens') {
           const { fromToken, toToken, amount, slippage = '0.5' } = functionArgs;
 
-          console.log('[Chat API] swap_tokens called:', { fromToken, toToken, amount, slippage });
+          console.log('[Chat API] swap_tokens called (quote only):', { fromToken, toToken, amount, slippage });
+
+          // 1. Validar wallet conectada
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to perform swaps',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              // 2. Converter símbolos para endereços
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+
+              // 3. Converter amount para base units
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // 4. Obter Quote apenas (não construir transações ainda)
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
+              } else {
+                // Retornar apenas a cotação, sem transações
+                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+
+                functionResult = {
+                  success: true,
+                  requiresConfirmation: true,
+                  swap: {
+                    fromToken,
+                    toToken,
+                    fromAmount: amount,
+                    toAmount,
+                    exchangeRate: quoteData.quote.exchangeRate,
+                    priceImpact: quoteData.quote.priceImpact,
+                    estimatedGas: quoteData.quote.estimatedGas
+                  }
+                };
+
+                console.log('[Chat API] Quote prepared, awaiting user confirmation');
+              }
+            } catch (error) {
+              console.error('[Chat API] Quote error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to get quote'
+              };
+            }
+          }
+        }
+        else if (functionName === 'confirm_swap') {
+          const { fromToken, toToken, amount, slippage = '0.5' } = functionArgs;
+
+          console.log('[Chat API] confirm_swap called:', { fromToken, toToken, amount, slippage });
 
           // 1. Validar wallet conectada
           if (!walletAddress) {
@@ -296,11 +392,12 @@ export async function POST(req: NextRequest) {
                 if (!buildRes.ok) {
                   functionResult = { success: false, error: buildData.error || 'Failed to build swap transaction' };
                 } else {
-                  // 7. Retornar resultado estruturado
+                  // 7. Retornar resultado completo com transações
                   const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
 
                   functionResult = {
                     success: true,
+                    confirmed: true,
                     swap: {
                       fromToken,
                       toToken,
@@ -315,14 +412,17 @@ export async function POST(req: NextRequest) {
                     }
                   };
 
-                  console.log('[Chat API] Swap prepared successfully:', functionResult);
+                  // Store swap data for response
+                  swapDataResult = functionResult.swap;
+
+                  console.log('[Chat API] Swap confirmed and transactions built successfully');
                 }
               }
             } catch (error) {
-              console.error('[Chat API] Swap error:', error);
+              console.error('[Chat API] Confirm swap error:', error);
               functionResult = {
                 success: false,
-                error: error instanceof Error ? error.message : 'Swap failed'
+                error: error instanceof Error ? error.message : 'Failed to confirm swap'
               };
             }
           }
@@ -353,8 +453,10 @@ export async function POST(req: NextRequest) {
       'Desculpe, não consegui gerar uma resposta.';
 
     // Return response in format compatible with existing UI
+    // Include swapData if confirm_swap was called successfully
     return NextResponse.json({
-      response: responseContent
+      response: responseContent,
+      swapData: swapDataResult
     });
 
   } catch (error) {

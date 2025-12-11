@@ -79,3 +79,17 @@ export interface SwapBuildResponse {
   transaction: SwapTransaction;
   quote: SwapQuote;
 }
+
+// Chat integration types
+export interface SwapData {
+  fromToken: string;
+  toToken: string;
+  fromAmount: string;
+  toAmount: string;
+  exchangeRate: string;
+  priceImpact: string;
+  estimatedGas: string;
+  needsApproval: boolean;
+  approvalTransaction?: ApprovalTransaction;
+  swapTransaction: SwapTransaction;
+}
