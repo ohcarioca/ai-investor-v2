@@ -28,6 +28,10 @@ export default function PortfolioOverview() {
     ? parseFloat(sierraBalanceData.formatted)
     : 0;
 
+  // Calculate SIERRA value in USD (get from balance data)
+  const sierraBalance = balance?.balances.find(b => b.currency === 'SIERRA');
+  const totalSierraUSD = sierraBalance?.usdValue || 0;
+
   return (
     <aside className="hidden lg:block fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
@@ -62,23 +66,23 @@ export default function PortfolioOverview() {
         </div>
       )}
 
-      {/* Total Balance Card */}
+      {/* Total Available for Investment Card */}
       <div className="bg-gray-50 rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">Total Balance (USD)</span>
+          <span className="text-sm text-gray-600 font-medium">Total Available for Investment (USDC)</span>
           <button className="p-1 hover:bg-gray-200 rounded transition-colors" aria-label="Copy balance">
             <Copy className="w-4 h-4 text-purple-600" />
           </button>
         </div>
-        <div className="text-3xl font-bold text-gray-900 mb-2">
+        <div className="text-2xl font-bold text-gray-900">
           {isLoading ? (
-            <div className="animate-pulse bg-gray-300 h-10 w-40 rounded" />
+            <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
           ) : (
             `$${totalUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           )}
         </div>
         {balance && (
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-gray-500 mt-2">
             Last updated: {new Date(balance.lastUpdated).toLocaleTimeString()}
           </div>
         )}
@@ -93,19 +97,29 @@ export default function PortfolioOverview() {
           {isLoading ? (
             <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
           ) : (
-            `${sierraAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} SIERRA`
+            `$${totalSierraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           )}
         </div>
       </div>
 
-      {/* Swap Button */}
+      {/* APY Card */}
+      <div className="bg-green-50 rounded-xl p-5 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-green-700 font-medium">APY</span>
+        </div>
+        <div className="text-2xl font-bold text-green-900">
+          5.1%
+        </div>
+      </div>
+
+      {/* Invest More Button */}
       <button
         onClick={() => setShowSwapModal(true)}
         disabled={!isConnected}
         className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         <ArrowLeftRight className="w-5 h-5" />
-        Swap Tokens
+        Invest more funds
       </button>
 
       {/* Swap Modal */}
