@@ -43,14 +43,77 @@ export async function POST(request: NextRequest) {
     // Get swap transaction data from OKX SDK
     const client = getOKXClient();
 
-    console.log('Building swap with params:', {
+    console.log('[Swap Build] Building swap with params:', {
       chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
       amount,
+      amountType: typeof amount,
       slippage: slippage || '0.5',
       userWalletAddress: userAddress,
     });
+
+    // Check if fromToken is not native, verify balance and allowance
+    const NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+    const OKX_ROUTER = '0x2E84246828ddae1850Bc0CF23d8d8a8d1Aa5f1f'; // OKX DEX Router on Avalanche
+
+    if (fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase()) {
+      const { createPublicClient, http, erc20Abi } = await import('viem');
+      const { avalanche } = await import('viem/chains');
+
+      const publicClient = createPublicClient({
+        chain: avalanche,
+        transport: http(),
+      });
+
+      try {
+        // Check balance
+        const balance = await publicClient.readContract({
+          address: fromToken as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'balanceOf',
+          args: [userAddress as `0x${string}`],
+        });
+
+        console.log('[Swap Build] Token balance check:', {
+          token: fromToken,
+          balance: balance.toString(),
+          required: amount,
+          sufficient: BigInt(balance) >= BigInt(amount),
+        });
+
+        if (BigInt(balance) < BigInt(amount)) {
+          return NextResponse.json(
+            { error: `Insufficient token balance. You have ${balance.toString()} but need ${amount}` },
+            { status: 400 }
+          );
+        }
+
+        // Check allowance for OKX router
+        const allowance = await publicClient.readContract({
+          address: fromToken as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [userAddress as `0x${string}`, OKX_ROUTER as `0x${string}`],
+        });
+
+        console.log('[Swap Build] Token allowance check:', {
+          token: fromToken,
+          spender: OKX_ROUTER,
+          allowance: allowance.toString(),
+          required: amount,
+          sufficient: BigInt(allowance) >= BigInt(amount),
+        });
+
+        if (BigInt(allowance) < BigInt(amount)) {
+          console.warn('[Swap Build] WARNING: Insufficient allowance! This may cause transaction to fail.');
+          console.warn('[Swap Build] User should approve token spending first.');
+        }
+      } catch (error) {
+        console.warn('[Swap Build] Could not verify balance/allowance:', error);
+        // Continue anyway - let the transaction fail if balance is insufficient
+      }
+    }
 
     const swapResult = await client.dex.getSwapData({
       chainId: chainIndex,
@@ -61,7 +124,11 @@ export async function POST(request: NextRequest) {
       userWalletAddress: userAddress,
     });
 
-    console.log('OKX Swap Result:', JSON.stringify(swapResult, null, 2));
+    console.log('[Swap Build] ===== OKX SWAP RESULT START =====');
+    console.log('[Swap Build] Full response:', JSON.stringify(swapResult, null, 2));
+    console.log('[Swap Build] Response code:', swapResult?.code);
+    console.log('[Swap Build] Response msg:', swapResult?.msg);
+    console.log('[Swap Build] ===== OKX SWAP RESULT END =====');
 
     // Check if swap data was successfully retrieved - OKX returns data in different formats
     if (!swapResult || !swapResult.data) {
@@ -82,10 +149,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Swap Data:', JSON.stringify(swapData, null, 2));
+    console.log('[Swap Build] Swap Data:', JSON.stringify(swapData, null, 2));
 
     // Extract transaction data with flexible field access
     const txData = (swapData.tx || (swapData as unknown as Record<string, unknown>).transaction || {}) as Record<string, unknown>;
+
+    console.log('[Swap Build] ===== TRANSACTION DETAILS =====');
+    console.log('[Swap Build] Target contract (to):', txData.to);
+    console.log('[Swap Build] Value (ETH/AVAX):', txData.value);
+    console.log('[Swap Build] Gas estimate:', txData.gas || txData.gasLimit);
+    console.log('[Swap Build] Data length:', (txData.data as string)?.length || 0, 'chars');
+    console.log('[Swap Build] First 200 chars of data:', (txData.data as string)?.substring(0, 200));
+    console.log('[Swap Build] ===== TRANSACTION DETAILS END =====');
 
     // Transform to our transaction format
     const transaction = {

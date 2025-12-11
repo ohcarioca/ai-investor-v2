@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       // Will use the default OKX_ROUTER_AVALANCHE
     }
 
-    console.log('Using router/spender address:', spenderAddress);
+    console.log('[Approval] Using router/spender address:', spenderAddress);
 
     // Check current allowance using viem
     const publicClient = createPublicClient({
@@ -102,6 +102,14 @@ export async function POST(request: NextRequest) {
 
     const currentAllowanceString = currentAllowance.toString();
     const isApproved = BigInt(currentAllowanceString) >= BigInt(amount);
+
+    console.log('[Approval] Allowance check result:', {
+      token: tokenAddress,
+      spender: spenderAddress,
+      currentAllowance: currentAllowanceString,
+      requiredAllowance: amount,
+      isApproved,
+    });
 
     if (isApproved) {
       return NextResponse.json({

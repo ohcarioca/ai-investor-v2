@@ -190,10 +190,15 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     setError(null);
 
     try {
-      // Add 20% gas safety margin
+      // Add 50% gas safety margin for complex tokens
       const gasWithMargin = swapData.swapTransaction.gasLimit
-        ? BigInt(Math.floor(Number(swapData.swapTransaction.gasLimit) * 1.2))
-        : undefined;
+        ? BigInt(Math.floor(Number(swapData.swapTransaction.gasLimit) * 1.5))
+        : BigInt(500000); // Fallback gas limit
+
+      console.log('[SwapApprovalCard] Gas calculation:', {
+        original: swapData.swapTransaction.gasLimit,
+        withMargin: gasWithMargin.toString(),
+      });
 
       sendTransaction({
         to: swapData.swapTransaction.to as `0x${string}`,

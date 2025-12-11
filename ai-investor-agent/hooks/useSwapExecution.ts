@@ -108,10 +108,16 @@ export function useSwapExecution() {
           gasLimit: transaction.gasLimit,
         });
 
-        // Add 20% safety margin to gas limit to avoid out of gas errors
+        // Add 50% safety margin to gas limit to avoid out of gas errors
+        // Higher margin for complex tokens like SIERRA
         const gasWithMargin = transaction.gasLimit
-          ? BigInt(Math.floor(Number(transaction.gasLimit) * 1.2))
-          : undefined;
+          ? BigInt(Math.floor(Number(transaction.gasLimit) * 1.5))
+          : BigInt(500000); // Fallback gas limit
+
+        console.log('Gas calculation:', {
+          original: transaction.gasLimit,
+          withMargin: gasWithMargin.toString(),
+        });
 
         // Send transaction via wagmi
         sendTransaction({
