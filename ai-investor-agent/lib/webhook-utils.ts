@@ -21,22 +21,25 @@ export function generateUUID(): string {
 
 /**
  * Build webhook payload from swap data
+ * NOTE: fromAmount and toAmount are expected in BASE UNITS (wei/smallest unit)
  */
 export function buildWebhookPayload(
   walletAddress: string,
   fromToken: Token,
   toToken: Token,
-  fromAmount: string, // Base units
-  toAmount: string, // Base units
+  fromAmount: string, // Base units (wei)
+  toAmount: string, // Base units (wei)
   txHash: string,
   slippage: number,
   quote?: SwapQuote
 ): SwapWebhookPayload {
+  // Parse amounts as base units first
+  const fromAmountBase = parseFloat(fromAmount);
+  const toAmountBase = parseFloat(toAmount);
+
   // Convert amounts from base units to decimal
-  const amountInDecimal =
-    parseFloat(fromAmount) / Math.pow(10, fromToken.decimals);
-  const amountOutDecimal =
-    parseFloat(toAmount) / Math.pow(10, toToken.decimals);
+  const amountInDecimal = fromAmountBase / Math.pow(10, fromToken.decimals);
+  const amountOutDecimal = toAmountBase / Math.pow(10, toToken.decimals);
 
   // Calculate USD price
   const priceOutUsd = calculatePriceOutUsd(
@@ -78,7 +81,10 @@ export function buildWebhookPayload(
   console.log('[Webhook] Payload built:', {
     id: payload.id,
     tokens: `${fromToken.symbol} → ${toToken.symbol}`,
-    amounts: `${amountInDecimal} → ${amountOutDecimal}`,
+    fromAmount_base: fromAmount,
+    toAmount_base: toAmount,
+    fromAmount_decimal: amountInDecimal,
+    toAmount_decimal: amountOutDecimal,
     price_usd: priceOutUsd,
     cost_basis: costBasisUsd,
   });

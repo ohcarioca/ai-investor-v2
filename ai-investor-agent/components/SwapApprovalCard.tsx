@@ -92,24 +92,38 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
           name: swapData.toToken,
         };
 
-        // Convert fromAmount to base units
+        // Convert fromAmount to base units (swapData.fromAmount is human-readable)
         const fromAmountBase = (
           parseFloat(swapData.fromAmount) * Math.pow(10, fromToken.decimals)
         ).toFixed(0);
+
+        // Convert toAmount to base units (swapData.toAmount is human-readable from formatUnits)
+        const toAmountBase = (
+          parseFloat(swapData.toAmount) * Math.pow(10, toToken.decimals)
+        ).toFixed(0);
+
+        console.log('[SwapApprovalCard] Preparing webhook:', {
+          fromToken: swapData.fromToken,
+          toToken: swapData.toToken,
+          fromAmount_raw: swapData.fromAmount,
+          toAmount_raw: swapData.toAmount,
+          fromAmount_base: fromAmountBase,
+          toAmount_base: toAmountBase,
+        });
 
         const payload = buildWebhookPayload(
           address,
           fromToken,
           toToken,
           fromAmountBase,
-          swapData.toAmount, // Already in base units from quote
+          toAmountBase, // Convert to base units
           txHash,
           0.5, // Default slippage for agent flow
           {
             fromToken,
             toToken,
             fromAmount: fromAmountBase,
-            toAmount: swapData.toAmount,
+            toAmount: toAmountBase,
             toAmountMin: '0',
             exchangeRate: swapData.exchangeRate,
             priceImpact: swapData.priceImpact,
