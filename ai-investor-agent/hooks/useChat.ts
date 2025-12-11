@@ -119,54 +119,19 @@ export function useChat() {
 
   const notifySwapSuccess = useCallback(
     async (txHash: string, toAmount: string, fromToken: string, toToken: string) => {
-      // Create a system message to notify the agent about the swap success
-      const successMessage = `Swap completed successfully. Transaction hash: ${txHash}. User received ${toAmount} ${toToken} from ${fromToken}.`;
+      // Simply add a success message from the assistant without calling the API
+      // This avoids the infinite loop issue
+      const successMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: `✅ Swap concluído com sucesso! Você recebeu ${toAmount} ${toToken}.`,
+        timestamp: new Date(),
+        txHash, // Store txHash for rendering link in UI
+      };
 
-      setIsLoading(true);
-
-      try {
-        const response = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: [
-              ...messages,
-              {
-                id: Date.now().toString(),
-                role: 'user',
-                content: successMessage,
-                timestamp: new Date(),
-              },
-            ],
-            walletAddress: address,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to notify agent about swap success');
-        }
-
-        const data: ChatResponse = await response.json();
-
-        // Add agent's confirmation message
-        const confirmationMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: data.response,
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, confirmationMessage]);
-      } catch (err) {
-        console.error('Error notifying swap success:', err);
-        // Silently fail - the swap was successful, just the notification failed
-      } finally {
-        setIsLoading(false);
-      }
+      setMessages((prev) => [...prev, successMessage]);
     },
-    [messages, address]
+    []
   );
 
   return {

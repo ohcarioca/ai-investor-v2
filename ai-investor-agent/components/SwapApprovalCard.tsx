@@ -29,6 +29,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   const [error, setError] = useState<string | null>(null);
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
   const [swapTxHash, setSwapTxHash] = useState<string | null>(null);
+  const [hasNotified, setHasNotified] = useState(false);
 
   // Check if we're on the correct network
   const isCorrectNetwork = chainId === 43114;
@@ -93,12 +94,15 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       setStatus('approved');
       reset(); // Reset for next transaction
     } else if (isSuccess && status === 'confirming') {
-      // Call success callback
-      if (onSwapSuccess && swapTxHash) {
+      // Call success callback only once and hide loader
+      if (onSwapSuccess && swapTxHash && !hasNotified) {
         onSwapSuccess(swapTxHash, swapData.toAmount);
+        setHasNotified(true);
+        // Hide the confirming loader after success notification
+        setStatus('pending');
       }
     }
-  }, [isSuccess, status, onSwapSuccess, swapTxHash, swapData.toAmount, reset]);
+  }, [isSuccess, status, onSwapSuccess, swapTxHash, swapData.toAmount, reset, hasNotified]);
 
   // Wallet validation
   if (!isConnected || !address) {
@@ -234,7 +238,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
           </button>
         )}
 
-        {(!swapData.needsApproval || status === 'approved') && status !== 'confirming' && (
+        {(!swapData.needsApproval || status === 'approved') && status !== 'confirming' && !hasNotified && (
           <button
             onClick={handleSwap}
             disabled={isConfirming || status === 'swapping'}

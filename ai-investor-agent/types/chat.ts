@@ -6,6 +6,7 @@ export interface Message {
   content: string;
   timestamp: Date;
   swapData?: SwapData;
+  txHash?: string; // Transaction hash for success messages
 }
 
 export interface ChatResponse {
