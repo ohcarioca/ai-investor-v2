@@ -8,7 +8,10 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi';
 import { CheckCircle2, AlertCircle, Loader2, ExternalLink, TrendingDown } from 'lucide-react';
-import type { SwapData } from '@/types/swap';
+import type { SwapData, Token } from '@/types/swap';
+import { sendSwapWebhook } from '@/lib/webhook-service';
+import { buildWebhookPayload } from '@/lib/webhook-utils';
+import WebhookLoadingModal from './WebhookLoadingModal';
 
 interface SwapApprovalCardProps {
   swapData: SwapData;
@@ -30,9 +33,121 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   const [approvalTxHash, setApprovalTxHash] = useState<string | null>(null);
   const [swapTxHash, setSwapTxHash] = useState<string | null>(null);
   const [hasNotified, setHasNotified] = useState(false);
+  const [webhookState, setWebhookState] = useState<{
+    isLoading: boolean;
+    isError: boolean;
+    errorMessage: string | null;
+  }>({
+    isLoading: false,
+    isError: false,
+    errorMessage: null,
+  });
 
   // Check if we're on the correct network
   const isCorrectNetwork = chainId === 43114;
+
+  // Helper functions to map token symbols to addresses and decimals
+  const getTokenAddress = (symbol: string): string => {
+    const tokenMap: Record<string, string> = {
+      AVAX: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      USDC: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+      SIERRA: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
+    };
+    return tokenMap[symbol] || symbol;
+  };
+
+  const getTokenDecimals = (symbol: string): number => {
+    const decimalsMap: Record<string, number> = {
+      AVAX: 18,
+      USDC: 6,
+      SIERRA: 6,
+    };
+    return decimalsMap[symbol] || 18;
+  };
+
+  // Send webhook data after successful swap
+  const sendWebhookData = useCallback(
+    async (txHash: string) => {
+      if (!address) return;
+
+      setWebhookState({
+        isLoading: true,
+        isError: false,
+        errorMessage: null,
+      });
+
+      try {
+        // Parse token info from swapData
+        const fromToken: Token = {
+          address: getTokenAddress(swapData.fromToken),
+          symbol: swapData.fromToken,
+          decimals: getTokenDecimals(swapData.fromToken),
+          name: swapData.fromToken,
+        };
+
+        const toToken: Token = {
+          address: getTokenAddress(swapData.toToken),
+          symbol: swapData.toToken,
+          decimals: getTokenDecimals(swapData.toToken),
+          name: swapData.toToken,
+        };
+
+        // Convert fromAmount to base units
+        const fromAmountBase = (
+          parseFloat(swapData.fromAmount) * Math.pow(10, fromToken.decimals)
+        ).toFixed(0);
+
+        const payload = buildWebhookPayload(
+          address,
+          fromToken,
+          toToken,
+          fromAmountBase,
+          swapData.toAmount, // Already in base units from quote
+          txHash,
+          0.5, // Default slippage for agent flow
+          {
+            fromToken,
+            toToken,
+            fromAmount: fromAmountBase,
+            toAmount: swapData.toAmount,
+            toAmountMin: '0',
+            exchangeRate: swapData.exchangeRate,
+            priceImpact: swapData.priceImpact,
+            estimatedGas: swapData.estimatedGas,
+            route: [],
+          }
+        );
+
+        const result = await sendSwapWebhook(payload);
+
+        if (result.success) {
+          setWebhookState({
+            isLoading: false,
+            isError: false,
+            errorMessage: null,
+          });
+          // Call original success callback
+          if (onSwapSuccess) {
+            onSwapSuccess(txHash, swapData.toAmount);
+          }
+        } else {
+          setWebhookState({
+            isLoading: false,
+            isError: true,
+            errorMessage: result.error || 'Failed to save transaction',
+          });
+        }
+      } catch (error) {
+        setWebhookState({
+          isLoading: false,
+          isError: true,
+          errorMessage:
+            error instanceof Error ? error.message : 'Unknown error occurred',
+        });
+      }
+    },
+    [address, swapData, onSwapSuccess]
+  );
 
   // Handle approval
   const handleApprove = useCallback(async () => {
@@ -93,16 +208,34 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     if (isSuccess && status === 'approving') {
       setStatus('approved');
       reset(); // Reset for next transaction
-    } else if (isSuccess && status === 'confirming') {
-      // Call success callback only once and hide loader
-      if (onSwapSuccess && swapTxHash && !hasNotified) {
-        onSwapSuccess(swapTxHash, swapData.toAmount);
-        setHasNotified(true);
-        // Hide the confirming loader after success notification
-        setStatus('pending');
-      }
+    } else if (isSuccess && status === 'confirming' && swapTxHash && !hasNotified) {
+      // Transaction confirmed, send webhook
+      sendWebhookData(swapTxHash);
+      setHasNotified(true);
+      // Hide the confirming loader after success notification
+      setStatus('pending');
     }
-  }, [isSuccess, status, onSwapSuccess, swapTxHash, swapData.toAmount, reset, hasNotified]);
+  }, [isSuccess, status, swapTxHash, hasNotified, reset, sendWebhookData]);
+
+  // Webhook retry handler
+  const retryWebhook = useCallback(() => {
+    if (swapTxHash) {
+      sendWebhookData(swapTxHash);
+    }
+  }, [swapTxHash, sendWebhookData]);
+
+  // Continue without webhook handler
+  const continueWithoutWebhook = useCallback(() => {
+    setWebhookState({
+      isLoading: false,
+      isError: false,
+      errorMessage: null,
+    });
+    // Call success callback even without webhook
+    if (onSwapSuccess && swapTxHash) {
+      onSwapSuccess(swapTxHash, swapData.toAmount);
+    }
+  }, [onSwapSuccess, swapTxHash, swapData.toAmount]);
 
   // Wallet validation
   if (!isConnected || !address) {
@@ -282,6 +415,15 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
           </a>
         </div>
       )}
+
+      {/* Webhook Loading Modal */}
+      <WebhookLoadingModal
+        isOpen={webhookState.isLoading || webhookState.isError}
+        isError={webhookState.isError}
+        errorMessage={webhookState.errorMessage || undefined}
+        onRetry={retryWebhook}
+        onContinue={continueWithoutWebhook}
+      />
     </div>
   );
 }

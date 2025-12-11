@@ -6,7 +6,9 @@ import {
   useSendTransaction,
   useWaitForTransactionReceipt,
 } from 'wagmi';
-import type { Token, SwapState } from '@/types/swap';
+import type { Token, SwapState, SwapQuote } from '@/types/swap';
+import { sendSwapWebhook } from '@/lib/webhook-service';
+import { buildWebhookPayload } from '@/lib/webhook-utils';
 
 export function useSwapExecution() {
   const { address, chain } = useAccount();
@@ -20,6 +22,25 @@ export function useSwapExecution() {
     error: null,
     txHash: null,
   });
+
+  const [webhookState, setWebhookState] = useState<{
+    isLoading: boolean;
+    isError: boolean;
+    errorMessage: string | null;
+  }>({
+    isLoading: false,
+    isError: false,
+    errorMessage: null,
+  });
+
+  const [lastSwapData, setLastSwapData] = useState<{
+    fromToken: Token;
+    toToken: Token;
+    fromAmount: string;
+    toAmount: string;
+    slippage: number;
+    quote?: SwapQuote;
+  } | null>(null);
 
   // Execute swap
   const executeSwap = useCallback(
@@ -69,7 +90,17 @@ export function useSwapExecution() {
           throw new Error(errorData.error || 'Failed to build swap');
         }
 
-        const { transaction } = await response.json();
+        const { transaction, quote } = await response.json();
+
+        // Store swap data for webhook
+        setLastSwapData({
+          fromToken,
+          toToken,
+          fromAmount: amountInBaseUnits,
+          toAmount: quote.toAmount,
+          slippage,
+          quote,
+        });
 
         console.log('Executing swap transaction:', {
           to: transaction.to,
@@ -101,6 +132,55 @@ export function useSwapExecution() {
     [address, chain, sendTransaction]
   );
 
+  // Send webhook data after successful transaction
+  const sendWebhookData = useCallback(async () => {
+    if (!address || !txData || !lastSwapData) return;
+
+    setWebhookState({
+      isLoading: true,
+      isError: false,
+      errorMessage: null,
+    });
+
+    try {
+      const payload = buildWebhookPayload(
+        address,
+        lastSwapData.fromToken,
+        lastSwapData.toToken,
+        lastSwapData.fromAmount,
+        lastSwapData.toAmount,
+        txData,
+        lastSwapData.slippage,
+        lastSwapData.quote
+      );
+
+      const result = await sendSwapWebhook(payload);
+
+      if (result.success) {
+        setWebhookState({
+          isLoading: false,
+          isError: false,
+          errorMessage: null,
+        });
+        // Clear last swap data
+        setLastSwapData(null);
+      } else {
+        setWebhookState({
+          isLoading: false,
+          isError: true,
+          errorMessage: result.error || 'Failed to save transaction',
+        });
+      }
+    } catch (error) {
+      setWebhookState({
+        isLoading: false,
+        isError: true,
+        errorMessage:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      });
+    }
+  }, [address, txData, lastSwapData]);
+
   // Update state based on transaction status
   useEffect(() => {
     if (txData) {
@@ -110,14 +190,22 @@ export function useSwapExecution() {
       }));
     }
 
-    if (isSuccess) {
+    if (isSuccess && txData && lastSwapData) {
+      // Transaction confirmed, now send webhook
+      sendWebhookData();
+    }
+  }, [txData, isSuccess, lastSwapData, sendWebhookData]);
+
+  // Update swap state to success after webhook completes
+  useEffect(() => {
+    if (isSuccess && !webhookState.isLoading && !webhookState.isError) {
       setSwapState({
         step: 'success',
         error: null,
         txHash: txData || null,
       });
     }
-  }, [txData, isSuccess]);
+  }, [isSuccess, txData, webhookState.isLoading, webhookState.isError]);
 
   const resetSwap = useCallback(() => {
     reset();
@@ -126,13 +214,40 @@ export function useSwapExecution() {
       error: null,
       txHash: null,
     });
+    setWebhookState({
+      isLoading: false,
+      isError: false,
+      errorMessage: null,
+    });
+    setLastSwapData(null);
   }, [reset]);
+
+  const retryWebhook = useCallback(() => {
+    sendWebhookData();
+  }, [sendWebhookData]);
+
+  const continueWithoutWebhook = useCallback(() => {
+    setWebhookState({
+      isLoading: false,
+      isError: false,
+      errorMessage: null,
+    });
+    setSwapState({
+      step: 'success',
+      error: null,
+      txHash: txData || null,
+    });
+    setLastSwapData(null);
+  }, [txData]);
 
   return {
     swapState,
-    isSwapping: isConfirming,
+    isSwapping: isConfirming || webhookState.isLoading,
     executeSwap,
     resetSwap,
     txHash: txData,
+    webhookState,
+    retryWebhook,
+    continueWithoutWebhook,
   };
 }

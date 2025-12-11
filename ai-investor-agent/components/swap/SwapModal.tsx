@@ -15,6 +15,7 @@ import {
 import { useAccount } from 'wagmi';
 import TokenInput from './TokenInput';
 import SwapButton from './SwapButton';
+import WebhookLoadingModal from '@/components/WebhookLoadingModal';
 import { useTokenList } from '@/hooks/useTokenList';
 import { useSwapQuote } from '@/hooks/useSwapQuote';
 import { useTokenApproval } from '@/hooks/useTokenApproval';
@@ -61,7 +62,15 @@ export default function SwapModal({
     checkApproval,
   } = useTokenApproval();
 
-  const { swapState, isSwapping, executeSwap, resetSwap } = useSwapExecution();
+  const {
+    swapState,
+    isSwapping,
+    executeSwap,
+    resetSwap,
+    webhookState,
+    retryWebhook,
+    continueWithoutWebhook,
+  } = useSwapExecution();
 
   // Handle token swap (flip from/to)
   const handleFlipTokens = () => {
@@ -72,7 +81,7 @@ export default function SwapModal({
 
   // Handle modal close
   const handleClose = () => {
-    if (!isSwapping && !isApproving) {
+    if (!isSwapping && !isApproving && !webhookState.isLoading) {
       resetSwap();
       setFromAmount('');
       onClose();
@@ -315,6 +324,15 @@ export default function SwapModal({
           </div>
         </div>
       </div>
+
+      {/* Webhook Loading Modal */}
+      <WebhookLoadingModal
+        isOpen={webhookState.isLoading || webhookState.isError}
+        isError={webhookState.isError}
+        errorMessage={webhookState.errorMessage || undefined}
+        onRetry={retryWebhook}
+        onContinue={continueWithoutWebhook}
+      />
     </div>
   );
 
