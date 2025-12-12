@@ -246,9 +246,16 @@ export async function POST(req: NextRequest) {
           }
         }
         else if (functionName === 'swap_tokens') {
-          const { fromToken, toToken, amount, slippage = '0.5' } = functionArgs;
+          const { fromToken, toToken, amount } = functionArgs;
+          
+          // Use VERY HIGH slippage for low liquidity tokens like SIERRA
+          // OKX SDK expects slippage as decimal (0.5% = 0.005, 10% = 0.1)
+          // SIERRA has very low liquidity and may have transfer fees
+          const isLowLiquidityToken = fromToken === 'SIERRA' || toToken === 'SIERRA';
+          const slippagePercent = parseFloat(functionArgs.slippage || (isLowLiquidityToken ? '10.0' : '0.5'));
+          const slippage = (slippagePercent / 100).toString(); // Convert percentage to decimal
 
-          console.log('[Chat API] swap_tokens called (quote only):', { fromToken, toToken, amount, slippage });
+          console.log('[Chat API] swap_tokens called (quote only):', { fromToken, toToken, amount, slippagePercent, slippage, isLowLiquidityToken });
 
           // 1. Validar wallet conectada
           if (!walletAddress) {
@@ -312,9 +319,16 @@ export async function POST(req: NextRequest) {
           }
         }
         else if (functionName === 'confirm_swap') {
-          const { fromToken, toToken, amount, slippage = '0.5' } = functionArgs;
+          const { fromToken, toToken, amount } = functionArgs;
+          
+          // Use VERY HIGH slippage for low liquidity tokens like SIERRA
+          // OKX SDK expects slippage as decimal (0.5% = 0.005, 10% = 0.1)
+          // SIERRA has very low liquidity and may have transfer fees
+          const isLowLiquidityToken = fromToken === 'SIERRA' || toToken === 'SIERRA';
+          const slippagePercent = parseFloat(functionArgs.slippage || (isLowLiquidityToken ? '10.0' : '0.5'));
+          const slippage = (slippagePercent / 100).toString(); // Convert percentage to decimal
 
-          console.log('[Chat API] confirm_swap called:', { fromToken, toToken, amount, slippage });
+          console.log('[Chat API] confirm_swap called:', { fromToken, toToken, amount, slippagePercent, slippage, isLowLiquidityToken });
 
           // 1. Validar wallet conectada
           if (!walletAddress) {
@@ -370,11 +384,19 @@ export async function POST(req: NextRequest) {
                   if (approvalRes.ok && !approvalData.status.isApproved) {
                     needsApproval = true;
                     approvalTx = approvalData.transaction;
+                    console.log('[Chat API] Approval needed:', {
+                      token: fromToken,
+                      currentAllowance: approvalData.status.currentAllowance,
+                      requiredAllowance: approvalData.status.requiredAllowance,
+                      spender: approvalData.status.spenderAddress,
+                    });
                   }
                 }
 
                 // 6. Construir transação de swap
-                const buildRes = await fetch(`${baseUrl}/api/swap/build`, {
+                // Note: If approval is needed, we still build the swap transaction
+                // but the frontend will execute approval first, then swap
+                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -395,6 +417,19 @@ export async function POST(req: NextRequest) {
                   // 7. Retornar resultado completo com transações
                   const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
 
+                  // Check if build detected insufficient allowance
+                  // In this case, use approval data from build response
+                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
+                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
+
+                  if (buildData.needsApproval) {
+                    console.log('[Chat API] Build detected insufficient allowance:', {
+                      currentAllowance: buildData.approvalDetails?.currentAllowance,
+                      required: buildData.approvalDetails?.requiredAmount,
+                      router: buildData.approvalDetails?.router,
+                    });
+                  }
+
                   functionResult = {
                     success: true,
                     confirmed: true,
@@ -405,8 +440,8 @@ export async function POST(req: NextRequest) {
                       toAmount,
                       exchangeRate: quoteData.quote.exchangeRate,
                       priceImpact: quoteData.quote.priceImpact,
-                      needsApproval,
-                      approvalTransaction: approvalTx,
+                      needsApproval: finalNeedsApproval,
+                      approvalTransaction: finalApprovalTx,
                       swapTransaction: buildData.transaction,
                       estimatedGas: quoteData.quote.estimatedGas
                     }
@@ -415,7 +450,9 @@ export async function POST(req: NextRequest) {
                   // Store swap data for response
                   swapDataResult = functionResult.swap;
 
-                  console.log('[Chat API] Swap confirmed and transactions built successfully');
+                  console.log('[Chat API] Swap confirmed and transactions built successfully', {
+                    needsApproval: finalNeedsApproval,
+                  });
                 }
               }
             } catch (error) {

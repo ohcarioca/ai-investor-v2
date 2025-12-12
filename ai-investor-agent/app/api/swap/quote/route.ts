@@ -14,7 +14,12 @@ export async function GET(request: NextRequest) {
     const fromToken = searchParams.get('fromToken');
     const toToken = searchParams.get('toToken');
     const amount = searchParams.get('amount');
-    const slippage = searchParams.get('slippage') || '0.5';
+    // OKX SDK expects slippage as decimal (0.5% = 0.005)
+    // If the caller sends percentage (e.g., "0.5"), convert it
+    const rawSlippage = searchParams.get('slippage') || '0.5';
+    const slippageValue = parseFloat(rawSlippage);
+    // If value > 1, assume it's a percentage and convert to decimal
+    const slippage = slippageValue > 1 ? (slippageValue / 100).toString() : rawSlippage;
 
     // Validation
     if (!chainId || !fromToken || !toToken || !amount) {

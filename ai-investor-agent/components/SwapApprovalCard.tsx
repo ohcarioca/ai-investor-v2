@@ -163,6 +163,54 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     [address, swapData, onSwapSuccess]
   );
 
+  // Rebuild swap transaction after approval is confirmed
+  const rebuildSwapTransaction = useCallback(async () => {
+    if (!address || !chainId) return null;
+
+    try {
+      const fromTokenAddress = getTokenAddress(swapData.fromToken);
+      const toTokenAddress = getTokenAddress(swapData.toToken);
+      const fromDecimals = getTokenDecimals(swapData.fromToken);
+      const baseAmount = Math.floor(parseFloat(swapData.fromAmount) * Math.pow(10, fromDecimals));
+
+      console.log('[SwapApprovalCard] Rebuilding swap transaction after approval...');
+
+      // OKX SDK expects slippage as decimal (1% = 0.01, 10% = 0.1)
+      // Use VERY HIGH slippage for low liquidity tokens like SIERRA
+      // SIERRA has very low liquidity and may have transfer fees
+      const isLowLiquidityToken = swapData.fromToken === 'SIERRA' || swapData.toToken === 'SIERRA';
+      const slippageDecimal = isLowLiquidityToken ? '0.1' : '0.005'; // 10% or 0.5%
+      
+      console.log('[SwapApprovalCard] Using slippage:', slippageDecimal, 'for tokens:', swapData.fromToken, '->', swapData.toToken);
+
+      const response = await fetch('/api/swap/build', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chainId,
+          fromToken: fromTokenAddress,
+          toToken: toTokenAddress,
+          amount: baseAmount.toString(),
+          slippage: slippageDecimal,
+          userAddress: address,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('[SwapApprovalCard] Failed to rebuild swap:', errorData);
+        return null;
+      }
+
+      const { transaction } = await response.json();
+      console.log('[SwapApprovalCard] Rebuilt swap transaction:', transaction);
+      return transaction;
+    } catch (error) {
+      console.error('[SwapApprovalCard] Error rebuilding swap:', error);
+      return null;
+    }
+  }, [address, chainId, swapData]);
+
   // Handle approval
   const handleApprove = useCallback(async () => {
     if (!swapData.approvalTransaction || !address) return;
@@ -184,33 +232,71 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
 
   // Handle swap
   const handleSwap = useCallback(async () => {
-    if (!swapData.swapTransaction || !address) return;
+    if (!address) return;
 
     setStatus('swapping');
     setError(null);
 
     try {
+      // ALWAYS rebuild the swap transaction with fresh data before executing
+      // This ensures:
+      // 1. Fresh deadline (prevents "dropped" transactions)
+      // 2. Current prices (prevents slippage failures)
+      // 3. Valid routing data
+      console.log('[SwapApprovalCard] Rebuilding swap transaction with fresh data...');
+      
+      let swapTransaction = await rebuildSwapTransaction();
+      
+      if (!swapTransaction) {
+        console.warn('[SwapApprovalCard] Rebuild failed, falling back to original transaction');
+        swapTransaction = swapData.swapTransaction;
+      } else {
+        console.log('[SwapApprovalCard] Using fresh swap transaction');
+      }
+
+      if (!swapTransaction) {
+        throw new Error('No swap transaction available');
+      }
+
       // Add 50% gas safety margin for complex tokens
-      const gasWithMargin = swapData.swapTransaction.gasLimit
-        ? BigInt(Math.floor(Number(swapData.swapTransaction.gasLimit) * 1.5))
+      const gasWithMargin = swapTransaction.gasLimit
+        ? BigInt(Math.floor(Number(swapTransaction.gasLimit) * 1.5))
         : BigInt(500000); // Fallback gas limit
 
-      console.log('[SwapApprovalCard] Gas calculation:', {
-        original: swapData.swapTransaction.gasLimit,
-        withMargin: gasWithMargin.toString(),
+      console.log('[SwapApprovalCard] Executing swap:', {
+        to: swapTransaction.to,
+        value: swapTransaction.value,
+        gasLimit: swapTransaction.gasLimit,
+        gasWithMargin: gasWithMargin.toString(),
+        dataLength: swapTransaction.data?.length,
+        dataPreview: swapTransaction.data?.substring(0, 100),
       });
 
-      sendTransaction({
-        to: swapData.swapTransaction.to as `0x${string}`,
-        data: swapData.swapTransaction.data as `0x${string}`,
-        value: BigInt(swapData.swapTransaction.value),
-        gas: gasWithMargin,
-      });
+      // Execute the swap transaction
+      // Using a higher gas limit to ensure complex swap routes complete
+      sendTransaction(
+        {
+          to: swapTransaction.to as `0x${string}`,
+          data: swapTransaction.data as `0x${string}`,
+          value: BigInt(swapTransaction.value),
+          gas: gasWithMargin,
+        },
+        {
+          onSuccess: (hash) => {
+            console.log('[SwapApprovalCard] Transaction sent successfully:', hash);
+          },
+          onError: (error) => {
+            console.error('[SwapApprovalCard] Transaction failed:', error);
+            setStatus('error');
+            setError(error.message || 'Transaction failed');
+          },
+        }
+      );
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to execute swap');
     }
-  }, [swapData.swapTransaction, address, sendTransaction]);
+  }, [swapData.swapTransaction, address, sendTransaction, rebuildSwapTransaction]);
 
   // Handle transaction status updates
   useEffect(() => {
@@ -227,6 +313,9 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     if (isSuccess && status === 'approving') {
       setStatus('approved');
       reset(); // Reset for next transaction
+      
+      // Rebuild swap transaction with fresh data after approval
+      console.log('[SwapApprovalCard] Approval confirmed, preparing fresh swap transaction...');
     } else if (isSuccess && status === 'confirming' && swapTxHash && !hasNotified) {
       // Transaction confirmed, send webhook
       sendWebhookData(swapTxHash);

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  getOKXClient,
-  CHAIN_INDEX_MAP,
   NATIVE_TOKEN_ADDRESS,
 } from '@/lib/okx-server';
 import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
@@ -49,41 +47,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get OKX router address (spender)
-    // OKX DEX Aggregator router address for Avalanche C-Chain
-    // This is the standard OKX router that handles token approvals
-    const OKX_ROUTER_AVALANCHE = getAddress('0x4a1a4e0a296e391ab60f49e35ee8bc3c16fe67b1');
-
-    const client = getOKXClient();
-    const chainIndex = CHAIN_INDEX_MAP[parseInt(chainId)];
-
-    let spenderAddress = OKX_ROUTER_AVALANCHE;
-
-    // Try to get the actual router address from a quote
-    try {
-      const dummyQuote = await client.dex.getQuote({
-        chainId: chainIndex,
-        fromTokenAddress: tokenAddress,
-        toTokenAddress: NATIVE_TOKEN_ADDRESS,
-        amount: '1000000',
-        slippage: '0.5',
-      });
-
-      console.log('Dummy quote for approval:', JSON.stringify(dummyQuote, null, 2));
-
-      // Extract router address from different possible response formats
-      const quoteData = dummyQuote.data;
-      if (quoteData && Array.isArray(quoteData) && quoteData.length > 0) {
-        const routeInfo = quoteData[0] as unknown as Record<string, unknown>;
-        const dataRouter = (routeInfo?.routerAddress as string | undefined) || (routeInfo?.to as string | undefined);
-        if (dataRouter) {
-          spenderAddress = dataRouter as `0x${string}`;
-        }
-      }
-    } catch (error) {
-      console.warn('Could not fetch router from quote, using default:', error);
-      // Will use the default OKX_ROUTER_AVALANCHE
-    }
+    // Use the known OKX DEX router for Avalanche directly
+    // This is the router used by OKX Web interface (dagSwap)
+    // Avoiding extra API calls to prevent rate limiting
+    const spenderAddress = getAddress('0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f');
+    console.log('[Approval] Using known OKX DEX router:', spenderAddress);
 
     console.log('[Approval] Using router/spender address:', spenderAddress);
 
@@ -122,12 +90,20 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Build approval transaction
+    // Build approval transaction with MAX_UINT256 (unlimited approval)
+    // This avoids needing to re-approve for each swap
     // ERC20 approve function signature: approve(address spender, uint256 amount)
     // Function selector: 0x095ea7b3
+    const MAX_UINT256 = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
     const spenderPadded = spenderAddress.slice(2).padStart(64, '0');
-    const amountHex = BigInt(amount).toString(16).padStart(64, '0');
-    const approveData = `0x095ea7b3${spenderPadded}${amountHex}`;
+    const approveData = `0x095ea7b3${spenderPadded}${MAX_UINT256}`;
+    
+    console.log('[Approval] Building unlimited approval transaction for:', {
+      token: tokenAddress,
+      spender: spenderAddress,
+      currentAllowance: currentAllowanceString,
+      requiredAllowance: amount,
+    });
 
     return NextResponse.json({
       status: {
