@@ -63,6 +63,20 @@ const functions = [
     },
   },
   {
+    name: 'get_investment_data',
+    description: 'Obtém dados de investimento do usuário, incluindo total investido em USDC e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.',
+    parameters: {
+      type: 'object',
+      properties: {
+        wallet_address: {
+          type: 'string',
+          description: 'Endereço da carteira conectada (formato 0x...)',
+        },
+      },
+      required: ['wallet_address'],
+    },
+  },
+  {
     name: 'swap_tokens',
     description: 'Get a quote for a token swap on Avalanche C-Chain using OKX DEX. This shows the user the exchange rate and asks for confirmation. After user confirms, call confirm_swap to build the transactions.',
     parameters: {
@@ -139,6 +153,31 @@ async function getWalletBalance(address: string, chainId: number = 43114) {
   } catch (error) {
     console.error('Error fetching wallet balance:', error);
     return { error: 'Failed to fetch wallet balance' };
+  }
+}
+
+// Function to call the investment data API
+async function getInvestmentData(walletAddress: string) {
+  try {
+    const response = await fetch(`https://n8n.balampay.com/webhook/calc_swaps?wallet_address=${walletAddress}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch investment data');
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      total_invested_usdc: parseFloat(data.total_invested_usdc),
+      apy: parseFloat(data.apy) * 100, // Convert to percentage
+      raw_apy: parseFloat(data.apy), // Keep raw value for reference
+    };
+  } catch (error) {
+    console.error('Error fetching investment data:', error);
+    return {
+      success: false,
+      error: 'Failed to fetch investment data'
+    };
   }
 }
 
@@ -243,6 +282,44 @@ export async function POST(req: NextRequest) {
             console.log('[Chat API] Fetching balance for:', addressToUse);
             functionResult = await getWalletBalance(addressToUse, functionArgs.chainId || 43114);
             console.log('[Chat API] Balance result:', functionResult);
+          }
+        }
+        else if (functionName === 'get_investment_data') {
+          console.log('[Chat API] get_investment_data called with args:', functionArgs);
+          console.log('[Chat API] Connected wallet:', walletAddress);
+
+          // Use connected wallet address
+          const addressToUse = walletAddress || functionArgs.wallet_address;
+
+          // Check if wallet is connected
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet not connected. Please connect your wallet to check investment data.',
+              code: 'WALLET_NOT_CONNECTED',
+            };
+          }
+          // Validate address format
+          else if (!isValidAddress(addressToUse)) {
+            functionResult = {
+              success: false,
+              error: 'Invalid wallet address format. Please check your wallet connection.',
+              code: 'INVALID_ADDRESS'
+            };
+          }
+          // Validate not a placeholder address
+          else if (!isRealAddress(addressToUse)) {
+            functionResult = {
+              success: false,
+              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
+              code: 'PLACEHOLDER_ADDRESS'
+            };
+          }
+          // All validations passed - fetch investment data
+          else {
+            console.log('[Chat API] Fetching investment data for:', addressToUse);
+            functionResult = await getInvestmentData(addressToUse);
+            console.log('[Chat API] Investment data result:', functionResult);
           }
         }
         else if (functionName === 'swap_tokens') {

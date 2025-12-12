@@ -4,10 +4,12 @@ import { Copy, RefreshCw, Wallet, ArrowLeftRight } from 'lucide-react';
 import { useState } from 'react';
 import { useBalance, useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
+import { useInvestmentData } from '@/hooks/useInvestmentData';
 import SwapModal from './swap/SwapModal';
 
 export default function PortfolioOverview() {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
+  const { investmentData, isLoading: isLoadingInvestment, error: investmentError, refetch: refetchInvestment } = useInvestmentData(true, 30000);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const { address } = useAccount();
 
@@ -32,17 +34,27 @@ export default function PortfolioOverview() {
   const sierraBalance = balance?.balances.find(b => b.currency === 'SIERRA');
   const totalSierraUSD = sierraBalance?.usdValue || 0;
 
+  // Get investment data from API
+  const totalInvestedUSDC = investmentData ? parseFloat(investmentData.total_invested_usdc) : totalSierraUSD;
+  const currentAPY = investmentData ? parseFloat(investmentData.apy) * 100 : 5.1; // Convert to percentage
+
+  // Combined refresh function
+  const handleRefresh = () => {
+    refetch();
+    refetchInvestment();
+  };
+
   return (
     <aside className="hidden lg:block fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Portfolio Overview</h2>
         <button
-          onClick={refetch}
-          disabled={isLoading}
+          onClick={handleRefresh}
+          disabled={isLoading || isLoadingInvestment}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
           aria-label="Refresh balance"
         >
-          <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading || isLoadingInvestment ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -94,10 +106,10 @@ export default function PortfolioOverview() {
           <span className="text-sm text-purple-700 font-medium">Total Invested</span>
         </div>
         <div className="text-2xl font-bold text-purple-900">
-          {isLoading ? (
+          {isLoading || isLoadingInvestment ? (
             <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
           ) : (
-            `$${totalSierraUSD.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
           )}
         </div>
       </div>
@@ -108,7 +120,11 @@ export default function PortfolioOverview() {
           <span className="text-sm text-green-700 font-medium">APY</span>
         </div>
         <div className="text-2xl font-bold text-green-900">
-          5.1%
+          {isLoadingInvestment ? (
+            <div className="animate-pulse bg-green-300 h-8 w-24 rounded" />
+          ) : (
+            `${currentAPY.toFixed(2)}%`
+          )}
         </div>
       </div>
 
