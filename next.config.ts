@@ -33,6 +33,14 @@ const nextConfig: NextConfig = {
     // Optimize package imports
     optimizePackageImports: ['lucide-react'],
   },
+
+  // Environment variables that should be available on the client side
+  env: {
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || '',
+  },
+
+  // Increase API route timeout (Vercel limit is 60s for Pro, 10s for Hobby)
+  // This is configured in vercel.json
 };
 
 export default nextConfig;
