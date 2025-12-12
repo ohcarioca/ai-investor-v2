@@ -24,6 +24,12 @@ export const metadata: Metadata = {
     description: "Your AI-powered financial assistant for Web3 investments",
     type: "website",
   },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
 };
 
 export default function RootLayout({

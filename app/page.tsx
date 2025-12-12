@@ -16,7 +16,7 @@ export default function Home() {
       <Header />
 
       {/* Main Content */}
-      <main className="pt-20 pb-32 lg:pr-96 flex flex-col" style={{ height: 'calc(100vh - 5rem)' }}>
+      <main className="pt-20 pb-24 sm:pb-32 lg:pr-96 flex flex-col min-h-screen">
         {showWelcome ? (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
             {/* Welcome Section */}

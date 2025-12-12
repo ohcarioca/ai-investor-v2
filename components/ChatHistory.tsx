@@ -23,7 +23,7 @@ export default function ChatHistory({ messages, isLoading, onSwapSuccess }: Chat
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-8">
+    <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-8 pb-6">
       <div className="max-w-4xl mx-auto">
         {messages.map((message) => (
           <ChatMessage

@@ -24,16 +24,16 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
   };
 
   return (
-    <div className={`flex gap-4 ${isUser ? 'justify-end' : 'justify-start'} mb-6`}>
+    <div className={`flex gap-2 sm:gap-4 ${isUser ? 'justify-end' : 'justify-start'} mb-4 sm:mb-6`}>
       {!isUser && (
-        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center">
-          <Bot className="w-5 h-5 text-white" />
+        <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-600 to-pink-500 rounded-full flex items-center justify-center">
+          <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
         </div>
       )}
 
-      <div className={`max-w-2xl ${isUser ? 'order-first' : ''}`}>
+      <div className={`max-w-full sm:max-w-2xl ${isUser ? 'order-first' : ''}`}>
         <div
-          className={`rounded-2xl px-6 py-4 ${
+          className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 ${
             isUser
               ? 'bg-purple-600 text-white'
               : 'bg-white border border-gray-200 text-gray-900'
@@ -81,8 +81,8 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
       </div>
 
       {isUser && (
-        <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-          <User className="w-5 h-5 text-gray-600" />
+        <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex items-center justify-center">
+          <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
         </div>
       )}
     </div>
