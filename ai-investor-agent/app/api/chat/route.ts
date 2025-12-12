@@ -103,8 +103,36 @@ const functions = [
     },
   },
   {
+    name: 'invest',
+    description: 'Investe USDC no fundo SIERRA. Use quando o usuário falar: "quero investir", "investir X USDC", "aportar", "aplicar dinheiro", etc. Sempre converte USDC → SIERRA.',
+    parameters: {
+      type: 'object',
+      properties: {
+        amount: {
+          type: 'string',
+          description: 'Quantidade de USDC a investir (ex: "100" para 100 USDC)',
+        },
+      },
+      required: ['amount'],
+    },
+  },
+  {
+    name: 'withdraw',
+    description: 'Saca/resgata investimento convertendo SIERRA de volta para USDC. Use quando o usuário falar: "quero sacar", "resgatar", "withdraw", "converter para USDC", "tirar do fundo", etc. Sempre converte SIERRA → USDC.',
+    parameters: {
+      type: 'object',
+      properties: {
+        amount: {
+          type: 'string',
+          description: 'Quantidade de SIERRA a sacar (ex: "50" para 50 SIERRA)',
+        },
+      },
+      required: ['amount'],
+    },
+  },
+  {
     name: 'swap_tokens',
-    description: 'Get a quote for a token swap on Avalanche C-Chain using OKX DEX. This shows the user the exchange rate and asks for confirmation. After user confirms, call confirm_swap to build the transactions.',
+    description: 'Troca tokens genérica (use apenas para swaps que NÃO sejam investimento ou saque). Para investir use "invest", para sacar use "withdraw". Esta função é para swaps customizados entre qualquer par de tokens.',
     parameters: {
       type: 'object',
       properties: {
@@ -129,6 +157,34 @@ const functions = [
         },
       },
       required: ['fromToken', 'toToken', 'amount'],
+    },
+  },
+  {
+    name: 'confirm_invest',
+    description: 'Confirma e executa o investimento (USDC → SIERRA) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).',
+    parameters: {
+      type: 'object',
+      properties: {
+        amount: {
+          type: 'string',
+          description: 'Quantidade de USDC a investir',
+        },
+      },
+      required: ['amount'],
+    },
+  },
+  {
+    name: 'confirm_withdraw',
+    description: 'Confirma e executa o saque (SIERRA → USDC) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).',
+    parameters: {
+      type: 'object',
+      properties: {
+        amount: {
+          type: 'string',
+          description: 'Quantidade de SIERRA a sacar',
+        },
+      },
+      required: ['amount'],
     },
   },
   {
@@ -418,6 +474,132 @@ export async function POST(req: NextRequest) {
             }
           }
         }
+        else if (functionName === 'invest') {
+          // Invest: Always USDC → SIERRA
+          const amount = functionArgs.amount;
+          console.log('[Chat API] invest called - Converting USDC to SIERRA, amount:', amount);
+
+          // Validate wallet connected
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to invest',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              const fromToken = 'USDC';
+              const toToken = 'SIERRA';
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+              const slippagePercent = 10.0; // High slippage for SIERRA
+              const slippage = (slippagePercent / 100).toString();
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // Get quote
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote for investment' };
+              } else {
+                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+                functionResult = {
+                  success: true,
+                  requiresConfirmation: true,
+                  swap: {
+                    fromToken,
+                    toToken,
+                    fromAmount: amount,
+                    toAmount,
+                    exchangeRate: quoteData.quote.exchangeRate,
+                    priceImpact: quoteData.quote.priceImpact,
+                    estimatedGas: quoteData.quote.estimatedGas
+                  }
+                };
+                console.log('[Chat API] Investment quote prepared:', functionResult);
+              }
+            } catch (error) {
+              console.error('[Chat API] Invest error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to prepare investment'
+              };
+            }
+          }
+        }
+        else if (functionName === 'withdraw') {
+          // Withdraw: Always SIERRA → USDC
+          const amount = functionArgs.amount;
+          console.log('[Chat API] withdraw called - Converting SIERRA to USDC, amount:', amount);
+
+          // Validate wallet connected
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to withdraw',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              const fromToken = 'SIERRA';
+              const toToken = 'USDC';
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+              const slippagePercent = 10.0; // High slippage for SIERRA
+              const slippage = (slippagePercent / 100).toString();
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // Get quote
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote for withdrawal' };
+              } else {
+                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+                functionResult = {
+                  success: true,
+                  requiresConfirmation: true,
+                  swap: {
+                    fromToken,
+                    toToken,
+                    fromAmount: amount,
+                    toAmount,
+                    exchangeRate: quoteData.quote.exchangeRate,
+                    priceImpact: quoteData.quote.priceImpact,
+                    estimatedGas: quoteData.quote.estimatedGas
+                  }
+                };
+                console.log('[Chat API] Withdrawal quote prepared:', functionResult);
+              }
+            } catch (error) {
+              console.error('[Chat API] Withdraw error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to prepare withdrawal'
+              };
+            }
+          }
+        }
         else if (functionName === 'swap_tokens') {
           const { fromToken, toToken, amount } = functionArgs;
           
@@ -633,6 +815,228 @@ export async function POST(req: NextRequest) {
               functionResult = {
                 success: false,
                 error: error instanceof Error ? error.message : 'Failed to confirm swap'
+              };
+            }
+          }
+        }
+        else if (functionName === 'confirm_invest') {
+          // Confirm invest: USDC → SIERRA
+          const amount = functionArgs.amount;
+          console.log('[Chat API] confirm_invest called - USDC to SIERRA, amount:', amount);
+
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to invest',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              const fromToken = 'USDC';
+              const toToken = 'SIERRA';
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+              const slippagePercent = 10.0;
+              const slippage = (slippagePercent / 100).toString();
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // Get quote
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
+              } else {
+                // Check approval
+                let needsApproval = false;
+                let approvalTx = null;
+
+                const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chainId: 43114,
+                    tokenAddress: fromTokenAddress,
+                    amount: baseAmount.toString(),
+                    userAddress: walletAddress
+                  })
+                });
+
+                const approvalData = await approvalRes.json();
+                if (approvalRes.ok && !approvalData.status.isApproved) {
+                  needsApproval = true;
+                  approvalTx = approvalData.transaction;
+                }
+
+                // Build swap transaction
+                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chainId: 43114,
+                    fromToken: fromTokenAddress,
+                    toToken: toTokenAddress,
+                    amount: baseAmount.toString(),
+                    slippage,
+                    userAddress: walletAddress
+                  })
+                });
+
+                const buildData = await buildRes.json();
+
+                if (!buildRes.ok) {
+                  functionResult = { success: false, error: buildData.error || 'Failed to build investment transaction' };
+                } else {
+                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
+                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
+
+                  functionResult = {
+                    success: true,
+                    confirmed: true,
+                    swap: {
+                      fromToken,
+                      toToken,
+                      fromAmount: amount,
+                      toAmount,
+                      exchangeRate: quoteData.quote.exchangeRate,
+                      priceImpact: quoteData.quote.priceImpact,
+                      needsApproval: finalNeedsApproval,
+                      approvalTransaction: finalApprovalTx,
+                      swapTransaction: buildData.transaction,
+                      estimatedGas: quoteData.quote.estimatedGas
+                    }
+                  };
+
+                  swapDataResult = functionResult.swap;
+                  console.log('[Chat API] Investment confirmed and transactions built successfully');
+                }
+              }
+            } catch (error) {
+              console.error('[Chat API] Confirm invest error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to confirm investment'
+              };
+            }
+          }
+        }
+        else if (functionName === 'confirm_withdraw') {
+          // Confirm withdraw: SIERRA → USDC
+          const amount = functionArgs.amount;
+          console.log('[Chat API] confirm_withdraw called - SIERRA to USDC, amount:', amount);
+
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet must be connected to withdraw',
+              code: 'WALLET_NOT_CONNECTED'
+            };
+          } else {
+            try {
+              const fromToken = 'SIERRA';
+              const toToken = 'USDC';
+              const fromTokenAddress = getTokenAddress(fromToken);
+              const toTokenAddress = getTokenAddress(toToken);
+              const fromDecimals = getTokenDecimals(fromToken);
+              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
+              const slippagePercent = 10.0;
+              const slippage = (slippagePercent / 100).toString();
+              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+              // Get quote
+              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
+              quoteUrl.searchParams.append('chainId', '43114');
+              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
+              quoteUrl.searchParams.append('toToken', toTokenAddress);
+              quoteUrl.searchParams.append('amount', baseAmount.toString());
+              quoteUrl.searchParams.append('slippage', slippage);
+
+              const quoteRes = await fetch(quoteUrl.toString());
+              const quoteData = await quoteRes.json();
+
+              if (!quoteRes.ok) {
+                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
+              } else {
+                // Check approval
+                let needsApproval = false;
+                let approvalTx = null;
+
+                const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chainId: 43114,
+                    tokenAddress: fromTokenAddress,
+                    amount: baseAmount.toString(),
+                    userAddress: walletAddress
+                  })
+                });
+
+                const approvalData = await approvalRes.json();
+                if (approvalRes.ok && !approvalData.status.isApproved) {
+                  needsApproval = true;
+                  approvalTx = approvalData.transaction;
+                }
+
+                // Build swap transaction
+                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    chainId: 43114,
+                    fromToken: fromTokenAddress,
+                    toToken: toTokenAddress,
+                    amount: baseAmount.toString(),
+                    slippage,
+                    userAddress: walletAddress
+                  })
+                });
+
+                const buildData = await buildRes.json();
+
+                if (!buildRes.ok) {
+                  functionResult = { success: false, error: buildData.error || 'Failed to build withdrawal transaction' };
+                } else {
+                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
+                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
+                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
+
+                  functionResult = {
+                    success: true,
+                    confirmed: true,
+                    swap: {
+                      fromToken,
+                      toToken,
+                      fromAmount: amount,
+                      toAmount,
+                      exchangeRate: quoteData.quote.exchangeRate,
+                      priceImpact: quoteData.quote.priceImpact,
+                      needsApproval: finalNeedsApproval,
+                      approvalTransaction: finalApprovalTx,
+                      swapTransaction: buildData.transaction,
+                      estimatedGas: quoteData.quote.estimatedGas
+                    }
+                  };
+
+                  swapDataResult = functionResult.swap;
+                  console.log('[Chat API] Withdrawal confirmed and transactions built successfully');
+                }
+              }
+            } catch (error) {
+              console.error('[Chat API] Confirm withdraw error:', error);
+              functionResult = {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to confirm withdrawal'
               };
             }
           }
