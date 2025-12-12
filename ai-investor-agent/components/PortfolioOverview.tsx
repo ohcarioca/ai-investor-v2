@@ -1,16 +1,13 @@
 'use client';
 
-import { Copy, RefreshCw, Wallet, ArrowLeftRight } from 'lucide-react';
-import { useState } from 'react';
+import { Copy, RefreshCw, Wallet } from 'lucide-react';
 import { useBalance, useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
-import SwapModal from './swap/SwapModal';
 
 export default function PortfolioOverview() {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
-  const { investmentData, isLoading: isLoadingInvestment, error: investmentError, refetch: refetchInvestment } = useInvestmentData(true, 30000);
-  const [showSwapModal, setShowSwapModal] = useState(false);
+  const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 30000);
   const { address } = useAccount();
 
   // Calculate USDC balance only for Total Balance display
@@ -127,22 +124,6 @@ export default function PortfolioOverview() {
           )}
         </div>
       </div>
-
-      {/* Invest More Button */}
-      <button
-        onClick={() => setShowSwapModal(true)}
-        disabled={!isConnected}
-        className="w-full bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        <ArrowLeftRight className="w-5 h-5" />
-        Invest more funds
-      </button>
-
-      {/* Swap Modal */}
-      <SwapModal
-        isOpen={showSwapModal}
-        onClose={() => setShowSwapModal(false)}
-      />
     </aside>
   );
 }
