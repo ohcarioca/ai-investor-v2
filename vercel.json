@@ -3,8 +3,5 @@
     "app/api/**/*.ts": {
       "maxDuration": 60
     }
-  },
-  "env": {
-    "NEXT_PUBLIC_APP_URL": "@next_public_app_url"
   }
 }
