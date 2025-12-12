@@ -77,6 +77,32 @@ const functions = [
     },
   },
   {
+    name: 'generate_chart',
+    description: 'Gera um gráfico visual dos dados de investimento. Use quando o usuário pedir: "mostre um gráfico", "crie um gráfico", "quero ver graficamente", "visualizar", "mostrar performance", etc. Tipos disponíveis: portfolio (desempenho geral), growth (crescimento comparativo), profit (lucro ao longo do tempo).',
+    parameters: {
+      type: 'object',
+      properties: {
+        wallet_address: {
+          type: 'string',
+          description: 'Endereço da carteira conectada (formato 0x...)',
+        },
+        chart_type: {
+          type: 'string',
+          description: 'Tipo de gráfico: "portfolio" (desempenho do portfólio), "growth" (crescimento investido vs valor atual), "profit" (lucro ao longo do tempo)',
+          enum: ['portfolio', 'growth', 'profit'],
+          default: 'portfolio',
+        },
+        period: {
+          type: 'string',
+          description: 'Período de tempo: "7d" (7 dias), "1m" (1 mês), "3m" (3 meses), "6m" (6 meses), "1y" (1 ano)',
+          enum: ['7d', '1m', '3m', '6m', '1y'],
+          default: '1m',
+        },
+      },
+      required: ['wallet_address'],
+    },
+  },
+  {
     name: 'swap_tokens',
     description: 'Get a quote for a token swap on Avalanche C-Chain using OKX DEX. This shows the user the exchange rate and asks for confirmation. After user confirms, call confirm_swap to build the transactions.',
     parameters: {
@@ -181,6 +207,30 @@ async function getInvestmentData(walletAddress: string) {
   }
 }
 
+// Function to generate chart data
+async function generateChart(walletAddress: string, chartType: string = 'portfolio', period: string = '1m') {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/charts/historical?wallet_address=${walletAddress}&type=${chartType}&period=${period}`);
+
+    if (!response.ok) {
+      throw new Error('Failed to generate chart');
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      chartConfig: data.chartConfig,
+    };
+  } catch (error) {
+    console.error('Error generating chart:', error);
+    return {
+      success: false,
+      error: 'Failed to generate chart'
+    };
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Parse request body
@@ -235,6 +285,7 @@ export async function POST(req: NextRequest) {
 
     let responseMessage = completion.choices[0]?.message;
     let swapDataResult = null; // Store swap data for response
+    let chartDataResult = null; // Store chart data for response
 
     // Handle function calls
     if (responseMessage?.tool_calls && responseMessage.tool_calls.length > 0) {
@@ -320,6 +371,51 @@ export async function POST(req: NextRequest) {
             console.log('[Chat API] Fetching investment data for:', addressToUse);
             functionResult = await getInvestmentData(addressToUse);
             console.log('[Chat API] Investment data result:', functionResult);
+          }
+        }
+        else if (functionName === 'generate_chart') {
+          console.log('[Chat API] generate_chart called with args:', functionArgs);
+          console.log('[Chat API] Connected wallet:', walletAddress);
+
+          // Use connected wallet address
+          const addressToUse = walletAddress || functionArgs.wallet_address;
+          const chartType = functionArgs.chart_type || 'portfolio';
+          const period = functionArgs.period || '1m';
+
+          // Check if wallet is connected
+          if (!walletAddress) {
+            functionResult = {
+              success: false,
+              error: 'Wallet not connected. Please connect your wallet to generate charts.',
+              code: 'WALLET_NOT_CONNECTED',
+            };
+          }
+          // Validate address format
+          else if (!isValidAddress(addressToUse)) {
+            functionResult = {
+              success: false,
+              error: 'Invalid wallet address format. Please check your wallet connection.',
+              code: 'INVALID_ADDRESS'
+            };
+          }
+          // Validate not a placeholder address
+          else if (!isRealAddress(addressToUse)) {
+            functionResult = {
+              success: false,
+              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
+              code: 'PLACEHOLDER_ADDRESS'
+            };
+          }
+          // All validations passed - generate chart
+          else {
+            console.log('[Chat API] Generating chart for:', addressToUse, 'Type:', chartType, 'Period:', period);
+            functionResult = await generateChart(addressToUse, chartType, period);
+            console.log('[Chat API] Chart generation result:', functionResult);
+
+            // Store chart data for response
+            if (functionResult.success && functionResult.chartConfig) {
+              chartDataResult = functionResult.chartConfig;
+            }
           }
         }
         else if (functionName === 'swap_tokens') {
@@ -568,9 +664,11 @@ export async function POST(req: NextRequest) {
 
     // Return response in format compatible with existing UI
     // Include swapData if confirm_swap was called successfully
+    // Include chartData if generate_chart was called successfully
     return NextResponse.json({
       response: responseContent,
-      swapData: swapDataResult
+      swapData: swapDataResult,
+      chartData: chartDataResult
     });
 
   } catch (error) {

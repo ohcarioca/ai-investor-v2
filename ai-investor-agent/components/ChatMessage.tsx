@@ -1,6 +1,7 @@
 import { Message } from '@/types/chat';
 import { User, Bot } from 'lucide-react';
 import SwapApprovalCard from './SwapApprovalCard';
+import ChartCard from './charts/ChartCard';
 
 interface ChatMessageProps {
   message: Message;
@@ -62,6 +63,13 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
             swapData={message.swapData}
             onSwapSuccess={handleSwapSuccess}
           />
+        )}
+
+        {/* Render ChartCard if chartData is present */}
+        {!isUser && message.chartData && (
+          <div className="mt-4">
+            <ChartCard config={message.chartData} />
+          </div>
         )}
 
         <div className={`text-xs text-gray-400 mt-2 ${isUser ? 'text-right' : 'text-left'}`}>

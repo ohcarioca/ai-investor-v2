@@ -114,6 +114,7 @@ export function useChat() {
         content: data.response,
         timestamp: new Date(),
         swapData: data.swapData, // Include swap data if present
+        chartData: data.chartData, // Include chart data if present
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
