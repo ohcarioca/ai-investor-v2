@@ -179,16 +179,53 @@ export function useChat() {
 
   const notifySwapSuccess = useCallback(
     async (txHash: string, toAmount: string, fromToken: string, toToken: string) => {
-      // Detect user's browser language
-      const userLang = navigator.language.toLowerCase();
+      // Detect language from conversation history
+      // Look at the last assistant messages to determine the language being used
+      const recentMessages = messages.slice(-5).filter(m => m.role === 'assistant');
+      let detectedLang = 'en'; // Default to English
+
+      // Check for Portuguese indicators
+      const ptIndicators = ['você', 'seu', 'sua', 'por favor', 'obrigad', 'recebeu', 'valor', 'carteira'];
+      // Check for Spanish indicators
+      const esIndicators = ['usted', 'su', 'por favor', 'gracia', 'recibió', 'valor', 'billetera'];
+      // Check for French indicators
+      const frIndicators = ['vous', 'votre', 's\'il vous plaît', 'merci', 'reçu', 'valeur', 'portefeuille'];
+
+      for (const msg of recentMessages) {
+        const content = msg.content.toLowerCase();
+
+        // Count matches for each language
+        const ptMatches = ptIndicators.filter(ind => content.includes(ind)).length;
+        const esMatches = esIndicators.filter(ind => content.includes(ind)).length;
+        const frMatches = frIndicators.filter(ind => content.includes(ind)).length;
+
+        if (ptMatches > 0 && ptMatches >= esMatches && ptMatches >= frMatches) {
+          detectedLang = 'pt';
+          break;
+        } else if (esMatches > 0 && esMatches >= ptMatches && esMatches >= frMatches) {
+          detectedLang = 'es';
+          break;
+        } else if (frMatches > 0) {
+          detectedLang = 'fr';
+          break;
+        }
+      }
+
+      // Fallback to browser language if no language detected from conversation
+      if (detectedLang === 'en' && recentMessages.length === 0) {
+        const browserLang = navigator.language.toLowerCase();
+        if (browserLang.startsWith('pt')) detectedLang = 'pt';
+        else if (browserLang.startsWith('es')) detectedLang = 'es';
+        else if (browserLang.startsWith('fr')) detectedLang = 'fr';
+      }
 
       // Define messages in different languages
       let message = '';
-      if (userLang.startsWith('pt')) {
+      if (detectedLang === 'pt') {
         message = `✅ Swap concluído com sucesso! Você recebeu ${toAmount} ${toToken}.`;
-      } else if (userLang.startsWith('es')) {
+      } else if (detectedLang === 'es') {
         message = `✅ ¡Swap completado con éxito! Has recibido ${toAmount} ${toToken}.`;
-      } else if (userLang.startsWith('fr')) {
+      } else if (detectedLang === 'fr') {
         message = `✅ Swap réussi ! Vous avez reçu ${toAmount} ${toToken}.`;
       } else {
         // Default to English
@@ -205,7 +242,7 @@ export function useChat() {
 
       setMessages((prev) => [...prev, successMessage]);
     },
-    []
+    [messages]
   );
 
   return {
