@@ -2,7 +2,7 @@
 
 import { createPortal } from 'react-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface WebhookLoadingModalProps {
   isOpen: boolean;
@@ -19,11 +19,8 @@ export default function WebhookLoadingModal({
   onRetry,
   onContinue,
 }: WebhookLoadingModalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Use lazy initialization to check if we're on the client
+  const [mounted] = useState(() => typeof window !== 'undefined');
 
   if (!isOpen || !mounted) return null;
 

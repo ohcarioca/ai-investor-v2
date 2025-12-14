@@ -1,0 +1,94 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run weekly on Sundays at midnight
+    - cron: '0 0 * * 0'
+
+jobs:
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Check for critical vulnerabilities
+        run: |
+          AUDIT_RESULT=$(npm audit --json 2>/dev/null || echo '{"vulnerabilities":{}}')
+          CRITICAL=$(echo "$AUDIT_RESULT" | jq '.metadata.vulnerabilities.critical // 0')
+          HIGH=$(echo "$AUDIT_RESULT" | jq '.metadata.vulnerabilities.high // 0')
+
+          echo "Critical vulnerabilities: $CRITICAL"
+          echo "High vulnerabilities: $HIGH"
+
+          if [ "$CRITICAL" -gt 0 ]; then
+            echo "::error::Found $CRITICAL critical vulnerabilities"
+            exit 1
+          fi
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Check for outdated dependencies
+        run: npm outdated || true
+
+      - name: Check for duplicate dependencies
+        run: npm dedupe --dry-run || true
+
+  secrets-scan:
+    name: Secrets Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for hardcoded secrets
+        run: |
+          # Check for common secret patterns
+          echo "Scanning for potential secrets..."
+
+          # API keys pattern
+          if grep -rE "(sk-|sk_|api_key|apikey|secret_key|secretkey)" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.json" . 2>/dev/null | grep -v node_modules | grep -v ".env.example" | grep -v ".test."; then
+            echo "::warning::Found potential hardcoded secrets. Please review."
+          fi
+
+          # Check .env files aren't committed
+          if [ -f ".env.local" ] || [ -f ".env.production" ]; then
+            echo "::error::.env files should not be committed to the repository"
+            exit 1
+          fi
+
+          echo "Secrets scan completed"

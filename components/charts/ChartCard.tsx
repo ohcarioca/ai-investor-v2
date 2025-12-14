@@ -1,8 +1,20 @@
 'use client';
 
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useState } from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+
+// Types for Recharts tooltip
+interface TooltipPayloadEntry {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}
 
 export type ChartType = 'line' | 'area' | 'bar';
 
@@ -54,12 +66,12 @@ export default function ChartCard({ config }: ChartCardProps) {
   const trend = lastValue > firstValue ? 'up' : 'down';
   const trendPercentage = firstValue ? (((lastValue - firstValue) / firstValue) * 100).toFixed(2) : '0';
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
           <p className="text-sm font-semibold text-gray-900 mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: TooltipPayloadEntry, index: number) => (
             <p key={index} className="text-sm" style={{ color: entry.color }}>
               {entry.name}: <span className="font-bold">${entry.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </p>

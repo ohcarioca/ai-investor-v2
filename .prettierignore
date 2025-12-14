@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+out/
+build/
+dist/
+
+# Cache
+.vercel/
+.turbo/
+
+# IDE
+.idea/
+.vscode/
+
+# Lockfiles
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Auto-generated
+next-env.d.ts

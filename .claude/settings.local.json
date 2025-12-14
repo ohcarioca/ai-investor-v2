@@ -24,7 +24,11 @@
       "Bash(npx tsc:*)",
       "Bash(npm run lint)",
       "Bash(node -e:*)",
-      "Bash(npm install recharts)"
+      "Bash(npm install recharts)",
+      "Bash(wc:*)",
+      "Bash(xargs cat:*)",
+      "Bash(npm run test:run:*)",
+      "Bash(npx vitest:*)"
     ]
   }
 }
