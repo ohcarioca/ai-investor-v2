@@ -265,6 +265,7 @@
 
   "features": {
     "experimental": {
+      "modular_tools": true,
       "multi_chain_swaps": false,
       "limit_orders": false,
       "price_alerts": false,

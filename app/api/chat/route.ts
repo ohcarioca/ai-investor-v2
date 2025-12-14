@@ -1,11 +1,14 @@
+/**
+ * Chat API Route Handler (Modular Version)
+ * Refactored from 1088 lines to ~150 lines
+ * Uses modular tool system with feature flag for rollback
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { formatUnits } from 'viem';
-import { getConfig, getSystemPrompt, getTimeout } from '@/lib/config';
-import {
-  isValidAddress,
-  isRealAddress
-} from '@/lib/wallet-validation';
+import { getConfig, getSystemPrompt } from '@/lib/config';
+import { isValidAddress } from '@/lib/wallet-validation';
+import { getToolRegistry, ToolContext } from '@/lib/tools';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -22,268 +25,14 @@ interface Message {
   timestamp: Date;
 }
 
-// Helper functions for token operations
-function getTokenAddress(symbol: string): string {
-  const tokenMap: Record<string, string> = {
-    'AVAX': '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-    'USDC': '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-    'SIERRA': '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
-  };
-  return tokenMap[symbol];
-}
-
-function getTokenDecimals(symbol: string): number {
-  const decimalsMap: Record<string, number> = {
-    'AVAX': 18,
-    'USDC': 6,
-    'SIERRA': 6,
-  };
-  return decimalsMap[symbol];
-}
-
-// Function definitions for GPT
-const functions = [
-  {
-    name: 'get_wallet_balance',
-    description: 'Obtém o saldo completo da carteira conectada, incluindo tokens nativos (AVAX) e ERC20 (USDC, SIERRA). Retorna valores em USD e quantidade de cada token.',
-    parameters: {
-      type: 'object',
-      properties: {
-        address: {
-          type: 'string',
-          description: 'Endereço da carteira (formato 0x...)',
-        },
-        chainId: {
-          type: 'number',
-          description: 'ID da chain (43114 para Avalanche)',
-          default: 43114,
-        },
-      },
-      required: ['address'],
-    },
-  },
-  {
-    name: 'get_investment_data',
-    description: 'Obtém dados de investimento do usuário, incluindo total investido em USDC e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.',
-    parameters: {
-      type: 'object',
-      properties: {
-        wallet_address: {
-          type: 'string',
-          description: 'Endereço da carteira conectada (formato 0x...)',
-        },
-      },
-      required: ['wallet_address'],
-    },
-  },
-  {
-    name: 'generate_chart',
-    description: 'Gera um gráfico visual dos dados de investimento. Use quando o usuário pedir: "mostre um gráfico", "crie um gráfico", "quero ver graficamente", "visualizar", "mostrar performance", etc. Tipos disponíveis: portfolio (desempenho geral), growth (crescimento comparativo), profit (lucro ao longo do tempo).',
-    parameters: {
-      type: 'object',
-      properties: {
-        wallet_address: {
-          type: 'string',
-          description: 'Endereço da carteira conectada (formato 0x...)',
-        },
-        chart_type: {
-          type: 'string',
-          description: 'Tipo de gráfico: "portfolio" (desempenho do portfólio), "growth" (crescimento investido vs valor atual), "profit" (lucro ao longo do tempo)',
-          enum: ['portfolio', 'growth', 'profit'],
-          default: 'portfolio',
-        },
-        period: {
-          type: 'string',
-          description: 'Período de tempo: "7d" (7 dias), "1m" (1 mês), "3m" (3 meses), "6m" (6 meses), "1y" (1 ano)',
-          enum: ['7d', '1m', '3m', '6m', '1y'],
-          default: '1m',
-        },
-      },
-      required: ['wallet_address'],
-    },
-  },
-  {
-    name: 'invest',
-    description: 'Investe USDC no fundo SIERRA. Use quando o usuário falar: "quero investir", "investir X USDC", "aportar", "aplicar dinheiro", etc. Sempre converte USDC → SIERRA.',
-    parameters: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'string',
-          description: 'Quantidade de USDC a investir (ex: "100" para 100 USDC)',
-        },
-      },
-      required: ['amount'],
-    },
-  },
-  {
-    name: 'withdraw',
-    description: 'Saca/resgata investimento convertendo SIERRA de volta para USDC. Use quando o usuário falar: "quero sacar", "resgatar", "withdraw", "converter para USDC", "tirar do fundo", etc. Sempre converte SIERRA → USDC.',
-    parameters: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'string',
-          description: 'Quantidade de SIERRA a sacar (ex: "50" para 50 SIERRA)',
-        },
-      },
-      required: ['amount'],
-    },
-  },
-  {
-    name: 'swap_tokens',
-    description: 'Troca tokens genérica (use apenas para swaps que NÃO sejam investimento ou saque). Para investir use "invest", para sacar use "withdraw". Esta função é para swaps customizados entre qualquer par de tokens.',
-    parameters: {
-      type: 'object',
-      properties: {
-        fromToken: {
-          type: 'string',
-          description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
-          enum: ['USDC', 'SIERRA', 'AVAX'],
-        },
-        toToken: {
-          type: 'string',
-          description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
-          enum: ['USDC', 'SIERRA', 'AVAX'],
-        },
-        amount: {
-          type: 'string',
-          description: 'Amount to swap in human-readable format (e.g., "10.5" for 10.5 USDC)',
-        },
-        slippage: {
-          type: 'string',
-          description: 'Slippage tolerance in percentage (default: 0.5)',
-          default: '0.5',
-        },
-      },
-      required: ['fromToken', 'toToken', 'amount'],
-    },
-  },
-  {
-    name: 'confirm_invest',
-    description: 'Confirma e executa o investimento (USDC → SIERRA) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'string',
-          description: 'Quantidade de USDC a investir',
-        },
-      },
-      required: ['amount'],
-    },
-  },
-  {
-    name: 'confirm_withdraw',
-    description: 'Confirma e executa o saque (SIERRA → USDC) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'string',
-          description: 'Quantidade de SIERRA a sacar',
-        },
-      },
-      required: ['amount'],
-    },
-  },
-  {
-    name: 'confirm_swap',
-    description: 'Confirm and build swap transactions after user approves the quote. Call this only after the user confirms they want to proceed with the swap (e.g., says "yes", "sim", "proceed", etc.).',
-    parameters: {
-      type: 'object',
-      properties: {
-        fromToken: {
-          type: 'string',
-          description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
-          enum: ['USDC', 'SIERRA', 'AVAX'],
-        },
-        toToken: {
-          type: 'string',
-          description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
-          enum: ['USDC', 'SIERRA', 'AVAX'],
-        },
-        amount: {
-          type: 'string',
-          description: 'Amount to swap in human-readable format',
-        },
-        slippage: {
-          type: 'string',
-          description: 'Slippage tolerance in percentage (default: 0.5)',
-          default: '0.5',
-        },
-      },
-      required: ['fromToken', 'toToken', 'amount'],
-    },
-  },
-];
-
-// Function to call the wallet balance API
-async function getWalletBalance(address: string, chainId: number = 43114) {
+/**
+ * Check if modular tools feature is enabled
+ */
+function isModularToolsEnabled(): boolean {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/wallet/balance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ address, chainId }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch wallet balance');
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching wallet balance:', error);
-    return { error: 'Failed to fetch wallet balance' };
-  }
-}
-
-// Function to call the investment data API
-async function getInvestmentData(walletAddress: string) {
-  try {
-    const response = await fetch(`https://n8n.balampay.com/webhook/calc_swaps?wallet_address=${walletAddress}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch investment data');
-    }
-
-    const data = await response.json();
-    return {
-      success: true,
-      total_invested_usdc: parseFloat(data.total_invested_usdc),
-      apy: parseFloat(data.apy) * 100, // Convert to percentage
-      raw_apy: parseFloat(data.apy), // Keep raw value for reference
-    };
-  } catch (error) {
-    console.error('Error fetching investment data:', error);
-    return {
-      success: false,
-      error: 'Failed to fetch investment data'
-    };
-  }
-}
-
-// Function to generate chart data
-async function generateChart(walletAddress: string, chartType: string = 'portfolio', period: string = '1m') {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/charts/historical?wallet_address=${walletAddress}&type=${chartType}&period=${period}`);
-
-    if (!response.ok) {
-      throw new Error('Failed to generate chart');
-    }
-
-    const data = await response.json();
-    return {
-      success: true,
-      chartConfig: data.chartConfig,
-    };
-  } catch (error) {
-    console.error('Error generating chart:', error);
-    return {
-      success: false,
-      error: 'Failed to generate chart'
-    };
+    return getConfig<boolean>('features.experimental.modular_tools') ?? true;
+  } catch {
+    return true; // Default to enabled
   }
 }
 
@@ -303,746 +52,96 @@ export async function POST(req: NextRequest) {
     }
 
     // Log wallet address for debugging
-    console.log('[Chat API] Wallet address received:', walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'NOT PROVIDED');
+    console.log('[Chat API] Wallet address received:', walletAddress
+      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+      : 'NOT PROVIDED');
 
-    // Format messages for OpenAI (convert to OpenAI format)
+    // Build tool context
+    const toolContext: ToolContext = {
+      walletAddress,
+      chainId: 43114, // Avalanche C-Chain
+      isConnected: !!walletAddress && isValidAddress(walletAddress),
+    };
+
+    // Format messages for OpenAI
     const formattedMessages = messages.map((msg) => ({
       role: msg.role,
       content: msg.content,
     }));
 
-    // Call OpenAI API with function calling
-    // Get configuration values
-    const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>('capabilities.natural_language');
-    const timeout = getTimeout('chat_response_ms');
-
-    // Build system prompt with wallet context if available
+    // Build system prompt with wallet context
     let systemPromptWithContext = SYSTEM_PROMPT;
-    if (walletAddress && isValidAddress(walletAddress)) {
+    if (toolContext.isConnected) {
       systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- When the user asks about their balance or wallet, use this address: ${walletAddress}`;
     } else {
       systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Wallet Status: NOT CONNECTED\n- If the user asks about balance or wallet operations, inform them they need to connect their wallet first.`;
     }
 
+    // Get tool registry and configuration
+    const registry = getToolRegistry();
+    const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>('capabilities.natural_language');
+
+    console.log(`[Chat API] Using modular tools: ${isModularToolsEnabled()}`);
+    console.log(`[Chat API] Registered tools: ${registry.getToolNames().join(', ')}`);
+
+    // Call OpenAI API with function calling
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || nlConfig.model,
       messages: [
         { role: 'system', content: systemPromptWithContext },
         ...formattedMessages,
       ],
-      tools: functions.map(fn => ({
-        type: 'function' as const,
-        function: fn,
-      })),
+      tools: registry.getDefinitions(),
       tool_choice: 'auto',
       temperature: nlConfig.temperature,
       max_tokens: nlConfig.max_tokens,
     });
 
     let responseMessage = completion.choices[0]?.message;
-    let swapDataResult = null; // Store swap data for response
-    let chartDataResult = null; // Store chart data for response
+    let swapDataResult = null;
+    let chartDataResult = null;
 
-    // Handle function calls
+    // Handle tool calls
     if (responseMessage?.tool_calls && responseMessage.tool_calls.length > 0) {
       const toolCall = responseMessage.tool_calls[0];
 
-      // Type guard to check if this is a function tool call
       if (toolCall.type === 'function') {
         const functionName = toolCall.function.name;
         const functionArgs = JSON.parse(toolCall.function.arguments);
 
-        let functionResult;
+        console.log(`[Chat API] Executing tool: ${functionName}`, functionArgs);
 
-        if (functionName === 'get_wallet_balance') {
-          console.log('[Chat API] get_wallet_balance called with args:', functionArgs);
-          console.log('[Chat API] Connected wallet:', walletAddress);
+        // Execute tool via registry
+        const toolResult = await registry.execute(functionName, functionArgs, toolContext);
 
-          // CRITICAL: Always use the connected wallet address
-          // The GPT provides the address parameter, but we override it with the connected wallet
-          const addressToUse = walletAddress || functionArgs.address;
+        // Extract swap and chart data from result
+        if (toolResult.success && toolResult.data) {
+          const data = toolResult.data as Record<string, unknown>;
 
-          // Check if wallet is connected
-          if (!walletAddress) {
-            functionResult = {
-              error: 'Wallet not connected. Please connect your wallet to check balance.',
-              code: 'WALLET_NOT_CONNECTED',
-              message: 'To check your balance, you need to connect your wallet first. Click the wallet button in the top right corner.'
-            };
+          // Handle swap data (from confirm_* tools)
+          if (data.swap) {
+            swapDataResult = data.swap;
           }
-          // Validate address format
-          else if (!isValidAddress(addressToUse)) {
-            functionResult = {
-              error: 'Invalid wallet address format. Please check your wallet connection.',
-              code: 'INVALID_ADDRESS'
-            };
-          }
-          // Validate not a placeholder address
-          else if (!isRealAddress(addressToUse)) {
-            functionResult = {
-              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
-              code: 'PLACEHOLDER_ADDRESS'
-            };
-          }
-          // All validations passed - fetch balance using connected wallet
-          else {
-            console.log('[Chat API] Fetching balance for:', addressToUse);
-            functionResult = await getWalletBalance(addressToUse, functionArgs.chainId || 43114);
-            console.log('[Chat API] Balance result:', functionResult);
+
+          // Handle chart data (from generate_chart tool)
+          if (data.chartConfig) {
+            chartDataResult = data.chartConfig;
           }
         }
-        else if (functionName === 'get_investment_data') {
-          console.log('[Chat API] get_investment_data called with args:', functionArgs);
-          console.log('[Chat API] Connected wallet:', walletAddress);
 
-          // Use connected wallet address
-          const addressToUse = walletAddress || functionArgs.wallet_address;
-
-          // Check if wallet is connected
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet not connected. Please connect your wallet to check investment data.',
-              code: 'WALLET_NOT_CONNECTED',
-            };
-          }
-          // Validate address format
-          else if (!isValidAddress(addressToUse)) {
-            functionResult = {
-              success: false,
-              error: 'Invalid wallet address format. Please check your wallet connection.',
-              code: 'INVALID_ADDRESS'
-            };
-          }
-          // Validate not a placeholder address
-          else if (!isRealAddress(addressToUse)) {
-            functionResult = {
-              success: false,
-              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
-              code: 'PLACEHOLDER_ADDRESS'
-            };
-          }
-          // All validations passed - fetch investment data
-          else {
-            console.log('[Chat API] Fetching investment data for:', addressToUse);
-            functionResult = await getInvestmentData(addressToUse);
-            console.log('[Chat API] Investment data result:', functionResult);
-          }
-        }
-        else if (functionName === 'generate_chart') {
-          console.log('[Chat API] generate_chart called with args:', functionArgs);
-          console.log('[Chat API] Connected wallet:', walletAddress);
-
-          // Use connected wallet address
-          const addressToUse = walletAddress || functionArgs.wallet_address;
-          const chartType = functionArgs.chart_type || 'portfolio';
-          const period = functionArgs.period || '1m';
-
-          // Check if wallet is connected
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet not connected. Please connect your wallet to generate charts.',
-              code: 'WALLET_NOT_CONNECTED',
-            };
-          }
-          // Validate address format
-          else if (!isValidAddress(addressToUse)) {
-            functionResult = {
-              success: false,
-              error: 'Invalid wallet address format. Please check your wallet connection.',
-              code: 'INVALID_ADDRESS'
-            };
-          }
-          // Validate not a placeholder address
-          else if (!isRealAddress(addressToUse)) {
-            functionResult = {
-              success: false,
-              error: 'Cannot use placeholder or example addresses. Please connect your real wallet.',
-              code: 'PLACEHOLDER_ADDRESS'
-            };
-          }
-          // All validations passed - generate chart
-          else {
-            console.log('[Chat API] Generating chart for:', addressToUse, 'Type:', chartType, 'Period:', period);
-            functionResult = await generateChart(addressToUse, chartType, period);
-            console.log('[Chat API] Chart generation result:', functionResult);
-
-            // Store chart data for response
-            if (functionResult.success && functionResult.chartConfig) {
-              chartDataResult = functionResult.chartConfig;
+        // Build function result for GPT (flatten for backwards compatibility)
+        const functionResult = toolResult.success
+          ? {
+              success: true,
+              ...(toolResult.data as object),
             }
-          }
-        }
-        else if (functionName === 'invest') {
-          // Invest: Always USDC → SIERRA
-          const amount = functionArgs.amount;
-          console.log('[Chat API] invest called - Converting USDC to SIERRA, amount:', amount);
-
-          // Validate wallet connected
-          if (!walletAddress) {
-            functionResult = {
+          : {
               success: false,
-              error: 'Wallet must be connected to invest',
-              code: 'WALLET_NOT_CONNECTED'
+              error: toolResult.error,
+              code: toolResult.errorCode,
             };
-          } else {
-            try {
-              const fromToken = 'USDC';
-              const toToken = 'SIERRA';
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-              const slippagePercent = 10.0; // High slippage for SIERRA
-              const slippage = (slippagePercent / 100).toString();
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-              // Get quote
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote for investment' };
-              } else {
-                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-                functionResult = {
-                  success: true,
-                  requiresConfirmation: true,
-                  swap: {
-                    fromToken,
-                    toToken,
-                    fromAmount: amount,
-                    toAmount,
-                    exchangeRate: quoteData.quote.exchangeRate,
-                    priceImpact: quoteData.quote.priceImpact,
-                    estimatedGas: quoteData.quote.estimatedGas
-                  }
-                };
-                console.log('[Chat API] Investment quote prepared:', functionResult);
-              }
-            } catch (error) {
-              console.error('[Chat API] Invest error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to prepare investment'
-              };
-            }
-          }
-        }
-        else if (functionName === 'withdraw') {
-          // Withdraw: Always SIERRA → USDC
-          const amount = functionArgs.amount;
-          console.log('[Chat API] withdraw called - Converting SIERRA to USDC, amount:', amount);
-
-          // Validate wallet connected
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet must be connected to withdraw',
-              code: 'WALLET_NOT_CONNECTED'
-            };
-          } else {
-            try {
-              const fromToken = 'SIERRA';
-              const toToken = 'USDC';
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-              const slippagePercent = 10.0; // High slippage for SIERRA
-              const slippage = (slippagePercent / 100).toString();
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-              // Get quote
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote for withdrawal' };
-              } else {
-                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-                functionResult = {
-                  success: true,
-                  requiresConfirmation: true,
-                  swap: {
-                    fromToken,
-                    toToken,
-                    fromAmount: amount,
-                    toAmount,
-                    exchangeRate: quoteData.quote.exchangeRate,
-                    priceImpact: quoteData.quote.priceImpact,
-                    estimatedGas: quoteData.quote.estimatedGas
-                  }
-                };
-                console.log('[Chat API] Withdrawal quote prepared:', functionResult);
-              }
-            } catch (error) {
-              console.error('[Chat API] Withdraw error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to prepare withdrawal'
-              };
-            }
-          }
-        }
-        else if (functionName === 'swap_tokens') {
-          const { fromToken, toToken, amount } = functionArgs;
-          
-          // Use VERY HIGH slippage for low liquidity tokens like SIERRA
-          // OKX SDK expects slippage as decimal (0.5% = 0.005, 10% = 0.1)
-          // SIERRA has very low liquidity and may have transfer fees
-          const isLowLiquidityToken = fromToken === 'SIERRA' || toToken === 'SIERRA';
-          const slippagePercent = parseFloat(functionArgs.slippage || (isLowLiquidityToken ? '10.0' : '0.5'));
-          const slippage = (slippagePercent / 100).toString(); // Convert percentage to decimal
-
-          console.log('[Chat API] swap_tokens called (quote only):', { fromToken, toToken, amount, slippagePercent, slippage, isLowLiquidityToken });
-
-          // 1. Validar wallet conectada
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet must be connected to perform swaps',
-              code: 'WALLET_NOT_CONNECTED'
-            };
-          } else {
-            try {
-              // 2. Converter símbolos para endereços
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-
-              // 3. Converter amount para base units
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-              // 4. Obter Quote apenas (não construir transações ainda)
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
-              } else {
-                // Retornar apenas a cotação, sem transações
-                const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-
-                functionResult = {
-                  success: true,
-                  requiresConfirmation: true,
-                  swap: {
-                    fromToken,
-                    toToken,
-                    fromAmount: amount,
-                    toAmount,
-                    exchangeRate: quoteData.quote.exchangeRate,
-                    priceImpact: quoteData.quote.priceImpact,
-                    estimatedGas: quoteData.quote.estimatedGas
-                  }
-                };
-
-                console.log('[Chat API] Quote prepared, awaiting user confirmation');
-              }
-            } catch (error) {
-              console.error('[Chat API] Quote error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to get quote'
-              };
-            }
-          }
-        }
-        else if (functionName === 'confirm_swap') {
-          const { fromToken, toToken, amount } = functionArgs;
-          
-          // Use VERY HIGH slippage for low liquidity tokens like SIERRA
-          // OKX SDK expects slippage as decimal (0.5% = 0.005, 10% = 0.1)
-          // SIERRA has very low liquidity and may have transfer fees
-          const isLowLiquidityToken = fromToken === 'SIERRA' || toToken === 'SIERRA';
-          const slippagePercent = parseFloat(functionArgs.slippage || (isLowLiquidityToken ? '10.0' : '0.5'));
-          const slippage = (slippagePercent / 100).toString(); // Convert percentage to decimal
-
-          console.log('[Chat API] confirm_swap called:', { fromToken, toToken, amount, slippagePercent, slippage, isLowLiquidityToken });
-
-          // 1. Validar wallet conectada
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet must be connected to perform swaps',
-              code: 'WALLET_NOT_CONNECTED'
-            };
-          } else {
-            try {
-              // 2. Converter símbolos para endereços
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-
-              // 3. Converter amount para base units
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-              // 4. Obter Quote
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
-              } else {
-                // 5. Verificar se precisa de approval (apenas para tokens não-nativos)
-                let needsApproval = false;
-                let approvalTx = null;
-
-                if (fromToken !== 'AVAX') {
-                  const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      chainId: 43114,
-                      tokenAddress: fromTokenAddress,
-                      amount: baseAmount.toString(),
-                      userAddress: walletAddress
-                    })
-                  });
-
-                  const approvalData = await approvalRes.json();
-
-                  if (approvalRes.ok && !approvalData.status.isApproved) {
-                    needsApproval = true;
-                    approvalTx = approvalData.transaction;
-                    console.log('[Chat API] Approval needed:', {
-                      token: fromToken,
-                      currentAllowance: approvalData.status.currentAllowance,
-                      requiredAllowance: approvalData.status.requiredAllowance,
-                      spender: approvalData.status.spenderAddress,
-                    });
-                  }
-                }
-
-                // 6. Construir transação de swap
-                // Note: If approval is needed, we still build the swap transaction
-                // but the frontend will execute approval first, then swap
-                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chainId: 43114,
-                    fromToken: fromTokenAddress,
-                    toToken: toTokenAddress,
-                    amount: baseAmount.toString(),
-                    slippage,
-                    userAddress: walletAddress
-                  })
-                });
-
-                const buildData = await buildRes.json();
-
-                if (!buildRes.ok) {
-                  functionResult = { success: false, error: buildData.error || 'Failed to build swap transaction' };
-                } else {
-                  // 7. Retornar resultado completo com transações
-                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-
-                  // Check if build detected insufficient allowance
-                  // In this case, use approval data from build response
-                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
-                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
-
-                  if (buildData.needsApproval) {
-                    console.log('[Chat API] Build detected insufficient allowance:', {
-                      currentAllowance: buildData.approvalDetails?.currentAllowance,
-                      required: buildData.approvalDetails?.requiredAmount,
-                      router: buildData.approvalDetails?.router,
-                    });
-                  }
-
-                  functionResult = {
-                    success: true,
-                    confirmed: true,
-                    swap: {
-                      fromToken,
-                      toToken,
-                      fromAmount: amount,
-                      toAmount,
-                      exchangeRate: quoteData.quote.exchangeRate,
-                      priceImpact: quoteData.quote.priceImpact,
-                      needsApproval: finalNeedsApproval,
-                      approvalTransaction: finalApprovalTx,
-                      swapTransaction: buildData.transaction,
-                      estimatedGas: quoteData.quote.estimatedGas
-                    }
-                  };
-
-                  // Store swap data for response
-                  swapDataResult = functionResult.swap;
-
-                  console.log('[Chat API] Swap confirmed and transactions built successfully', {
-                    needsApproval: finalNeedsApproval,
-                  });
-                }
-              }
-            } catch (error) {
-              console.error('[Chat API] Confirm swap error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to confirm swap'
-              };
-            }
-          }
-        }
-        else if (functionName === 'confirm_invest') {
-          // Confirm invest: USDC → SIERRA
-          const amount = functionArgs.amount;
-          console.log('[Chat API] confirm_invest called - USDC to SIERRA, amount:', amount);
-
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet must be connected to invest',
-              code: 'WALLET_NOT_CONNECTED'
-            };
-          } else {
-            try {
-              const fromToken = 'USDC';
-              const toToken = 'SIERRA';
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-              const slippagePercent = 10.0;
-              const slippage = (slippagePercent / 100).toString();
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-              // Get quote
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
-              } else {
-                // Check approval
-                let needsApproval = false;
-                let approvalTx = null;
-
-                const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chainId: 43114,
-                    tokenAddress: fromTokenAddress,
-                    amount: baseAmount.toString(),
-                    userAddress: walletAddress
-                  })
-                });
-
-                const approvalData = await approvalRes.json();
-                if (approvalRes.ok && !approvalData.status.isApproved) {
-                  needsApproval = true;
-                  approvalTx = approvalData.transaction;
-                }
-
-                // Build swap transaction
-                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chainId: 43114,
-                    fromToken: fromTokenAddress,
-                    toToken: toTokenAddress,
-                    amount: baseAmount.toString(),
-                    slippage,
-                    userAddress: walletAddress
-                  })
-                });
-
-                const buildData = await buildRes.json();
-
-                if (!buildRes.ok) {
-                  functionResult = { success: false, error: buildData.error || 'Failed to build investment transaction' };
-                } else {
-                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
-                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
-
-                  functionResult = {
-                    success: true,
-                    confirmed: true,
-                    swap: {
-                      fromToken,
-                      toToken,
-                      fromAmount: amount,
-                      toAmount,
-                      exchangeRate: quoteData.quote.exchangeRate,
-                      priceImpact: quoteData.quote.priceImpact,
-                      needsApproval: finalNeedsApproval,
-                      approvalTransaction: finalApprovalTx,
-                      swapTransaction: buildData.transaction,
-                      estimatedGas: quoteData.quote.estimatedGas
-                    }
-                  };
-
-                  swapDataResult = functionResult.swap;
-                  console.log('[Chat API] Investment confirmed and transactions built successfully');
-                }
-              }
-            } catch (error) {
-              console.error('[Chat API] Confirm invest error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to confirm investment'
-              };
-            }
-          }
-        }
-        else if (functionName === 'confirm_withdraw') {
-          // Confirm withdraw: SIERRA → USDC
-          const amount = functionArgs.amount;
-          console.log('[Chat API] confirm_withdraw called - SIERRA to USDC, amount:', amount);
-
-          if (!walletAddress) {
-            functionResult = {
-              success: false,
-              error: 'Wallet must be connected to withdraw',
-              code: 'WALLET_NOT_CONNECTED'
-            };
-          } else {
-            try {
-              const fromToken = 'SIERRA';
-              const toToken = 'USDC';
-              const fromTokenAddress = getTokenAddress(fromToken);
-              const toTokenAddress = getTokenAddress(toToken);
-              const fromDecimals = getTokenDecimals(fromToken);
-              const baseAmount = Math.floor(parseFloat(amount) * (10 ** fromDecimals));
-              const slippagePercent = 10.0;
-              const slippage = (slippagePercent / 100).toString();
-              const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
-              // Get quote
-              const quoteUrl = new URL(`${baseUrl}/api/swap/quote`);
-              quoteUrl.searchParams.append('chainId', '43114');
-              quoteUrl.searchParams.append('fromToken', fromTokenAddress);
-              quoteUrl.searchParams.append('toToken', toTokenAddress);
-              quoteUrl.searchParams.append('amount', baseAmount.toString());
-              quoteUrl.searchParams.append('slippage', slippage);
-
-              const quoteRes = await fetch(quoteUrl.toString());
-              const quoteData = await quoteRes.json();
-
-              if (!quoteRes.ok) {
-                functionResult = { success: false, error: quoteData.error || 'Failed to get quote' };
-              } else {
-                // Check approval
-                let needsApproval = false;
-                let approvalTx = null;
-
-                const approvalRes = await fetch(`${baseUrl}/api/swap/approval`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chainId: 43114,
-                    tokenAddress: fromTokenAddress,
-                    amount: baseAmount.toString(),
-                    userAddress: walletAddress
-                  })
-                });
-
-                const approvalData = await approvalRes.json();
-                if (approvalRes.ok && !approvalData.status.isApproved) {
-                  needsApproval = true;
-                  approvalTx = approvalData.transaction;
-                }
-
-                // Build swap transaction
-                const buildRes = await fetch(`${baseUrl}/api/swap/build?skipAllowanceCheck=${needsApproval}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    chainId: 43114,
-                    fromToken: fromTokenAddress,
-                    toToken: toTokenAddress,
-                    amount: baseAmount.toString(),
-                    slippage,
-                    userAddress: walletAddress
-                  })
-                });
-
-                const buildData = await buildRes.json();
-
-                if (!buildRes.ok) {
-                  functionResult = { success: false, error: buildData.error || 'Failed to build withdrawal transaction' };
-                } else {
-                  const toAmount = formatUnits(BigInt(quoteData.quote.toAmount), getTokenDecimals(toToken));
-                  const finalNeedsApproval = buildData.needsApproval || needsApproval;
-                  const finalApprovalTx = buildData.approvalTransaction || approvalTx;
-
-                  functionResult = {
-                    success: true,
-                    confirmed: true,
-                    swap: {
-                      fromToken,
-                      toToken,
-                      fromAmount: amount,
-                      toAmount,
-                      exchangeRate: quoteData.quote.exchangeRate,
-                      priceImpact: quoteData.quote.priceImpact,
-                      needsApproval: finalNeedsApproval,
-                      approvalTransaction: finalApprovalTx,
-                      swapTransaction: buildData.transaction,
-                      estimatedGas: quoteData.quote.estimatedGas
-                    }
-                  };
-
-                  swapDataResult = functionResult.swap;
-                  console.log('[Chat API] Withdrawal confirmed and transactions built successfully');
-                }
-              }
-            } catch (error) {
-              console.error('[Chat API] Confirm withdraw error:', error);
-              functionResult = {
-                success: false,
-                error: error instanceof Error ? error.message : 'Failed to confirm withdrawal'
-              };
-            }
-          }
-        }
-
-        // Send function result back to GPT
+        // Send function result back to GPT for natural language response
         const secondCompletion = await openai.chat.completions.create({
           model: process.env.OPENAI_MODEL || 'gpt-4o',
           messages: [
@@ -1066,13 +165,11 @@ export async function POST(req: NextRequest) {
     const responseContent = responseMessage?.content ||
       'Desculpe, não consegui gerar uma resposta.';
 
-    // Return response in format compatible with existing UI
-    // Include swapData if confirm_swap was called successfully
-    // Include chartData if generate_chart was called successfully
+    // Return response (compatible with existing UI)
     return NextResponse.json({
       response: responseContent,
       swapData: swapDataResult,
-      chartData: chartDataResult
+      chartData: chartDataResult,
     });
 
   } catch (error) {
