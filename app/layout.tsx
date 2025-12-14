@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/components/Providers";
@@ -13,6 +13,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
+
 export const metadata: Metadata = {
   title: "Kira AI Investor Agent - Your Web3 Financial Assistant",
   description: "AI-powered financial assistant for Web3 investments. Manage your portfolio, invest in funds, exchange currencies, and track your USDC balance with Kira.",
@@ -23,12 +30,6 @@ export const metadata: Metadata = {
     title: "Kira AI Investor Agent",
     description: "Your AI-powered financial assistant for Web3 investments",
     type: "website",
-  },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
   },
 };
 
