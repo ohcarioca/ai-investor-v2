@@ -67,7 +67,21 @@ export function getDefaultNetworkId(): number {
   try {
     return getConfig<number>('blockchain.default_network_id');
   } catch {
-    return 43114; // Default to Avalanche
+    return 1; // Default to Ethereum
+  }
+}
+
+/**
+ * Get supported network IDs
+ */
+export function getSupportedNetworkIds(): number[] {
+  try {
+    const networkConfig = getConfig<{ networks: Array<{ chain_id: number; enabled: boolean }> }>(
+      'blockchain'
+    );
+    return networkConfig.networks.filter((n) => n.enabled).map((n) => n.chain_id);
+  } catch {
+    return [1, 43114]; // Default to Ethereum and Avalanche
   }
 }
 
@@ -159,17 +173,13 @@ export function validateWalletConnection(
  * Validate network connection
  */
 export function validateNetwork(chainId: number | undefined): ValidationResult {
-  const defaultNetworkId = getDefaultNetworkId();
+  const supportedNetworkIds = getSupportedNetworkIds();
 
-  if (chainId !== defaultNetworkId) {
-    const networkConfig = getConfig<{ networks: Array<{ chain_id: number; name: string }> }>(
-      'blockchain'
-    );
-    const network = networkConfig.networks.find((n) => n.chain_id === defaultNetworkId);
-
+  if (!chainId || !supportedNetworkIds.includes(chainId)) {
+    const networkNames = ['Ethereum', 'Avalanche'];
     return {
       isValid: false,
-      error: `Wrong network. Please switch to ${network?.name || 'the correct network'}.`,
+      error: `Wrong network. Please switch to ${networkNames.join(' or ')}.`,
       errorCode: WalletValidationError.WRONG_NETWORK,
     };
   }

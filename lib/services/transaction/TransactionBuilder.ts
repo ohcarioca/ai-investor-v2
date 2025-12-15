@@ -51,13 +51,13 @@ export class TransactionBuilder {
    * This is the main method that replaces duplicated code in confirm_* functions
    */
   async buildSwapTransaction(params: BuildSwapParams): Promise<BuildSwapResult> {
-    const chainId = params.chainId || 43114;
+    const chainId = params.chainId || 1;
 
     try {
-      // 1. Get token addresses and decimals
-      const fromTokenAddress = TokenRegistry.getAddress(params.fromToken);
-      const toTokenAddress = TokenRegistry.getAddress(params.toToken);
-      const fromDecimals = TokenRegistry.getDecimals(params.fromToken);
+      // 1. Get token addresses and decimals for the specific chain
+      const fromTokenAddress = TokenRegistry.getAddress(params.fromToken, chainId);
+      const toTokenAddress = TokenRegistry.getAddress(params.toToken, chainId);
+      const fromDecimals = TokenRegistry.getDecimals(params.fromToken, chainId);
 
       // 2. Convert amount to base units
       const baseAmount = Math.floor(parseFloat(params.amount) * (10 ** fromDecimals));
@@ -97,7 +97,7 @@ export class TransactionBuilder {
       let needsApproval = false;
       let approvalTx: TransactionData | undefined;
 
-      if (!TokenRegistry.isNative(params.fromToken)) {
+      if (!TokenRegistry.isNative(params.fromToken, chainId)) {
         const approvalCheck = await this.checkApproval({
           chainId,
           tokenAddress: fromTokenAddress,

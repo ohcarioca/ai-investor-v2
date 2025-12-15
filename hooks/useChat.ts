@@ -10,7 +10,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { address } = useAccount();
+  const { address, chain } = useAccount();
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -34,6 +34,15 @@ export function useChat() {
       // Include full message history for context
       const allMessages = [...messages, userMessage];
 
+      // Log chain info for debugging
+      const currentChainId = chain?.id;
+      console.log('[useChat] Sending message with chain context:', {
+        chainId: currentChainId,
+        chainName: chain?.name,
+        address: address?.slice(0, 10) + '...',
+        isConnected: !!address,
+      });
+
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
@@ -42,6 +51,7 @@ export function useChat() {
         body: JSON.stringify({
           messages: allMessages,
           walletAddress: address, // Include wallet address for function calling
+          chainId: currentChainId, // Include chain ID for multi-chain support
         }),
         signal: controller.signal,
       });
@@ -170,7 +180,7 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, address]);
+  }, [messages, address, chain]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

@@ -23,7 +23,8 @@ interface SwapResult {
 
 export class SwapTokensTool extends BaseTool {
   readonly name = 'swap_tokens';
-  readonly description = 'Troca tokens genérica (use apenas para swaps que NÃO sejam investimento ou saque). Para investir use "invest", para sacar use "withdraw". Esta função é para swaps customizados entre qualquer par de tokens.';
+  readonly description =
+    'Troca tokens genérica (use apenas para swaps que NÃO sejam investimento ou saque). Para investir use "invest", para sacar use "withdraw". Esta função é para swaps customizados entre qualquer par de tokens. Suporta Ethereum e Avalanche.';
   readonly category = 'swap' as const;
   readonly requiresWallet = true;
 
@@ -36,13 +37,15 @@ export class SwapTokensTool extends BaseTool {
         properties: {
           fromToken: {
             type: 'string',
-            description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
-            enum: ['USDC', 'SIERRA', 'AVAX'],
+            description:
+              'Token symbol to swap from (USDC, SIERRA, AVAX on Avalanche or ETH on Ethereum)',
+            enum: ['USDC', 'SIERRA', 'AVAX', 'ETH'],
           },
           toToken: {
             type: 'string',
-            description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
-            enum: ['USDC', 'SIERRA', 'AVAX'],
+            description:
+              'Token symbol to swap to (USDC, SIERRA, AVAX on Avalanche or ETH on Ethereum)',
+            enum: ['USDC', 'SIERRA', 'AVAX', 'ETH'],
           },
           amount: {
             type: 'string',
@@ -69,22 +72,25 @@ export class SwapTokensTool extends BaseTool {
       return amountValidation;
     }
 
-    // Validate tokens
+    // Validate tokens on the connected chain
     const fromToken = params.fromToken as string;
     const toToken = params.toToken as string;
+    const chainId = context.chainId;
 
-    if (!fromToken || !TokenRegistry.isSupported(fromToken)) {
+    if (!fromToken || !TokenRegistry.isSupported(fromToken, chainId)) {
+      const supportedTokens = TokenRegistry.getSupportedSymbols(chainId).join(', ');
       return {
         isValid: false,
-        error: `Invalid fromToken: ${fromToken}. Supported: USDC, SIERRA, AVAX`,
+        error: `Invalid fromToken: ${fromToken}. Supported on chain ${chainId}: ${supportedTokens}`,
         errorCode: 'UNKNOWN_TOKEN',
       };
     }
 
-    if (!toToken || !TokenRegistry.isSupported(toToken)) {
+    if (!toToken || !TokenRegistry.isSupported(toToken, chainId)) {
+      const supportedTokens = TokenRegistry.getSupportedSymbols(chainId).join(', ');
       return {
         isValid: false,
-        error: `Invalid toToken: ${toToken}. Supported: USDC, SIERRA, AVAX`,
+        error: `Invalid toToken: ${toToken}. Supported on chain ${chainId}: ${supportedTokens}`,
         errorCode: 'UNKNOWN_TOKEN',
       };
     }
@@ -108,6 +114,7 @@ export class SwapTokensTool extends BaseTool {
     const toToken = (params.toToken as string).toUpperCase();
     const amount = params.amount as string;
     const slippageParam = params.slippage as string | undefined;
+    const chainId = context.chainId;
 
     // Determine slippage
     const slippage = slippageParam
@@ -115,8 +122,10 @@ export class SwapTokensTool extends BaseTool {
       : TokenRegistry.getRecommendedSlippage(fromToken, toToken);
 
     this.log(`Preparing swap quote: ${amount} ${fromToken} → ${toToken}`, {
+      chainId,
       slippage,
-      isLowLiquidity: TokenRegistry.isLowLiquidity(fromToken) || TokenRegistry.isLowLiquidity(toToken),
+      isLowLiquidity:
+        TokenRegistry.isLowLiquidity(fromToken) || TokenRegistry.isLowLiquidity(toToken),
     });
 
     try {
@@ -126,6 +135,7 @@ export class SwapTokensTool extends BaseTool {
         toToken,
         amount,
         slippage,
+        chainId,
       });
 
       if (!quoteResult.success || !quoteResult.quote) {
@@ -138,10 +148,11 @@ export class SwapTokensTool extends BaseTool {
       // Format the output amount
       const toAmount = formatUnits(
         BigInt(quoteResult.quote.toAmount),
-        TokenRegistry.getDecimals(toToken)
+        TokenRegistry.getDecimals(toToken, chainId)
       );
 
       this.log('Swap quote prepared, awaiting user confirmation', {
+        chainId,
         fromAmount: amount,
         toAmount,
         exchangeRate: quoteResult.quote.exchangeRate,

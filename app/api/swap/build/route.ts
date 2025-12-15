@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSwapDataDirect, CHAIN_INDEX_MAP } from '@/lib/okx-server';
 import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
+import { createPublicClient, http, erc20Abi, getAddress, Chain } from 'viem';
+import { avalanche, mainnet } from 'viem/chains';
+
+// Chain configurations
+const VIEM_CHAINS: Record<number, Chain> = {
+  1: mainnet,
+  43114: avalanche,
+};
+
+// Native token address
+const NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,13 +20,15 @@ export async function POST(request: NextRequest) {
     const skipAllowanceCheck = searchParams.get('skipAllowanceCheck') === 'true';
 
     const body = await request.json();
-    const { chainId, fromToken, toToken, amount, slippage, userAddress } =
-      body;
+    const { chainId, fromToken, toToken, amount, slippage, userAddress } = body;
 
     // CRITICAL: Validate all required parameters
     if (!chainId || !fromToken || !toToken || !amount || !userAddress) {
       return NextResponse.json(
-        { error: 'Missing required parameters. All swap parameters and wallet address are required.' },
+        {
+          error:
+            'Missing required parameters. All swap parameters and wallet address are required.',
+        },
         { status: 400 }
       );
     }
@@ -31,17 +44,24 @@ export async function POST(request: NextRequest) {
     // Validate not a placeholder or example address
     if (!isRealAddress(userAddress)) {
       return NextResponse.json(
-        { error: 'Cannot use placeholder or example addresses. This transaction must use your connected wallet.' },
+        {
+          error:
+            'Cannot use placeholder or example addresses. This transaction must use your connected wallet.',
+        },
         { status: 400 }
       );
     }
 
-    const chainIndex = CHAIN_INDEX_MAP[parseInt(chainId)];
+    const chainIdNum = parseInt(chainId);
+    const chainIndex = CHAIN_INDEX_MAP[chainIdNum];
     if (!chainIndex) {
-      return NextResponse.json(
-        { error: 'Unsupported chain' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Unsupported chain' }, { status: 400 });
+    }
+
+    // Get viem chain for RPC calls
+    const viemChain = VIEM_CHAINS[chainIdNum];
+    if (!viemChain) {
+      return NextResponse.json({ error: `Unsupported chain for RPC: ${chainId}` }, { status: 400 });
     }
 
     // OKX REST API expects slippage as decimal string (e.g., "0.01" for 1%, "0.1" for 10%)
@@ -49,16 +69,18 @@ export async function POST(request: NextRequest) {
     // Just ensure it's a valid decimal
     const slippageValue = parseFloat(slippage || '0.01');
     // If value > 1, assume it's percentage and convert to decimal
-    const effectiveSlippage = slippageValue > 1 ? (slippageValue / 100).toString() : (slippage || '0.01');
-    
+    const effectiveSlippage =
+      slippageValue > 1 ? (slippageValue / 100).toString() : slippage || '0.01';
+
     console.log('[Swap Build] Slippage conversion:', {
       input: slippage,
       parsed: slippageValue,
       isPercentage: slippageValue > 1,
       effective: effectiveSlippage,
     });
-    
+
     console.log('[Swap Build] Building swap with params:', {
+      chainId: chainIdNum,
       chainIndex,
       fromTokenAddress: fromToken,
       toTokenAddress: toToken,
@@ -69,14 +91,9 @@ export async function POST(request: NextRequest) {
     });
 
     // Check if fromToken is not native, verify balance
-    const NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
-
     if (fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase()) {
-      const { createPublicClient, http, erc20Abi } = await import('viem');
-      const { avalanche } = await import('viem/chains');
-
       const publicClient = createPublicClient({
-        chain: avalanche,
+        chain: viemChain,
         transport: http(),
       });
 
@@ -90,6 +107,7 @@ export async function POST(request: NextRequest) {
         });
 
         console.log('[Swap Build] Token balance check:', {
+          chain: chainIdNum,
           token: fromToken,
           balance: balance.toString(),
           required: amount,
@@ -98,7 +116,9 @@ export async function POST(request: NextRequest) {
 
         if (BigInt(balance) < BigInt(amount)) {
           return NextResponse.json(
-            { error: `Insufficient token balance. You have ${balance.toString()} but need ${amount}` },
+            {
+              error: `Insufficient token balance. You have ${balance.toString()} but need ${amount}`,
+            },
             { status: 400 }
           );
         }
@@ -138,16 +158,15 @@ export async function POST(request: NextRequest) {
 
     if (!swapData) {
       console.error('No swap data found in response:', swapResult);
-      return NextResponse.json(
-        { error: 'No swap data available' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No swap data available' }, { status: 404 });
     }
 
     console.log('[Swap Build] Swap Data:', JSON.stringify(swapData, null, 2));
 
     // Extract transaction data with flexible field access
-    const txData = (swapData.tx || (swapData as unknown as Record<string, unknown>).transaction || {}) as Record<string, unknown>;
+    const txData = (swapData.tx ||
+      (swapData as unknown as Record<string, unknown>).transaction ||
+      {}) as Record<string, unknown>;
 
     console.log('[Swap Build] ===== TRANSACTION DETAILS =====');
     console.log('[Swap Build] Target contract (to):', txData.to);
@@ -160,12 +179,13 @@ export async function POST(request: NextRequest) {
     // CRITICAL: Verify allowance against the ACTUAL router that will be used
     // This is the most accurate check because we use the router from the swap transaction
     // Skip this check if approval is pending (skipAllowanceCheck=true)
-    if (!skipAllowanceCheck && fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase() && txData.to) {
-      const { createPublicClient, http, erc20Abi, getAddress } = await import('viem');
-      const { avalanche } = await import('viem/chains');
-
+    if (
+      !skipAllowanceCheck &&
+      fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase() &&
+      txData.to
+    ) {
       const publicClient = createPublicClient({
-        chain: avalanche,
+        chain: viemChain,
         transport: http(),
       });
 
@@ -179,6 +199,7 @@ export async function POST(request: NextRequest) {
         });
 
         console.log('[Swap Build] ===== ALLOWANCE CHECK =====');
+        console.log('[Swap Build] Chain:', chainIdNum);
         console.log('[Swap Build] Token:', fromToken);
         console.log('[Swap Build] Router (from tx.to):', actualRouter);
         console.log('[Swap Build] Current allowance:', allowance.toString());
@@ -188,12 +209,13 @@ export async function POST(request: NextRequest) {
 
         if (BigInt(allowance) < BigInt(amount)) {
           console.log('[Swap Build] Allowance insufficient - building approval transaction');
-          
+
           // Build approval transaction with MAX_UINT256 (unlimited approval)
-          const MAX_UINT256 = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+          const MAX_UINT256 =
+            'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
           const routerPadded = actualRouter.slice(2).toLowerCase().padStart(64, '0');
           const approveData = `0x095ea7b3${routerPadded}${MAX_UINT256}`;
-          
+
           // Continue building the swap transaction but include approval info
           // The frontend will execute approval first, then swap
           const transaction = {
@@ -205,13 +227,21 @@ export async function POST(request: NextRequest) {
 
           // Extract token data
           const swapDataRecord = swapData as unknown as Record<string, unknown>;
-          const fromTokenData = (swapDataRecord.fromToken || swapDataRecord.fromTokenInfo || {}) as Record<string, unknown>;
-          const toTokenData = (swapDataRecord.toToken || swapDataRecord.toTokenInfo || {}) as Record<string, unknown>;
+          const fromTokenData = (swapDataRecord.fromToken ||
+            swapDataRecord.fromTokenInfo ||
+            {}) as Record<string, unknown>;
+          const toTokenData = (swapDataRecord.toToken ||
+            swapDataRecord.toTokenInfo ||
+            {}) as Record<string, unknown>;
           const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
           const toDecimals = parseInt((toTokenData.decimal as string) || '18');
-          const toAmount = (swapDataRecord.toTokenAmount || swapDataRecord.toAmount || '0') as string;
+          const toAmount = (swapDataRecord.toTokenAmount ||
+            swapDataRecord.toAmount ||
+            '0') as string;
 
-          let exchangeRate = (swapDataRecord.exchangeRate || swapDataRecord.price || '0') as string;
+          let exchangeRate = (swapDataRecord.exchangeRate ||
+            swapDataRecord.price ||
+            '0') as string;
           if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
             const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
             const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
@@ -219,8 +249,16 @@ export async function POST(request: NextRequest) {
           }
 
           const quote = {
-            fromToken: { address: fromToken, symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN', decimals: fromDecimals },
-            toToken: { address: toToken, symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN', decimals: toDecimals },
+            fromToken: {
+              address: fromToken,
+              symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN',
+              decimals: fromDecimals,
+            },
+            toToken: {
+              address: toToken,
+              symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN',
+              decimals: toDecimals,
+            },
             fromAmount: amount,
             toAmount,
             exchangeRate,
@@ -241,7 +279,7 @@ export async function POST(request: NextRequest) {
               currentAllowance: allowance.toString(),
               requiredAmount: amount,
               router: actualRouter,
-            }
+            },
           });
         }
       } catch (error) {
@@ -262,8 +300,12 @@ export async function POST(request: NextRequest) {
 
     // Extract token data with flexible field names
     const swapDataRecord = swapData as unknown as Record<string, unknown>;
-    const fromTokenData = (swapDataRecord.fromToken || swapDataRecord.fromTokenInfo || {}) as Record<string, unknown>;
-    const toTokenData = (swapDataRecord.toToken || swapDataRecord.toTokenInfo || {}) as Record<string, unknown>;
+    const fromTokenData = (swapDataRecord.fromToken ||
+      swapDataRecord.fromTokenInfo ||
+      {}) as Record<string, unknown>;
+    const toTokenData = (swapDataRecord.toToken ||
+      swapDataRecord.toTokenInfo ||
+      {}) as Record<string, unknown>;
 
     const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
     const toDecimals = parseInt((toTokenData.decimal as string) || '18');
@@ -309,10 +351,7 @@ export async function POST(request: NextRequest) {
     console.error('Build swap error:', error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to build swap transaction',
+        error: error instanceof Error ? error.message : 'Failed to build swap transaction',
       },
       { status: 500 }
     );

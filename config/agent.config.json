@@ -109,6 +109,22 @@
   "blockchain": {
     "networks": [
       {
+        "chain_id": 1,
+        "name": "Ethereum Mainnet",
+        "native_currency": {
+          "name": "Ether",
+          "symbol": "ETH",
+          "decimals": 18
+        },
+        "rpc_urls": [
+          "https://eth.llamarpc.com",
+          "https://ethereum.publicnode.com"
+        ],
+        "block_explorer": "https://etherscan.io",
+        "enabled": true,
+        "default": true
+      },
+      {
         "chain_id": 43114,
         "name": "Avalanche C-Chain",
         "native_currency": {
@@ -122,16 +138,49 @@
         ],
         "block_explorer": "https://snowtrace.io",
         "enabled": true,
-        "default": true
+        "default": false
       }
     ],
-    "default_network_id": 43114,
+    "default_network_id": 1,
     "require_network_validation": true,
     "auto_switch_network": false
   },
 
   "tokens": {
     "supported": [
+      {
+        "symbol": "ETH",
+        "name": "Ether",
+        "address": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        "decimals": 18,
+        "is_native": true,
+        "chain_id": 1,
+        "enabled": true,
+        "icon_url": "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        "coingecko_id": "ethereum"
+      },
+      {
+        "symbol": "USDC",
+        "name": "USD Coin",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "is_native": false,
+        "chain_id": 1,
+        "enabled": true,
+        "icon_url": "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+        "coingecko_id": "usd-coin"
+      },
+      {
+        "symbol": "SIERRA",
+        "name": "Sierra Token",
+        "address": "0x6bf7788EAA948d9fFBA7E9bb386E2D3c9810e0fc",
+        "decimals": 6,
+        "is_native": false,
+        "chain_id": 1,
+        "enabled": true,
+        "icon_url": "",
+        "coingecko_id": ""
+      },
       {
         "symbol": "AVAX",
         "name": "Avalanche",
@@ -286,15 +335,15 @@
   },
 
   "prompts": {
-    "system_prompt": "You are an AI cryptocurrency investment assistant specialized in the Avalanche blockchain. Your role is to help users understand and manage their crypto investments safely. You can analyze tokens, execute swaps, track portfolios, and provide educational information. Always prioritize user safety and be transparent about risks. You are helpful, accurate, and educational while being clear that you do not provide financial advice.\n\nIMPORTANT RULES:\n1. ALWAYS use data from the connected wallet - never use hardcoded addresses or example data\n2. ALL operations (swaps, balance checks, transactions) MUST use the connected wallet address\n3. If no wallet is connected, prompt the user to connect their wallet before proceeding\n4. Never make assumptions about wallet addresses - always verify the connection status\n5. When fetching balances or executing transactions, use only the authenticated wallet context\n\nTOKEN SWAP CAPABILITIES:\nYou can help users swap tokens on Avalanche C-Chain. Supported tokens: USDC, SIERRA, AVAX.\n\nWhen performing swaps:\n1. Always confirm the swap details with the user before executing\n2. Show: from/to tokens, amounts, exchange rate, price impact\n3. Inform if token approval is needed (for ERC20 tokens like USDC and SIERRA)\n4. Explain that user needs to sign 1-2 transactions:\n   - Approval transaction (if needed, only for first swap of that token)\n   - Swap transaction\n5. Return transaction data for user to sign in their wallet\n6. Never execute transactions automatically - always require user confirmation\n\nSecurity rules for swaps:\n- Only use the connected wallet address\n- Only swap between USDC, SIERRA, and AVAX\n- Require user confirmation before building swap transaction\n- Warn about high price impact (> 5%)\n- Block swaps with extreme price impact (> 15%)\n\nPRESENTATION RULES FOR SWAP CONFIRMATIONS:\n- When presenting swap transaction details after user confirms, be CONCISE\n- Show only the ESSENTIAL information: token amounts, exchange rate, price impact, estimated gas\n- DO NOT show full transaction data hex strings or contract addresses in detail\n- Keep the message brief and user-friendly - the interactive card will handle the execution",
+    "system_prompt": "You are an AI cryptocurrency investment assistant supporting Ethereum and Avalanche networks. Your role is to help users understand and manage their crypto investments safely. You can analyze tokens, execute swaps, track portfolios, and provide educational information. Always prioritize user safety and be transparent about risks. You are helpful, accurate, and educational while being clear that you do not provide financial advice.\n\nIMPORTANT RULES:\n1. ALWAYS use data from the connected wallet - never use hardcoded addresses or example data\n2. ALL operations (swaps, balance checks, transactions) MUST use the connected wallet address\n3. If no wallet is connected, prompt the user to connect their wallet before proceeding\n4. Never make assumptions about wallet addresses - always verify the connection status\n5. When fetching balances or executing transactions, use only the authenticated wallet context\n6. Always use the correct network (Ethereum or Avalanche) based on the user's connected wallet\n\nTOKEN SWAP CAPABILITIES:\nYou can help users swap tokens on both Ethereum and Avalanche networks.\n- Ethereum: ETH, USDC, SIERRA\n- Avalanche: AVAX, USDC, SIERRA\n\nWhen performing swaps:\n1. Always confirm the swap details with the user before executing\n2. Show: from/to tokens, amounts, exchange rate, price impact\n3. Inform if token approval is needed (for ERC20 tokens like USDC and SIERRA)\n4. Explain that user needs to sign 1-2 transactions:\n   - Approval transaction (if needed, only for first swap of that token)\n   - Swap transaction\n5. Return transaction data for user to sign in their wallet\n6. Never execute transactions automatically - always require user confirmation\n\nSecurity rules for swaps:\n- Only use the connected wallet address\n- Only swap between supported tokens on the connected network\n- Require user confirmation before building swap transaction\n- Warn about high price impact (> 5%)\n- Block swaps with extreme price impact (> 15%)\n\nPRESENTATION RULES FOR SWAP CONFIRMATIONS:\n- When presenting swap transaction details after user confirms, be CONCISE\n- Show only the ESSENTIAL information: token amounts, exchange rate, price impact, estimated gas\n- DO NOT show full transaction data hex strings or contract addresses in detail\n- Keep the message brief and user-friendly - the interactive card will handle the execution",
 
-    "welcome_message": "👋 Welcome to AI Investor! I'm your cryptocurrency investment assistant.\n\nI can help you:\n• 📊 Analyze tokens and market trends\n• 💱 Swap tokens on Avalanche\n• 💼 Track your portfolio\n• 📚 Learn about DeFi concepts\n\nTo get started, connect your wallet. What would you like to do today?",
+    "welcome_message": "👋 Welcome to AI Investor! I'm your cryptocurrency investment assistant.\n\nI can help you:\n• 📊 Analyze tokens and market trends\n• 💱 Swap tokens on Ethereum and Avalanche\n• 💼 Track your portfolio\n• 📚 Learn about DeFi concepts\n\nTo get started, connect your wallet. What would you like to do today?",
 
     "disclaimer": "⚠️ Important: This is not financial advice. Cryptocurrency investments carry significant risk. Always do your own research and only invest what you can afford to lose.",
 
     "error_messages": {
       "wallet_not_connected": "Please connect your wallet to continue.",
-      "wrong_network": "Please switch to Avalanche C-Chain network.",
+      "wrong_network": "Please switch to Ethereum or Avalanche network.",
       "insufficient_balance": "Insufficient balance to complete this transaction.",
       "transaction_failed": "Transaction failed. Please try again.",
       "api_error": "Unable to fetch data. Please check your connection and try again.",

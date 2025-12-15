@@ -46,7 +46,7 @@ export function useSwapQuote({
       ).toFixed(0);
 
       const params = new URLSearchParams({
-        chainId: (chain?.id || 43114).toString(),
+        chainId: (chain?.id || 1).toString(), // Default to Ethereum
         fromToken: fromToken.address,
         toToken: toToken.address,
         amount: amountInBaseUnits,

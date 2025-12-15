@@ -43,21 +43,44 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     errorMessage: null,
   });
 
-  // Check if we're on the correct network
-  const isCorrectNetwork = chainId === 43114;
+  // Check if we're on a supported network (Ethereum or Avalanche)
+  const supportedChainIds = [1, 43114];
+  const isCorrectNetwork = supportedChainIds.includes(chainId);
 
-  // Helper functions to map token symbols to addresses and decimals
-  const getTokenAddress = (symbol: string): string => {
-    const tokenMap: Record<string, string> = {
+  // Get block explorer URL based on chain
+  const getExplorerUrl = (txHash: string): string => {
+    return chainId === 1
+      ? `https://etherscan.io/tx/${txHash}`
+      : `https://snowtrace.io/tx/${txHash}`;
+  };
+
+  const getExplorerName = (): string => {
+    return chainId === 1 ? 'Etherscan' : 'Snowtrace';
+  };
+
+  // Token addresses by chain
+  const TOKEN_ADDRESSES_BY_CHAIN: Record<number, Record<string, string>> = {
+    1: { // Ethereum
+      ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
+      USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+      SIERRA: '0x6bf7788EAA948d9fFBA7E9bb386E2D3c9810e0fc',
+    },
+    43114: { // Avalanche
       AVAX: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       USDC: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
       SIERRA: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
-    };
+    },
+  };
+
+  // Helper functions to map token symbols to addresses and decimals
+  const getTokenAddress = (symbol: string): string => {
+    const tokenMap = TOKEN_ADDRESSES_BY_CHAIN[chainId] || TOKEN_ADDRESSES_BY_CHAIN[1];
     return tokenMap[symbol] || symbol;
   };
 
   const getTokenDecimals = (symbol: string): number => {
     const decimalsMap: Record<string, number> = {
+      ETH: 18,
       AVAX: 18,
       USDC: 6,
       SIERRA: 6,
@@ -363,7 +386,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       <div className="bg-white border border-gray-200 rounded-xl p-4 mt-4">
         <div className="flex items-center gap-2 text-red-600">
           <AlertCircle className="w-5 h-5" />
-          <span className="font-medium">Please switch to Avalanche C-Chain network</span>
+          <span className="font-medium">Please switch to Ethereum or Avalanche network</span>
         </div>
       </div>
     );
@@ -448,12 +471,12 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
           </div>
           {swapTxHash && (
             <a
-              href={`https://snowtrace.io/tx/${swapTxHash}`}
+              href={getExplorerUrl(swapTxHash)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
             >
-              View on Snowtrace
+              View on {getExplorerName()}
               <ExternalLink className="w-4 h-4" />
             </a>
           )}
@@ -513,12 +536,12 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       {approvalTxHash && status !== 'approving' && (
         <div className="mt-3">
           <a
-            href={`https://snowtrace.io/tx/${approvalTxHash}`}
+            href={getExplorerUrl(approvalTxHash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
           >
-            View approval transaction
+            View approval transaction on {getExplorerName()}
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>

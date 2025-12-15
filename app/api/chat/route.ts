@@ -39,9 +39,10 @@ function isModularToolsEnabled(): boolean {
 export async function POST(req: NextRequest) {
   try {
     // Parse request body
-    const { messages, walletAddress } = await req.json() as {
+    const { messages, walletAddress, chainId } = await req.json() as {
       messages: Message[];
       walletAddress?: string;
+      chainId?: number;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -51,15 +52,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Log wallet address for debugging
+    // Determine network - default to Ethereum (1)
+    const currentChainId = chainId || 1;
+    const networkName = currentChainId === 1 ? 'Ethereum' : 'Avalanche';
+
+    // Log wallet and network info for debugging
     console.log('[Chat API] Wallet address received:', walletAddress
       ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
       : 'NOT PROVIDED');
+    console.log('[Chat API] Chain ID:', currentChainId, `(${networkName})`);
 
     // Build tool context
     const toolContext: ToolContext = {
       walletAddress,
-      chainId: 43114, // Avalanche C-Chain
+      chainId: currentChainId,
       isConnected: !!walletAddress && isValidAddress(walletAddress),
     };
 
@@ -72,7 +78,7 @@ export async function POST(req: NextRequest) {
     // Build system prompt with wallet context
     let systemPromptWithContext = SYSTEM_PROMPT;
     if (toolContext.isConnected) {
-      systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- When the user asks about their balance or wallet, use this address: ${walletAddress}`;
+      systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- Connected Network: ${networkName} (Chain ID: ${currentChainId})\n- When the user asks about their balance or wallet, use this address on the ${networkName} network: ${walletAddress}`;
     } else {
       systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Wallet Status: NOT CONNECTED\n- If the user asks about balance or wallet operations, inform them they need to connect their wallet first.`;
     }

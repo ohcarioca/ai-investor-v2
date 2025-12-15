@@ -6,9 +6,22 @@ import { formatUnits, erc20Abi } from 'viem';
 import type { AccountBalance, Balance } from '@/types/wallet';
 
 /**
- * Token addresses - Limited to USDC and SIERRA on Avalanche only
+ * Token addresses - USDC and SIERRA on Ethereum and Avalanche
  */
 const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; decimals: number }>> = {
+  // Ethereum Mainnet (1)
+  1: [
+    {
+      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC on Ethereum
+      symbol: 'USDC',
+      decimals: 6,
+    },
+    {
+      address: '0x6bf7788EAA948d9fFBA7E9bb386E2D3c9810e0fc', // SIERRA on Ethereum
+      symbol: 'SIERRA',
+      decimals: 6,
+    },
+  ],
   // Avalanche C-Chain (43114)
   43114: [
     {
@@ -54,11 +67,13 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       const balances: Balance[] = [];
       let totalEquity = 0;
 
-      // Get token prices - Limited to USDC, SIERRA, AVAX only
+      // Get token prices - ETH, AVAX, USDC, SIERRA
       const getTokenPrice = (symbol: string): number => {
         switch (symbol) {
           case 'USDC':
             return 1; // Stablecoin
+          case 'ETH':
+            return 3500; // ETH price (update with real oracle)
           case 'AVAX':
             return 14.59; // AVAX price (update with real oracle)
           case 'SIERRA':
@@ -84,7 +99,7 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       }
 
       // Get tokens for current chain
-      const chainId = chain?.id || 43114; // Default to Avalanche
+      const chainId = chain?.id || 1; // Default to Ethereum
       const tokensForChain = TOKEN_ADDRESSES[chainId] || [];
 
       // Fetch ERC20 token balances

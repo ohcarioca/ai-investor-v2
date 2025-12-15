@@ -97,6 +97,8 @@ export class ToolRegistry {
       category: tool.category,
       requiresWallet: tool.requiresWallet,
       hasWallet: context.isConnected,
+      chainId: context.chainId,
+      walletAddress: context.walletAddress?.slice(0, 10) + '...',
     });
 
     try {

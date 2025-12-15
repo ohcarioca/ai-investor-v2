@@ -95,8 +95,9 @@ export default function SwapModal({
     }
   }, [quote, fromToken, fromAmount, checkApproval]);
 
-  // Wrong network check
-  if (isConnected && chain?.id !== 43114) {
+  // Wrong network check - support Ethereum and Avalanche
+  const supportedChainIds = [1, 43114];
+  if (isConnected && chain?.id && !supportedChainIds.includes(chain.id)) {
     return (
       <div
         className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}
@@ -108,7 +109,7 @@ export default function SwapModal({
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4">
           <div className="bg-white rounded-2xl p-6">
             <p className="text-center text-gray-900">
-              Please switch to Avalanche C-Chain network to use the swap feature.
+              Please switch to Ethereum or Avalanche network to use the swap feature.
             </p>
           </div>
         </div>
@@ -276,12 +277,14 @@ export default function SwapModal({
                 </div>
                 {swapState.txHash && (
                   <a
-                    href={`https://snowtrace.io/tx/${swapState.txHash}`}
+                    href={chain?.id === 1
+                      ? `https://etherscan.io/tx/${swapState.txHash}`
+                      : `https://snowtrace.io/tx/${swapState.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
                   >
-                    View on Snowtrace
+                    View on {chain?.id === 1 ? 'Etherscan' : 'Snowtrace'}
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}

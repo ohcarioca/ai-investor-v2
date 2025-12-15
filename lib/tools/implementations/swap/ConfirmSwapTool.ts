@@ -23,7 +23,8 @@ interface ConfirmSwapResult {
 
 export class ConfirmSwapTool extends BaseTool {
   readonly name = 'confirm_swap';
-  readonly description = 'Confirm and build swap transactions after user approves the quote. Call this only after the user confirms they want to proceed with the swap (e.g., says "yes", "sim", "proceed", etc.).';
+  readonly description =
+    'Confirm and build swap transactions after user approves the quote. Call this only after the user confirms they want to proceed with the swap (e.g., says "yes", "sim", "proceed", etc.). Supports Ethereum and Avalanche.';
   readonly category = 'swap' as const;
   readonly requiresWallet = true;
 
@@ -36,13 +37,15 @@ export class ConfirmSwapTool extends BaseTool {
         properties: {
           fromToken: {
             type: 'string',
-            description: 'Token symbol to swap from (USDC, SIERRA, or AVAX)',
-            enum: ['USDC', 'SIERRA', 'AVAX'],
+            description:
+              'Token symbol to swap from (USDC, SIERRA, AVAX on Avalanche or ETH on Ethereum)',
+            enum: ['USDC', 'SIERRA', 'AVAX', 'ETH'],
           },
           toToken: {
             type: 'string',
-            description: 'Token symbol to swap to (USDC, SIERRA, or AVAX)',
-            enum: ['USDC', 'SIERRA', 'AVAX'],
+            description:
+              'Token symbol to swap to (USDC, SIERRA, AVAX on Avalanche or ETH on Ethereum)',
+            enum: ['USDC', 'SIERRA', 'AVAX', 'ETH'],
           },
           amount: {
             type: 'string',
@@ -69,22 +72,25 @@ export class ConfirmSwapTool extends BaseTool {
       return amountValidation;
     }
 
-    // Validate tokens
+    // Validate tokens on the connected chain
     const fromToken = params.fromToken as string;
     const toToken = params.toToken as string;
+    const chainId = context.chainId;
 
-    if (!fromToken || !TokenRegistry.isSupported(fromToken)) {
+    if (!fromToken || !TokenRegistry.isSupported(fromToken, chainId)) {
+      const supportedTokens = TokenRegistry.getSupportedSymbols(chainId).join(', ');
       return {
         isValid: false,
-        error: `Invalid fromToken: ${fromToken}. Supported: USDC, SIERRA, AVAX`,
+        error: `Invalid fromToken: ${fromToken}. Supported on chain ${chainId}: ${supportedTokens}`,
         errorCode: 'UNKNOWN_TOKEN',
       };
     }
 
-    if (!toToken || !TokenRegistry.isSupported(toToken)) {
+    if (!toToken || !TokenRegistry.isSupported(toToken, chainId)) {
+      const supportedTokens = TokenRegistry.getSupportedSymbols(chainId).join(', ');
       return {
         isValid: false,
-        error: `Invalid toToken: ${toToken}. Supported: USDC, SIERRA, AVAX`,
+        error: `Invalid toToken: ${toToken}. Supported on chain ${chainId}: ${supportedTokens}`,
         errorCode: 'UNKNOWN_TOKEN',
       };
     }
@@ -108,6 +114,7 @@ export class ConfirmSwapTool extends BaseTool {
     const toToken = (params.toToken as string).toUpperCase();
     const amount = params.amount as string;
     const slippageParam = params.slippage as string | undefined;
+    const chainId = context.chainId;
 
     // Determine slippage
     const slippage = slippageParam
@@ -115,8 +122,10 @@ export class ConfirmSwapTool extends BaseTool {
       : TokenRegistry.getRecommendedSlippage(fromToken, toToken);
 
     this.log(`Confirming swap: ${amount} ${fromToken} → ${toToken}`, {
+      chainId,
       slippage,
-      isLowLiquidity: TokenRegistry.isLowLiquidity(fromToken) || TokenRegistry.isLowLiquidity(toToken),
+      isLowLiquidity:
+        TokenRegistry.isLowLiquidity(fromToken) || TokenRegistry.isLowLiquidity(toToken),
     });
 
     try {
@@ -127,7 +136,7 @@ export class ConfirmSwapTool extends BaseTool {
         amount,
         slippage,
         userAddress: context.walletAddress!,
-        chainId: context.chainId,
+        chainId,
       });
 
       if (!result.success || !result.swapTransaction) {
@@ -140,10 +149,11 @@ export class ConfirmSwapTool extends BaseTool {
       // Format the output amount
       const toAmount = formatUnits(
         BigInt(result.quote!.toAmount),
-        TokenRegistry.getDecimals(toToken)
+        TokenRegistry.getDecimals(toToken, chainId)
       );
 
       this.log('Swap confirmed and transactions built successfully', {
+        chainId,
         needsApproval: result.needsApproval,
       });
 

@@ -57,10 +57,11 @@ export default function SwapButton({
       };
     }
 
-    // Wrong network
-    if (chain?.id !== 43114) {
+    // Wrong network - check for supported chains (Ethereum and Avalanche)
+    const supportedChainIds = [1, 43114];
+    if (chain?.id && !supportedChainIds.includes(chain.id)) {
       return {
-        text: 'Switch to Avalanche',
+        text: 'Switch to Supported Network',
         disabled: true,
         onClick: () => {},
       };

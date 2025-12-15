@@ -2,11 +2,15 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { Wallet } from 'lucide-react';
+import NetworkSelector from './NetworkSelector';
+import { useSelectedNetwork, NETWORKS, CHAIN_IDS } from '@/contexts/NetworkContext';
 
 export default function WalletButton() {
   const { isConnected } = useAccount();
+  const { selectedChainId } = useSelectedNetwork();
+  const { switchChain } = useSwitchChain();
   const openConnectModalRef = useRef<(() => void) | null>(null);
   const hasCheckedAutoOpen = useRef(false);
 
@@ -35,6 +39,7 @@ export default function WalletButton() {
         chain,
         openConnectModal,
         openAccountModal,
+        openChainModal,
         mounted,
       }) => {
         const connected = mounted && account && chain;
@@ -53,36 +58,54 @@ export default function WalletButton() {
 
         if (!connected) {
           return (
-            <button
-              onClick={openConnectModal}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
-            >
-              <Wallet className="w-4 h-4" />
-              Connect Wallet
-            </button>
+            <div className="flex items-center gap-3">
+              <NetworkSelector compact />
+              <button
+                onClick={openConnectModal}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+              >
+                <Wallet className="w-4 h-4" />
+                Connect
+              </button>
+            </div>
           );
         }
 
-        // Wrong network warning
-        if (chain.id !== 43114) {
+        // Check supported networks (Ethereum mainnet and Avalanche)
+        const supportedChainIds = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE];
+        if (!supportedChainIds.includes(chain.id as typeof supportedChainIds[number])) {
           return (
-            <button
-              onClick={openAccountModal}
-              className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-medium text-red-700 transition-colors"
-            >
-              Wrong Network
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => switchChain?.({ chainId: selectedChainId })}
+                className="px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg font-medium text-red-700 transition-colors"
+              >
+                Switch to {NETWORKS[selectedChainId].name}
+              </button>
+            </div>
           );
         }
+
+        // Get current network info
+        const networkInfo = NETWORKS[chain.id as keyof typeof NETWORKS];
+        const networkName = networkInfo?.shortName || 'Unknown';
 
         return (
-          <button
-            onClick={openAccountModal}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
-          >
-            {account.displayName ||
-              `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openChainModal}
+              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors text-sm"
+            >
+              {networkName}
+            </button>
+            <button
+              onClick={openAccountModal}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-gray-700 transition-colors"
+            >
+              {account.displayName ||
+                `${account.address.slice(0, 6)}...${account.address.slice(-4)}`}
+            </button>
+          </div>
         );
       }}
     </ConnectButton.Custom>

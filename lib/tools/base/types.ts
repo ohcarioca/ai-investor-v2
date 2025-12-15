@@ -12,7 +12,7 @@
 export interface ToolContext {
   /** Connected wallet address (if any) */
   walletAddress?: string;
-  /** Blockchain chain ID (default: 43114 for Avalanche) */
+  /** Blockchain chain ID (1 for Ethereum, 43114 for Avalanche) */
   chainId: number;
   /** Whether a wallet is connected */
   isConnected: boolean;

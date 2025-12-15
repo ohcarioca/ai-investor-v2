@@ -28,7 +28,8 @@
       "Bash(wc:*)",
       "Bash(xargs cat:*)",
       "Bash(npm run test:run:*)",
-      "Bash(npx vitest:*)"
+      "Bash(npx vitest:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

@@ -100,22 +100,33 @@ export class QuoteFetcher {
     chainId?: number;
   }): Promise<QuoteFetchResult> {
     try {
-      const fromTokenAddress = TokenRegistry.getAddress(params.fromToken);
-      const toTokenAddress = TokenRegistry.getAddress(params.toToken);
-      const fromDecimals = TokenRegistry.getDecimals(params.fromToken);
+      // Use chainId from params, default to Ethereum (1) if not provided
+      const chainId = params.chainId || 1;
+
+      // Get token addresses for the specific chain
+      const fromTokenAddress = TokenRegistry.getAddress(params.fromToken, chainId);
+      const toTokenAddress = TokenRegistry.getAddress(params.toToken, chainId);
+      const fromDecimals = TokenRegistry.getDecimals(params.fromToken, chainId);
 
       // Convert human-readable amount to base units
-      const baseAmount = Math.floor(parseFloat(params.amount) * (10 ** fromDecimals));
+      const baseAmount = Math.floor(parseFloat(params.amount) * 10 ** fromDecimals);
 
       // Get recommended slippage if not provided
-      const slippagePercent = params.slippage ??
-        TokenRegistry.getRecommendedSlippage(params.fromToken, params.toToken);
+      const slippagePercent =
+        params.slippage ?? TokenRegistry.getRecommendedSlippage(params.fromToken, params.toToken);
 
       // Convert percentage to decimal (e.g., 10% -> 0.1)
       const slippage = (slippagePercent / 100).toString();
 
+      console.log('[QuoteFetcher] Preparing quote for chain', chainId, {
+        fromToken: params.fromToken,
+        toToken: params.toToken,
+        fromTokenAddress,
+        toTokenAddress,
+      });
+
       return await this.getQuote({
-        chainId: (params.chainId || 43114).toString(),
+        chainId: chainId.toString(),
         fromToken: fromTokenAddress,
         toToken: toTokenAddress,
         amount: baseAmount.toString(),
