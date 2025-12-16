@@ -15,7 +15,7 @@ export default function Providers({ children }: { children: ReactNode }) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <NetworkProvider>
-          <RainbowKitProvider modalSize="compact">
+          <RainbowKitProvider modalSize="compact" locale="en">
             {children}
           </RainbowKitProvider>
         </NetworkProvider>
