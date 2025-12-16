@@ -4,37 +4,14 @@
  * Can be called directly from tools or via API route
  */
 
-import { createPublicClient, http, formatUnits, erc20Abi, Chain } from 'viem';
-import { avalanche, mainnet } from 'viem/chains';
-
-// Chain configurations
-const VIEM_CHAINS: Record<number, Chain> = {
-  1: mainnet,
-  43114: avalanche,
-};
-
-// Token addresses by chain
-const TOKEN_ADDRESSES: Record<
-  number,
-  Array<{ address: string; symbol: string; decimals: number }>
-> = {
-  // Ethereum Mainnet
-  1: [
-    { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', symbol: 'USDC', decimals: 6 },
-    { address: '0x6bf7788EAA948d9fFBA7E9bb386E2D3c9810e0fc', symbol: 'SIERRA', decimals: 6 },
-  ],
-  // Avalanche C-Chain
-  43114: [
-    { address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', symbol: 'USDC', decimals: 6 },
-    { address: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7', symbol: 'SIERRA', decimals: 6 },
-  ],
-};
-
-// Native token symbol by chain
-const NATIVE_SYMBOLS: Record<number, string> = {
-  1: 'ETH',
-  43114: 'AVAX',
-};
+import { createPublicClient, http, formatUnits, erc20Abi } from 'viem';
+import {
+  VIEM_CHAINS,
+  NATIVE_SYMBOLS,
+  getChainName,
+  getNativeSymbol,
+} from '@/lib/constants/blockchain';
+import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 
 // Token prices - placeholder (in production use real price oracle)
 const getTokenPrice = (symbol: string): number => {
@@ -126,8 +103,8 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
     console.error(`[BalanceService] Failed to fetch ${nativeSymbol} balance:`, error);
   }
 
-  // Get ERC20 token balances
-  const tokensForChain = TOKEN_ADDRESSES[chainId] || [];
+  // Get ERC20 token balances using TokenRegistry
+  const tokensForChain = TokenRegistry.getAllTokens(chainId).filter(t => !t.isNative);
 
   for (const token of tokensForChain) {
     try {
@@ -181,7 +158,7 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
     })),
     totalUsd: totalEquity,
     chainId,
-    chainName: chainId === 1 ? 'Ethereum' : 'Avalanche',
+    chainName: getChainName(chainId),
     lastUpdated: new Date().toISOString(),
   };
 

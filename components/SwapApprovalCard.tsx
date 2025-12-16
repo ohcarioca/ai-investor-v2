@@ -12,6 +12,12 @@ import type { SwapData, Token } from '@/types/swap';
 import { sendSwapWebhook } from '@/lib/webhook-service';
 import { buildWebhookPayload } from '@/lib/webhook-utils';
 import WebhookLoadingModal from './WebhookLoadingModal';
+import {
+  SUPPORTED_CHAIN_IDS,
+  getExplorerTxUrl,
+  getExplorerName,
+} from '@/lib/constants/blockchain';
+import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 
 interface SwapApprovalCardProps {
   swapData: SwapData;
@@ -53,48 +59,23 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   });
 
   // Check if we're on a supported network (Ethereum or Avalanche)
-  const supportedChainIds = [1, 43114];
-  const isCorrectNetwork = supportedChainIds.includes(chainId);
+  const isCorrectNetwork = SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number]);
 
-  // Get block explorer URL based on chain
-  const getExplorerUrl = (txHash: string): string => {
-    return chainId === 1
-      ? `https://etherscan.io/tx/${txHash}`
-      : `https://snowtrace.io/tx/${txHash}`;
-  };
-
-  const getExplorerName = (): string => {
-    return chainId === 1 ? 'Etherscan' : 'Snowtrace';
-  };
-
-  // Token addresses by chain
-  const TOKEN_ADDRESSES_BY_CHAIN: Record<number, Record<string, string>> = {
-    1: { // Ethereum
-      ETH: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-      USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      SIERRA: '0x6bf7788EAA948d9fFBA7E9bb386E2D3c9810e0fc',
-    },
-    43114: { // Avalanche
-      AVAX: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-      USDC: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
-      SIERRA: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7',
-    },
-  };
-
-  // Helper functions to map token symbols to addresses and decimals
+  // Helper functions to map token symbols to addresses and decimals using TokenRegistry
   const getTokenAddress = (symbol: string): string => {
-    const tokenMap = TOKEN_ADDRESSES_BY_CHAIN[chainId] || TOKEN_ADDRESSES_BY_CHAIN[1];
-    return tokenMap[symbol] || symbol;
+    try {
+      return TokenRegistry.getAddress(symbol, chainId);
+    } catch {
+      return symbol; // Return as-is if not found (might be an address already)
+    }
   };
 
   const getTokenDecimals = (symbol: string): number => {
-    const decimalsMap: Record<string, number> = {
-      ETH: 18,
-      AVAX: 18,
-      USDC: 6,
-      SIERRA: 6,
-    };
-    return decimalsMap[symbol] || 18;
+    try {
+      return TokenRegistry.getDecimals(symbol, chainId);
+    } catch {
+      return 18; // Default decimals
+    }
   };
 
   // Send webhook data after successful swap
@@ -481,12 +462,12 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
           </div>
           {swapTxHash && (
             <a
-              href={getExplorerUrl(swapTxHash)}
+              href={getExplorerTxUrl(chainId, swapTxHash)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
             >
-              View on {getExplorerName()}
+              View on {getExplorerName(chainId)}
               <ExternalLink className="w-4 h-4" />
             </a>
           )}
@@ -546,12 +527,12 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       {approvalTxHash && status !== 'approving' && (
         <div className="mt-3">
           <a
-            href={getExplorerUrl(approvalTxHash)}
+            href={getExplorerTxUrl(chainId, approvalTxHash)}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
           >
-            View approval transaction on {getExplorerName()}
+            View approval transaction on {getExplorerName(chainId)}
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>

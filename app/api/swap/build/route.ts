@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSwapDataDirect, CHAIN_INDEX_MAP } from '@/lib/okx-server';
-import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
-import { createPublicClient, http, erc20Abi, getAddress, Chain } from 'viem';
-import { avalanche, mainnet } from 'viem/chains';
-
-// Chain configurations
-const VIEM_CHAINS: Record<number, Chain> = {
-  1: mainnet,
-  43114: avalanche,
-};
-
-// Native token address
-const NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+import { getSwapDataDirect } from '@/lib/okx-server';
+import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
+import {
+  VIEM_CHAINS,
+  CHAIN_INDEX_MAP,
+  NATIVE_TOKEN_ADDRESS,
+  isNativeToken,
+} from '@/lib/constants/blockchain';
+import { validateSwapRequest } from '@/lib/middleware/wallet-validation';
+import { extractSwapTokenData, extractTransactionData } from '@/lib/utils/token-utils';
+import { getErrorMessage } from '@/lib/utils/error-handler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,47 +20,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { chainId, fromToken, toToken, amount, slippage, userAddress } = body;
 
-    // CRITICAL: Validate all required parameters
-    if (!chainId || !fromToken || !toToken || !amount || !userAddress) {
-      return NextResponse.json(
-        {
-          error:
-            'Missing required parameters. All swap parameters and wallet address are required.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // CRITICAL: Validate user wallet address (must be from connected wallet)
-    if (!isValidAddress(userAddress)) {
-      return NextResponse.json(
-        { error: 'Invalid wallet address format. Please check your wallet connection.' },
-        { status: 400 }
-      );
-    }
-
-    // Validate not a placeholder or example address
-    if (!isRealAddress(userAddress)) {
-      return NextResponse.json(
-        {
-          error:
-            'Cannot use placeholder or example addresses. This transaction must use your connected wallet.',
-        },
-        { status: 400 }
-      );
+    // Validate request using centralized middleware
+    const validation = validateSwapRequest({ userAddress, chainId, fromToken, toToken, amount });
+    if (!validation.valid && validation.response) {
+      return validation.response;
     }
 
     const chainIdNum = parseInt(chainId);
     const chainIndex = CHAIN_INDEX_MAP[chainIdNum];
-    if (!chainIndex) {
-      return NextResponse.json({ error: 'Unsupported chain' }, { status: 400 });
-    }
-
-    // Get viem chain for RPC calls
     const viemChain = VIEM_CHAINS[chainIdNum];
-    if (!viemChain) {
-      return NextResponse.json({ error: `Unsupported chain for RPC: ${chainId}` }, { status: 400 });
-    }
 
     // OKX REST API expects slippage as decimal string (e.g., "0.01" for 1%, "0.1" for 10%)
     // The slippage coming from chat/route.ts is already in decimal format (0.1 for 10%)
@@ -91,7 +57,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Check if fromToken is not native, verify balance
-    if (fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase()) {
+    if (!isNativeToken(fromToken)) {
       const publicClient = createPublicClient({
         chain: viemChain,
         transport: http(),
@@ -195,11 +161,7 @@ export async function POST(request: NextRequest) {
     // CRITICAL: Verify allowance against the ACTUAL router that will be used
     // This is the most accurate check because we use the router from the swap transaction
     // Skip this check if approval is pending (skipAllowanceCheck=true)
-    if (
-      !skipAllowanceCheck &&
-      fromToken.toLowerCase() !== NATIVE_TOKEN_ADDRESS.toLowerCase() &&
-      txData.to
-    ) {
+    if (!skipAllowanceCheck && !isNativeToken(fromToken) && txData.to) {
       const publicClient = createPublicClient({
         chain: viemChain,
         transport: http(),
@@ -241,45 +203,25 @@ export async function POST(request: NextRequest) {
             gasLimit: (txData.gas as string) || (txData.gasLimit as string),
           };
 
-          // Extract token data
-          const swapDataRecord = swapData as unknown as Record<string, unknown>;
-          const fromTokenData = (swapDataRecord.fromToken ||
-            swapDataRecord.fromTokenInfo ||
-            {}) as Record<string, unknown>;
-          const toTokenData = (swapDataRecord.toToken ||
-            swapDataRecord.toTokenInfo ||
-            {}) as Record<string, unknown>;
-          const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
-          const toDecimals = parseInt((toTokenData.decimal as string) || '18');
-          const toAmount = (swapDataRecord.toTokenAmount ||
-            swapDataRecord.toAmount ||
-            '0') as string;
-
-          let exchangeRate = (swapDataRecord.exchangeRate ||
-            swapDataRecord.price ||
-            '0') as string;
-          if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
-            const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
-            const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
-            exchangeRate = (toAmountFloat / fromAmountFloat).toString();
-          }
+          // Extract token data using centralized utility
+          const tokenData = extractSwapTokenData(swapData, amount);
 
           const quote = {
             fromToken: {
               address: fromToken,
-              symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN',
-              decimals: fromDecimals,
+              symbol: tokenData.fromSymbol,
+              decimals: tokenData.fromDecimals,
             },
             toToken: {
               address: toToken,
-              symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN',
-              decimals: toDecimals,
+              symbol: tokenData.toSymbol,
+              decimals: tokenData.toDecimals,
             },
             fromAmount: amount,
-            toAmount,
-            exchangeRate,
-            priceImpact: (swapDataRecord.priceImpactPercentage as string) || '0',
-            estimatedGas: (swapDataRecord.estimateGasFee as string) || '0',
+            toAmount: tokenData.toAmount,
+            exchangeRate: tokenData.exchangeRate,
+            priceImpact: tokenData.priceImpact,
+            estimatedGas: tokenData.estimatedGas,
           };
 
           return NextResponse.json({
@@ -314,48 +256,29 @@ export async function POST(request: NextRequest) {
       gasLimit: (txData.gas as string) || (txData.gasLimit as string),
     };
 
-    // Extract token data with flexible field names
-    const swapDataRecord = swapData as unknown as Record<string, unknown>;
-    const fromTokenData = (swapDataRecord.fromToken ||
-      swapDataRecord.fromTokenInfo ||
-      {}) as Record<string, unknown>;
-    const toTokenData = (swapDataRecord.toToken ||
-      swapDataRecord.toTokenInfo ||
-      {}) as Record<string, unknown>;
-
-    const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
-    const toDecimals = parseInt((toTokenData.decimal as string) || '18');
-    const toAmount = (swapDataRecord.toTokenAmount || swapDataRecord.toAmount || '0') as string;
-
-    // Calculate exchange rate if not provided
-    let exchangeRate = (swapDataRecord.exchangeRate || swapDataRecord.price || '0') as string;
-    if (exchangeRate === '0' && parseFloat(amount) > 0 && parseFloat(toAmount) > 0) {
-      // Exchange rate = toAmount / fromAmount (both in human-readable units)
-      const fromAmountFloat = parseFloat(amount) / Math.pow(10, fromDecimals);
-      const toAmountFloat = parseFloat(toAmount) / Math.pow(10, toDecimals);
-      exchangeRate = (toAmountFloat / fromAmountFloat).toString();
-    }
+    // Extract token data using centralized utility
+    const tokenData = extractSwapTokenData(swapData, amount);
 
     // Also return quote for display
     const quote = {
       fromToken: {
         address: fromToken,
-        symbol: (fromTokenData.tokenSymbol as string) || 'UNKNOWN',
-        decimals: fromDecimals,
-        name: (fromTokenData.tokenSymbol as string) || 'Unknown Token',
+        symbol: tokenData.fromSymbol,
+        decimals: tokenData.fromDecimals,
+        name: tokenData.fromSymbol || 'Unknown Token',
       },
       toToken: {
         address: toToken,
-        symbol: (toTokenData.tokenSymbol as string) || 'UNKNOWN',
-        decimals: toDecimals,
-        name: (toTokenData.tokenSymbol as string) || 'Unknown Token',
+        symbol: tokenData.toSymbol,
+        decimals: tokenData.toDecimals,
+        name: tokenData.toSymbol || 'Unknown Token',
       },
       fromAmount: amount,
-      toAmount,
+      toAmount: tokenData.toAmount,
       toAmountMin: '0', // Calculate min amount based on slippage
-      exchangeRate,
-      priceImpact: (swapDataRecord.priceImpactPercentage as string) || '0',
-      estimatedGas: (swapDataRecord.estimateGasFee as string) || '0',
+      exchangeRate: tokenData.exchangeRate,
+      priceImpact: tokenData.priceImpact,
+      estimatedGas: tokenData.estimatedGas,
       route: [],
     };
 
@@ -366,9 +289,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Build swap error:', error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to build swap transaction',
-      },
+      { error: getErrorMessage(error, 'Failed to build swap transaction') },
       { status: 500 }
     );
   }

@@ -1,55 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NATIVE_TOKEN_ADDRESS } from '@/lib/okx-server';
-import { createPublicClient, http, erc20Abi, getAddress, Chain } from 'viem';
-import { avalanche, mainnet } from 'viem/chains';
-import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
-
-// Chain configurations
-const VIEM_CHAINS: Record<number, Chain> = {
-  1: mainnet,
-  43114: avalanche,
-};
-
-// OKX DEX router addresses per chain
-// These are the actual OKX DEX aggregator routers that will be used for swaps
-const OKX_ROUTERS: Record<number, string> = {
-  1: '0xF6801D319497789f934ec7F83E142a9536312B08', // OKX DEX router on Ethereum
-  43114: '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f', // OKX DEX router on Avalanche
-};
+import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
+import {
+  VIEM_CHAINS,
+  OKX_ROUTERS,
+  NATIVE_TOKEN_ADDRESS,
+} from '@/lib/constants/blockchain';
+import { validateApprovalRequest } from '@/lib/middleware/wallet-validation';
+import { getErrorMessage } from '@/lib/utils/error-handler';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { chainId, tokenAddress, amount, userAddress } = body;
 
-    // CRITICAL: Validate all required parameters
-    if (!chainId || !tokenAddress || !amount || !userAddress) {
-      return NextResponse.json(
-        {
-          error:
-            'Missing required parameters. All approval parameters and wallet address are required.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // CRITICAL: Validate user wallet address (must be from connected wallet)
-    if (!isValidAddress(userAddress)) {
-      return NextResponse.json(
-        { error: 'Invalid wallet address format. Please check your wallet connection.' },
-        { status: 400 }
-      );
-    }
-
-    // Validate not a placeholder or example address
-    if (!isRealAddress(userAddress)) {
-      return NextResponse.json(
-        {
-          error:
-            'Cannot use placeholder or example addresses. Token approval must use your connected wallet.',
-        },
-        { status: 400 }
-      );
+    // Validate request using centralized middleware
+    const validation = validateApprovalRequest({ userAddress, chainId, tokenAddress, amount });
+    if (!validation.valid && validation.response) {
+      return validation.response;
     }
 
     // Native tokens don't need approval
@@ -64,21 +31,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Get chain configuration
+    // Get chain configuration (already validated by middleware)
     const chainIdNum = parseInt(chainId);
     const chain = VIEM_CHAINS[chainIdNum];
-    if (!chain) {
-      return NextResponse.json({ error: `Unsupported chain: ${chainId}` }, { status: 400 });
-    }
-
-    // Get router address for the chain
     const routerAddress = OKX_ROUTERS[chainIdNum];
-    if (!routerAddress) {
-      return NextResponse.json(
-        { error: `No router configured for chain: ${chainId}` },
-        { status: 400 }
-      );
-    }
 
     const spenderAddress = getAddress(routerAddress);
     console.log(`[Approval] Using router for chain ${chainIdNum}:`, spenderAddress);
@@ -151,9 +107,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Approval check error:', error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Failed to check approval',
-      },
+      { error: getErrorMessage(error, 'Failed to check approval') },
       { status: 500 }
     );
   }

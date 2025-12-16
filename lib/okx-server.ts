@@ -1,5 +1,9 @@
 import { OKXDexClient } from '@okx-dex/okx-dex-sdk';
 import crypto from 'crypto';
+import { sleep } from '@/lib/utils/retry';
+
+// Re-export blockchain constants for backwards compatibility
+export { CHAIN_INDEX_MAP, NATIVE_TOKEN_ADDRESS } from '@/lib/constants/blockchain';
 
 // Singleton pattern for OKX client
 let okxClient: OKXDexClient | null = null;
@@ -26,8 +30,7 @@ export function getOKXClient(): OKXDexClient {
   return okxClient;
 }
 
-// Helper to delay execution
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Using centralized sleep function from retry utils
 
 // Direct REST API call to OKX DEX v6 (same as OKX Web uses)
 // Updated from v5 to v6 API which uses different swap methods
@@ -94,7 +97,7 @@ export async function getSwapDataDirect(params: {
   // Handle rate limiting with retry
   if (data.code === '50011' && retryCount < 3) {
     console.log(`[OKX v6 API] Rate limited, retrying in ${(retryCount + 1) * 1000}ms...`);
-    await delay((retryCount + 1) * 1000);
+    await sleep((retryCount + 1) * 1000);
     return getSwapDataDirect(params, retryCount + 1);
   }
 
@@ -156,20 +159,9 @@ export async function getQuoteDataDirect(params: {
 
   // Handle rate limiting with retry
   if (data.code === '50011' && retryCount < 3) {
-    await delay((retryCount + 1) * 1000);
+    await sleep((retryCount + 1) * 1000);
     return getQuoteDataDirect(params, retryCount + 1);
   }
 
   return data;
 }
-
-// Chain ID mapping for OKX DEX
-export const CHAIN_INDEX_MAP: Record<number, string> = {
-  43114: '43114', // Avalanche C-Chain
-  1: '1', // Ethereum
-  8453: '8453', // Base
-};
-
-// Native token placeholder address (OKX convention)
-export const NATIVE_TOKEN_ADDRESS =
-  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
