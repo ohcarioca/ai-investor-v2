@@ -75,55 +75,60 @@ export default function PortfolioOverview() {
         </div>
       )}
 
-      {/* Total Available for Investment Card */}
-      <div className="bg-gray-50 rounded-xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600 font-medium">Total Available for Investment (USDC)</span>
-          <button className="p-1 hover:bg-gray-200 rounded transition-colors" aria-label="Copy balance">
-            <Copy className="w-4 h-4 text-purple-600" />
-          </button>
-        </div>
-        <div className="text-2xl font-bold text-gray-900">
-          {isLoading ? (
-            <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
-          ) : (
-            `$${totalUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          )}
-        </div>
-        {balance && (
-          <div className="text-xs text-gray-500 mt-2">
-            Last updated: {new Date(balance.lastUpdated).toLocaleTimeString()}
+      {/* Balance Cards - Only show when wallet is connected */}
+      {isConnected && (
+        <>
+          {/* Total Available for Investment Card */}
+          <div className="bg-gray-50 rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-600 font-medium">Total Available for Investment (USDC)</span>
+              <button className="p-1 hover:bg-gray-200 rounded transition-colors" aria-label="Copy balance">
+                <Copy className="w-4 h-4 text-purple-600" />
+              </button>
+            </div>
+            <div className="text-2xl font-bold text-gray-900">
+              {isLoading ? (
+                <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
+              ) : (
+                `$${totalUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
+            </div>
+            {balance && (
+              <div className="text-xs text-gray-500 mt-2">
+                Last updated: {new Date(balance.lastUpdated).toLocaleTimeString()}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Total Invested Card */}
-      <div className="bg-purple-50 rounded-xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-purple-700 font-medium">Total Invested</span>
-        </div>
-        <div className="text-2xl font-bold text-purple-900">
-          {isLoading || isLoadingInvestment ? (
-            <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
-          ) : (
-            `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-          )}
-        </div>
-      </div>
+          {/* Total Invested Card */}
+          <div className="bg-purple-50 rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-purple-700 font-medium">Total Invested</span>
+            </div>
+            <div className="text-2xl font-bold text-purple-900">
+              {isLoading || isLoadingInvestment ? (
+                <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
+              ) : (
+                `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              )}
+            </div>
+          </div>
 
-      {/* APY Card */}
-      <div className="bg-green-50 rounded-xl p-5 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-green-700 font-medium">APY</span>
-        </div>
-        <div className="text-2xl font-bold text-green-900">
-          {isLoadingInvestment ? (
-            <div className="animate-pulse bg-green-300 h-8 w-24 rounded" />
-          ) : (
-            `${currentAPY.toFixed(2)}%`
-          )}
-        </div>
-      </div>
+          {/* APY Card */}
+          <div className="bg-green-50 rounded-xl p-5 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-green-700 font-medium">APY</span>
+            </div>
+            <div className="text-2xl font-bold text-green-900">
+              {isLoadingInvestment ? (
+                <div className="animate-pulse bg-green-300 h-8 w-24 rounded" />
+              ) : (
+                `${currentAPY.toFixed(2)}%`
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 }
