@@ -127,6 +127,13 @@ export async function POST(req: NextRequest) {
           // Handle swap data (from confirm_* tools)
           if (data.swap) {
             swapDataResult = data.swap;
+            // Debug: Log swap data being passed to frontend
+            const swapData = data.swap as Record<string, unknown>;
+            console.log('[Chat API] Passing swap data to frontend:', {
+              needsApproval: swapData.needsApproval,
+              hasApprovalTx: !!swapData.approvalTransaction,
+              hasSwapTx: !!swapData.swapTransaction,
+            });
           }
 
           // Handle chart data (from generate_chart tool)

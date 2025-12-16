@@ -23,6 +23,15 @@ type SwapStatus = 'pending' | 'approving' | 'approved' | 'swapping' | 'confirmin
 export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprovalCardProps) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
+
+  // Debug log to trace needsApproval flow
+  console.log('[SwapApprovalCard] Received swapData:', {
+    fromToken: swapData.fromToken,
+    toToken: swapData.toToken,
+    needsApproval: swapData.needsApproval,
+    hasApprovalTransaction: !!swapData.approvalTransaction,
+    hasSwapTransaction: !!swapData.swapTransaction,
+  });
   const { sendTransaction, data: txData, reset } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txData,
@@ -152,7 +161,8 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
             priceImpact: swapData.priceImpact,
             estimatedGas: swapData.estimatedGas,
             route: [],
-          }
+          },
+          chainId // Pass chainId for correct blockchain name in webhook
         );
 
         const result = await sendSwapWebhook(payload);

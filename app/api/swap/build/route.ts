@@ -163,10 +163,26 @@ export async function POST(request: NextRequest) {
 
     console.log('[Swap Build] Swap Data:', JSON.stringify(swapData, null, 2));
 
+    // Debug: Log all keys in swapData to find transaction field
+    const swapDataKeys = Object.keys(swapData as object);
+    console.log('[Swap Build] SwapData keys:', swapDataKeys);
+
     // Extract transaction data with flexible field access
-    const txData = (swapData.tx ||
-      (swapData as unknown as Record<string, unknown>).transaction ||
+    // OKX v6 API may use different field names
+    const swapDataObj = swapData as unknown as Record<string, unknown>;
+    const txData = (swapDataObj.tx ||
+      swapDataObj.transaction ||
+      swapDataObj.txData ||
+      swapDataObj.routerResult ||
       {}) as Record<string, unknown>;
+
+    console.log('[Swap Build] txData extracted:', {
+      hasTx: !!swapDataObj.tx,
+      hasTransaction: !!swapDataObj.transaction,
+      hasTxData: !!swapDataObj.txData,
+      hasRouterResult: !!swapDataObj.routerResult,
+      txDataKeys: Object.keys(txData),
+    });
 
     console.log('[Swap Build] ===== TRANSACTION DETAILS =====');
     console.log('[Swap Build] Target contract (to):', txData.to);

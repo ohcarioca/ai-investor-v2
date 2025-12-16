@@ -1,6 +1,12 @@
-import type { SwapWebhookPayload, SwapExtraInfo } from '@/types/webhook';
+import type { SwapWebhookPayload, SwapExtraInfo, SupportedBlockchain } from '@/types/webhook';
 import type { Token, SwapQuote } from '@/types/swap';
 import { calculatePriceOutUsd } from './webhook-service';
+
+// Chain ID to blockchain name mapping
+const CHAIN_TO_BLOCKCHAIN: Record<number, SupportedBlockchain> = {
+  1: 'Ethereum',
+  43114: 'Avalanche',
+};
 
 /**
  * Generate UUID v4
@@ -31,7 +37,8 @@ export function buildWebhookPayload(
   toAmount: string, // Base units (wei)
   txHash: string,
   slippage: number,
-  quote?: SwapQuote
+  quote?: SwapQuote,
+  chainId: number = 43114 // Default to Avalanche for backwards compatibility
 ): SwapWebhookPayload {
   // Parse amounts as base units first
   const fromAmountBase = parseFloat(fromAmount);
@@ -41,12 +48,13 @@ export function buildWebhookPayload(
   const amountInDecimal = fromAmountBase / Math.pow(10, fromToken.decimals);
   const amountOutDecimal = toAmountBase / Math.pow(10, toToken.decimals);
 
-  // Calculate USD price
+  // Calculate USD price (chain-aware)
   const priceOutUsd = calculatePriceOutUsd(
     { address: fromToken.address, decimals: fromToken.decimals },
     { address: toToken.address, decimals: toToken.decimals },
     fromAmount,
-    toAmount
+    toAmount,
+    chainId
   );
 
   // Calculate cost basis
@@ -61,6 +69,9 @@ export function buildWebhookPayload(
     route: quote?.route || [],
   };
 
+  // Get blockchain name from chainId
+  const blockchain = CHAIN_TO_BLOCKCHAIN[chainId] || 'Avalanche';
+
   const payload: SwapWebhookPayload = {
     id: generateUUID(),
     wallet_address: walletAddress,
@@ -72,7 +83,7 @@ export function buildWebhookPayload(
     cost_basis_usd: costBasisUsd,
     provider: 'okx',
     tx_hash: txHash,
-    blockchain: 'Avalanche',
+    blockchain,
     timestamp: new Date().toISOString(),
     status: 'SUCCESS',
     extra_info: extraInfo,

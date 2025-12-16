@@ -9,6 +9,9 @@ export interface SwapExtraInfo {
   route?: SwapRoute[];
 }
 
+// Supported blockchains
+export type SupportedBlockchain = 'Ethereum' | 'Avalanche';
+
 // Complete webhook payload structure
 export interface SwapWebhookPayload {
   id: string; // UUID v4
@@ -21,7 +24,7 @@ export interface SwapWebhookPayload {
   cost_basis_usd: number | null; // amount_out × price_out_usd
   provider: 'okx';
   tx_hash: string;
-  blockchain: 'Avalanche';
+  blockchain: SupportedBlockchain;
   timestamp: string; // ISO 8601
   status: 'SUCCESS';
   extra_info: SwapExtraInfo;

@@ -40,6 +40,7 @@ export function useSwapExecution() {
     toAmount: string;
     slippage: number;
     quote?: SwapQuote;
+    chainId: number;
   } | null>(null);
 
   // Execute swap
@@ -92,7 +93,7 @@ export function useSwapExecution() {
 
         const { transaction, quote } = await response.json();
 
-        // Store swap data for webhook
+        // Store swap data for webhook (including chainId)
         setLastSwapData({
           fromToken,
           toToken,
@@ -100,6 +101,7 @@ export function useSwapExecution() {
           toAmount: quote.toAmount,
           slippage,
           quote,
+          chainId: chain.id,
         });
 
         console.log('Executing swap transaction:', {
@@ -157,7 +159,8 @@ export function useSwapExecution() {
         lastSwapData.toAmount,
         txData,
         lastSwapData.slippage,
-        lastSwapData.quote
+        lastSwapData.quote,
+        lastSwapData.chainId
       );
 
       const result = await sendSwapWebhook(payload);

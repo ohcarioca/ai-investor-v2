@@ -152,27 +152,44 @@ export class ConfirmSwapTool extends BaseTool {
         TokenRegistry.getDecimals(toToken, chainId)
       );
 
+      // Debug: Log full result from TransactionBuilder
+      console.log('[ConfirmSwapTool] TransactionBuilder result:', {
+        success: result.success,
+        needsApproval: result.needsApproval,
+        hasApprovalTx: !!result.approvalTransaction,
+        hasSwapTx: !!result.swapTransaction,
+        approvalTx: result.approvalTransaction,
+      });
+
       this.log('Swap confirmed and transactions built successfully', {
         chainId,
         needsApproval: result.needsApproval,
+      });
+
+      const swapResult = {
+        fromToken,
+        toToken,
+        fromAmount: amount,
+        toAmount,
+        exchangeRate: result.quote!.exchangeRate,
+        priceImpact: result.quote!.priceImpact,
+        estimatedGas: result.quote!.estimatedGas,
+        needsApproval: result.needsApproval,
+        approvalTransaction: result.approvalTransaction,
+        swapTransaction: result.swapTransaction,
+      };
+
+      // Debug: Log what we're returning
+      console.log('[ConfirmSwapTool] Returning swap result:', {
+        needsApproval: swapResult.needsApproval,
+        hasApprovalTx: !!swapResult.approvalTransaction,
       });
 
       return {
         success: true,
         data: {
           confirmed: true,
-          swap: {
-            fromToken,
-            toToken,
-            fromAmount: amount,
-            toAmount,
-            exchangeRate: result.quote!.exchangeRate,
-            priceImpact: result.quote!.priceImpact,
-            estimatedGas: result.quote!.estimatedGas,
-            needsApproval: result.needsApproval,
-            approvalTransaction: result.approvalTransaction,
-            swapTransaction: result.swapTransaction,
-          },
+          swap: swapResult,
         },
       };
     } catch (error) {

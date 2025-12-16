@@ -106,6 +106,15 @@ export function useChat() {
 
       const data: ChatResponse = await response.json();
 
+      // Debug: Log the full API response
+      if (data.swapData) {
+        console.log('[useChat] Chat API response swapData:', {
+          needsApproval: data.swapData.needsApproval,
+          hasApprovalTx: !!data.swapData.approvalTransaction,
+          hasSwapTx: !!data.swapData.swapTransaction,
+        });
+      }
+
       if (!data.response) {
         const userLang = navigator.language.toLowerCase();
         let errorMsg = 'Invalid server response.'; // Default English

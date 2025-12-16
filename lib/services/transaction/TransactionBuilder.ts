@@ -118,6 +118,8 @@ export class TransactionBuilder {
       }
 
       // 6. Build swap transaction
+      // IMPORTANT: Never skip allowance check in build API - it uses the correct router
+      // from the OKX v6 API response (txData.to), while checkApproval uses a hardcoded router
       const buildResult = await this.buildSwap({
         chainId,
         fromToken: fromTokenAddress,
@@ -125,7 +127,16 @@ export class TransactionBuilder {
         amount: baseAmount.toString(),
         slippage,
         userAddress: params.userAddress,
-        skipAllowanceCheck: needsApproval,
+        skipAllowanceCheck: false, // Always check - build API has correct router
+      });
+
+      console.log('[TransactionBuilder] Build result received:', {
+        success: buildResult.success,
+        hasTransaction: !!buildResult.transaction,
+        needsApproval: buildResult.needsApproval,
+        hasApprovalTx: !!buildResult.approvalTransaction,
+        approvalDetails: buildResult.approvalDetails,
+        error: buildResult.error,
       });
 
       if (!buildResult.success) {
@@ -137,8 +148,10 @@ export class TransactionBuilder {
         };
       }
 
-      // Handle case where build API detected insufficient allowance
-      const finalNeedsApproval = buildResult.needsApproval || needsApproval;
+      // IMPORTANT: Prioritize build API's approval data - it uses the correct router
+      // from OKX v6 API response, while checkApproval uses hardcoded router
+      const finalNeedsApproval = buildResult.needsApproval ?? needsApproval;
+      // Always prefer build API's approval transaction (has correct router)
       const finalApprovalTx = buildResult.approvalTransaction || approvalTx;
 
       if (buildResult.needsApproval) {
@@ -146,7 +159,12 @@ export class TransactionBuilder {
           currentAllowance: buildResult.approvalDetails?.currentAllowance,
           required: buildResult.approvalDetails?.requiredAmount,
           router: buildResult.approvalDetails?.router,
+          note: 'Using build API approval (correct router from OKX v6)',
         });
+      } else if (needsApproval && !buildResult.needsApproval) {
+        // checkApproval said needed, but build API said not needed
+        // Trust build API - it has the actual router being used
+        console.log('[TransactionBuilder] Build API says approval NOT needed (correct router)');
       }
 
       console.log('[TransactionBuilder] Swap built successfully:', {

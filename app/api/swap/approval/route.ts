@@ -11,10 +11,9 @@ const VIEM_CHAINS: Record<number, Chain> = {
 };
 
 // OKX DEX router addresses per chain
-// Note: For Ethereum, we'll extract the router from the swap transaction response
-// as OKX may use different routers. Using a known aggregator router as fallback.
+// These are the actual OKX DEX aggregator routers that will be used for swaps
 const OKX_ROUTERS: Record<number, string> = {
-  1: '0x1111111254EEB25477B68fb85Ed929f73A960582', // 1inch v5 router (common aggregator)
+  1: '0xF6801D319497789f934ec7F83E142a9536312B08', // OKX DEX router on Ethereum
   43114: '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f', // OKX DEX router on Avalanche
 };
 

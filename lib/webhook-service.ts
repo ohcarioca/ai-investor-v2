@@ -64,6 +64,12 @@ export async function sendSwapWebhook(
   };
 }
 
+// USDC addresses per chain
+const USDC_ADDRESSES: Record<number, string> = {
+  1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',    // Ethereum USDC
+  43114: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // Avalanche USDC
+};
+
 /**
  * Calculate USD price for the output token
  * Uses USDC as reference (6 decimals)
@@ -72,9 +78,10 @@ export function calculatePriceOutUsd(
   fromToken: { address: string; decimals: number },
   toToken: { address: string; decimals: number },
   fromAmount: string, // Base units
-  toAmount: string // Base units
+  toAmount: string, // Base units
+  chainId: number = 43114 // Default to Avalanche for backwards compatibility
 ): number | null {
-  const USDC_ADDRESS = '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E';
+  const USDC_ADDRESS = USDC_ADDRESSES[chainId] || USDC_ADDRESSES[43114];
 
   // Convert to human-readable amounts
   const fromAmountHuman = parseFloat(fromAmount) / Math.pow(10, fromToken.decimals);
