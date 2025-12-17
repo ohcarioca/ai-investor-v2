@@ -46,14 +46,14 @@ export class WithdrawTool extends BaseTool {
 
   protected validateSpecificParams(
     params: Record<string, unknown>,
-    context: ToolContext
+    _context: ToolContext
   ): ValidationResult {
     return this.validateAmount(params.amount);
   }
 
   protected async executeImpl(
     params: Record<string, unknown>,
-    context: ToolContext
+    _context: ToolContext
   ): Promise<ToolResult<WithdrawResult>> {
     const amount = params.amount as string;
     const fromToken = 'SIERRA';

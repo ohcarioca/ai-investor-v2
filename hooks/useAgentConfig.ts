@@ -25,7 +25,6 @@ import {
   getTimeout,
   isCachingEnabled,
   getCacheDuration,
-  type AgentConfig,
 } from '@/lib/config';
 
 /**

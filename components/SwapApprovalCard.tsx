@@ -62,21 +62,21 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   const isCorrectNetwork = SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number]);
 
   // Helper functions to map token symbols to addresses and decimals using TokenRegistry
-  const getTokenAddress = (symbol: string): string => {
+  const getTokenAddress = useCallback((symbol: string): string => {
     try {
       return TokenRegistry.getAddress(symbol, chainId);
     } catch {
       return symbol; // Return as-is if not found (might be an address already)
     }
-  };
+  }, [chainId]);
 
-  const getTokenDecimals = (symbol: string): number => {
+  const getTokenDecimals = useCallback((symbol: string): number => {
     try {
       return TokenRegistry.getDecimals(symbol, chainId);
     } catch {
       return 18; // Default decimals
     }
-  };
+  }, [chainId]);
 
   // Send webhook data after successful swap
   const sendWebhookData = useCallback(
@@ -174,7 +174,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         });
       }
     },
-    [address, swapData, onSwapSuccess]
+    [address, swapData, onSwapSuccess, chainId, getTokenAddress, getTokenDecimals]
   );
 
   // Rebuild swap transaction after approval is confirmed
@@ -223,7 +223,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       console.error('[SwapApprovalCard] Error rebuilding swap:', error);
       return null;
     }
-  }, [address, chainId, swapData]);
+  }, [address, chainId, swapData, getTokenAddress, getTokenDecimals]);
 
   // Handle approval
   const handleApprove = useCallback(async () => {

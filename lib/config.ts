@@ -473,7 +473,7 @@ export function getTimeout(operation: keyof AgentConfig['api']['timeouts']): num
 /**
  * Check if caching is enabled for specific resource
  */
-export function isCachingEnabled(resource?: 'quote' | 'balance' | 'price'): boolean {
+export function isCachingEnabled(_resource?: 'quote' | 'balance' | 'price'): boolean {
   if (!config.api.caching.enabled) {
     return false;
   }

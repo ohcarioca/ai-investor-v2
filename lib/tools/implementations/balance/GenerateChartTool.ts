@@ -8,7 +8,6 @@ import {
   ToolContext,
   ToolResult,
   ToolDefinition,
-  ChartResult,
   ChartConfig,
 } from '../../base/types';
 

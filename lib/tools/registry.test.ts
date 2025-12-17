@@ -33,7 +33,7 @@ class MockTool implements ITool {
 
   async execute(
     params: Record<string, unknown>,
-    context: ToolContext
+    _context: ToolContext
   ): Promise<ToolResult> {
     return {
       success: true,

@@ -9,7 +9,6 @@ import {
   VIEM_CHAINS,
   NATIVE_SYMBOLS,
   getChainName,
-  getNativeSymbol,
 } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 

@@ -5,7 +5,7 @@
  */
 
 import { TokenRegistry } from '../token/TokenRegistry';
-import { QuoteRequest, QuoteResponse } from '../../tools/base/types';
+import type { QuoteRequest } from '../../tools/base/types';
 
 export interface SwapQuote {
   fromAmount: string;

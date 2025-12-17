@@ -4,11 +4,10 @@ import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
 import {
   VIEM_CHAINS,
   CHAIN_INDEX_MAP,
-  NATIVE_TOKEN_ADDRESS,
   isNativeToken,
 } from '@/lib/constants/blockchain';
 import { validateSwapRequest } from '@/lib/middleware/wallet-validation';
-import { extractSwapTokenData, extractTransactionData } from '@/lib/utils/token-utils';
+import { extractSwapTokenData } from '@/lib/utils/token-utils';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 
 export async function POST(request: NextRequest) {

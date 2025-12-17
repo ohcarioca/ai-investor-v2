@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode, useSyncExternalStore } from 'react';
 
 // Supported chain IDs
 export const CHAIN_IDS = {
@@ -37,21 +37,27 @@ const NetworkContext = createContext<NetworkContextType | null>(null);
 
 const STORAGE_KEY = 'preferred_network';
 
-export function NetworkProvider({ children }: { children: ReactNode }) {
-  const [selectedChainId, setSelectedChainIdState] = useState<SupportedChainId>(CHAIN_IDS.ETHEREUM);
-  const [isHydrated, setIsHydrated] = useState(false);
+// Helper to detect hydration using useSyncExternalStore
+const emptySubscribe = () => () => {};
+const getServerSnapshot = () => false;
+const getClientSnapshot = () => true;
 
-  // Load from localStorage on mount
-  useEffect(() => {
+export function NetworkProvider({ children }: { children: ReactNode }) {
+  // Use useSyncExternalStore to detect hydration without causing cascading renders
+  const isHydrated = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+
+  // Initialize state from localStorage synchronously to avoid cascading renders
+  const [selectedChainId, setSelectedChainIdState] = useState<SupportedChainId>(() => {
+    if (typeof window === 'undefined') return CHAIN_IDS.ETHEREUM;
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = parseInt(stored);
       if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE) {
-        setSelectedChainIdState(parsed);
+        return parsed;
       }
     }
-    setIsHydrated(true);
-  }, []);
+    return CHAIN_IDS.ETHEREUM;
+  });
 
   // Save to localStorage when changed
   const setSelectedChainId = useCallback((chainId: SupportedChainId) => {

@@ -1,31 +1,18 @@
 'use client';
 
 import { Copy, RefreshCw, Wallet } from 'lucide-react';
-import { useBalance, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
 
 export default function PortfolioOverview() {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
   const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 30000);
-  const { address } = useAccount();
+  useAccount();
 
   // Calculate USDC balance only for Total Balance display
   const usdcBalance = balance?.balances.find(b => b.currency === 'USDC');
   const totalUSDC = usdcBalance?.usdValue || 0;
-
-  // Get SIERRA balance directly using Wagmi's useBalance (same as modal)
-  const { data: sierraBalanceData } = useBalance({
-    address,
-    token: '0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7' as `0x${string}`, // SIERRA token address
-    query: {
-      enabled: !!address && isConnected,
-    },
-  });
-
-  const sierraAmount = sierraBalanceData
-    ? parseFloat(sierraBalanceData.formatted)
-    : 0;
 
   // Calculate SIERRA value in USD (get from balance data)
   const sierraBalance = balance?.balances.find(b => b.currency === 'SIERRA');

@@ -160,8 +160,8 @@ export abstract class BaseTool implements ITool {
    * Default implementation does nothing
    */
   protected validateSpecificParams(
-    params: Record<string, unknown>,
-    context: ToolContext
+    _params: Record<string, unknown>,
+    _context: ToolContext
   ): ValidationResult {
     return { isValid: true };
   }

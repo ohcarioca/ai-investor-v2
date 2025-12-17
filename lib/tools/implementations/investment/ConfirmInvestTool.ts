@@ -46,7 +46,7 @@ export class ConfirmInvestTool extends BaseTool {
 
   protected validateSpecificParams(
     params: Record<string, unknown>,
-    context: ToolContext
+    _context: ToolContext
   ): ValidationResult {
     return this.validateAmount(params.amount);
   }
