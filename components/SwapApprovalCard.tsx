@@ -227,7 +227,8 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       
       console.log('[SwapApprovalCard] Using slippage:', slippageDecimal, 'for tokens:', swapData.fromToken, '->', swapData.toToken);
 
-      const response = await fetch('/api/swap/build', {
+      // Skip allowance check when rebuilding after approval - we've already approved
+      const response = await fetch('/api/swap/build?skipAllowanceCheck=true', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
