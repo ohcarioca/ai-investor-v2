@@ -91,12 +91,14 @@ export default function Home() {
                 icon="💰"
                 title="Invest in Funds"
                 description="Allocate your USDT/USDC to growth, stable, or high-yield funds"
+                onClick={() => sendMessage('I want to invest in funds')}
               />
 
               <FeatureCard
-                icon="📊"
-                title="Reports & Receipts"
-                description="Generate transaction receipts, APY charts, and balance reports"
+                icon="❓"
+                title="Quick Start Guide"
+                description="Learn how to use Kira, check FAQs, and get help with common questions"
+                onClick={() => sendMessage('Show me a quick start guide and FAQ')}
               />
             </div>
           </div>

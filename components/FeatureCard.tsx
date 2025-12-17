@@ -4,11 +4,16 @@ interface FeatureCardProps {
   icon: ReactNode;
   title: string;
   description: string;
+  onClick?: () => void;
 }
 
-export default function FeatureCard({ icon, title, description }: FeatureCardProps) {
+export default function FeatureCard({ icon, title, description, onClick }: FeatureCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all cursor-pointer group">
+    <button
+      type="button"
+      onClick={onClick}
+      className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-purple-300 transition-all cursor-pointer group text-left w-full"
+    >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 text-2xl mt-1">
           {icon}
@@ -22,6 +27,6 @@ export default function FeatureCard({ icon, title, description }: FeatureCardPro
           </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
