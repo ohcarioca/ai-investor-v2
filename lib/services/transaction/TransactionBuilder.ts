@@ -148,12 +148,16 @@ export class TransactionBuilder {
         };
       }
 
-      // Determine if approval is needed
-      const finalNeedsApproval = buildResult.needsApproval ?? needsApproval;
-
       // FIXED: Always use approval transaction from /api/swap/approval (uses our fixed router)
       // The build API may return a different router from OKX response
       const finalApprovalTx = approvalTx || buildResult.approvalTransaction;
+
+      // CRITICAL: Determine if approval is needed
+      // If any source says approval is needed OR if status is undefined, assume approval is needed
+      // This is a safety measure to prevent swaps without proper approval
+      const finalNeedsApproval = buildResult.needsApproval === true ||
+                                  needsApproval === true ||
+                                  (buildResult.needsApproval === undefined && needsApproval === undefined && !!finalApprovalTx);
 
       if (finalNeedsApproval) {
         console.log('[TransactionBuilder] Approval needed - using fixed router:', {

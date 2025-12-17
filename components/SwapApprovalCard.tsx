@@ -40,6 +40,27 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     hasApprovalTransaction: !!swapData.approvalTransaction,
     hasSwapTransaction: !!swapData.swapTransaction,
   });
+
+  // CRITICAL: Determine if approval is needed
+  // If needsApproval is undefined, we MUST check/require approval to be safe
+  // This prevents swaps from executing without proper approval verification
+  const requiresApproval = useMemo(() => {
+    // If explicitly set to false, no approval needed (native token or already approved)
+    if (swapData.needsApproval === false) {
+      return false;
+    }
+    // If true OR undefined (unknown state), require approval to be safe
+    // Having an approvalTransaction also indicates approval is needed
+    return swapData.needsApproval === true ||
+           swapData.needsApproval === undefined ||
+           !!swapData.approvalTransaction;
+  }, [swapData.needsApproval, swapData.approvalTransaction]);
+
+  console.log('[SwapApprovalCard] Approval requirement:', {
+    originalNeedsApproval: swapData.needsApproval,
+    computedRequiresApproval: requiresApproval,
+  });
+
   const { sendTransaction, data: txData, reset } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txData,
@@ -77,9 +98,9 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       swapData.toToken
     );
 
-    // If needs approval, add approval gas
+    // If needs approval (use requiresApproval for safety), add approval gas
     let totalGas = swapGasWithMargin;
-    if (swapData.needsApproval) {
+    if (requiresApproval) {
       const { gasLimit: approvalGas } = gasEstimator.estimateApprovalGas();
       totalGas = totalGas + approvalGas;
     }
@@ -89,7 +110,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     // Use a default price if not available (ETH ~$3500, AVAX ~$35)
     const nativePrice = chainId === 43114 ? 35 : 3500;
     return costEth * nativePrice;
-  }, [optimizedGas, swapData, gasEstimator, chainId]);
+  }, [optimizedGas, swapData, gasEstimator, chainId, requiresApproval]);
 
   // Helper functions to map token symbols to addresses and decimals using TokenRegistry
   const getTokenAddress = useCallback((symbol: string): string => {
@@ -297,6 +318,18 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   const handleSwap = useCallback(async () => {
     if (!address) return;
 
+    // CRITICAL SAFETY CHECK: If approval was required but not completed, block the swap
+    if (requiresApproval && status !== 'approved') {
+      console.error('[SwapApprovalCard] BLOCKED: Attempting swap without approval!', {
+        requiresApproval,
+        status,
+        approvalTxHash,
+      });
+      setStatus('error');
+      setError('Token approval required before swapping. Please approve first.');
+      return;
+    }
+
     setStatus('swapping');
     setError(null);
 
@@ -371,7 +404,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to execute swap');
     }
-  }, [swapData.swapTransaction, swapData.fromToken, swapData.toToken, address, sendTransaction, rebuildSwapTransaction, gasEstimator, optimizedGas]);
+  }, [swapData.swapTransaction, swapData.fromToken, swapData.toToken, address, sendTransaction, rebuildSwapTransaction, gasEstimator, optimizedGas, requiresApproval, status, approvalTxHash]);
 
   // Handle transaction status updates
   useEffect(() => {
@@ -490,7 +523,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         <div className="flex justify-between items-center pt-2 border-t border-gray-100">
           <span className="text-sm text-gray-600">
             Est. Network Fee:
-            {swapData.needsApproval && (
+            {requiresApproval && (
               <span className="text-xs text-gray-400 ml-1">(incl. approval)</span>
             )}
           </span>
@@ -573,10 +606,12 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
 
       {/* Action Buttons */}
       <div className="flex gap-2">
-        {swapData.needsApproval && (status === 'pending' || status === 'approving') && (
+        {/* CRITICAL: Use requiresApproval instead of swapData.needsApproval
+            This ensures approval is ALWAYS requested when needsApproval is undefined */}
+        {requiresApproval && (status === 'pending' || status === 'approving') && (
           <button
             onClick={handleApprove}
-            disabled={isConfirming || status === 'approving'}
+            disabled={isConfirming || status === 'approving' || !swapData.approvalTransaction}
             className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             {status === 'approving' && isConfirming ? (
@@ -584,13 +619,19 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Approving...
               </>
+            ) : !swapData.approvalTransaction ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                Loading approval...
+              </>
             ) : (
               `Approve ${swapData.fromToken}`
             )}
           </button>
         )}
 
-        {(!swapData.needsApproval || status === 'approved') && status !== 'confirming' && !hasNotified && (
+        {/* Only show Swap button when approval is explicitly NOT required OR already approved */}
+        {(!requiresApproval || status === 'approved') && status !== 'confirming' && !hasNotified && (
           <button
             onClick={handleSwap}
             disabled={isConfirming || status === 'swapping'}
@@ -610,7 +651,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         {status === 'error' && (
           <button
             onClick={() => {
-              setStatus(swapData.needsApproval && !approvalTxHash ? 'pending' : 'approved');
+              setStatus(requiresApproval && !approvalTxHash ? 'pending' : 'approved');
               setError(null);
             }}
             className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"

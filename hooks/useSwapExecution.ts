@@ -78,6 +78,50 @@ export function useSwapExecution() {
           parseFloat(amount) * Math.pow(10, fromToken.decimals)
         ).toFixed(0);
 
+        // CRITICAL: Check approval status BEFORE building swap
+        // This prevents executing swaps without proper token approval
+        const isNativeToken = fromToken.address === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE';
+
+        if (!isNativeToken) {
+          console.log('[useSwapExecution] Checking approval before swap...');
+
+          const approvalResponse = await fetch('/api/swap/approval', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chainId: chain.id,
+              tokenAddress: fromToken.address,
+              amount: amountInBaseUnits,
+              userAddress: address,
+            }),
+          });
+
+          if (approvalResponse.ok) {
+            const approvalData = await approvalResponse.json();
+
+            // If not approved or status is undefined, block the swap
+            if (approvalData.status?.isApproved !== true) {
+              console.error('[useSwapExecution] Token not approved! Blocking swap.', {
+                isApproved: approvalData.status?.isApproved,
+                currentAllowance: approvalData.status?.currentAllowance,
+                requiredAllowance: approvalData.status?.requiredAllowance,
+              });
+              throw new Error(
+                `Token ${fromToken.symbol} not approved. Please approve the token before swapping.`
+              );
+            }
+
+            console.log('[useSwapExecution] Approval verified:', {
+              isApproved: approvalData.status.isApproved,
+              currentAllowance: approvalData.status.currentAllowance,
+            });
+          } else {
+            // If we can't verify approval, block the swap to be safe
+            console.error('[useSwapExecution] Could not verify approval status. Blocking swap.');
+            throw new Error('Could not verify token approval. Please try again.');
+          }
+        }
+
         // Build swap transaction
         const response = await fetch('/api/swap/build', {
           method: 'POST',
