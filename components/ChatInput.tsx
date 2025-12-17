@@ -6,9 +6,11 @@ import { Paperclip, Send } from 'lucide-react';
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
   isLoading: boolean;
+  sidebarWidth?: number;
+  isLargeScreen?: boolean;
 }
 
-export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) {
+export default function ChatInput({ onSendMessage, isLoading, sidebarWidth = 384, isLargeScreen = false }: ChatInputProps) {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,7 +22,10 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
   };
 
   return (
-    <div className="fixed bottom-0 left-0 lg:right-96 right-0 bg-white border-t border-gray-200 p-3 sm:p-4 md:p-6 safe-area-inset-bottom">
+    <div
+      className="fixed bottom-0 left-0 bg-white border-t border-gray-200 p-3 sm:p-4 md:p-6 safe-area-inset-bottom"
+      style={{ right: isLargeScreen ? sidebarWidth : 0 }}
+    >
       <div className="max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="relative">
           <div className="flex items-center gap-2 sm:gap-3 bg-gray-50 rounded-full border border-gray-200 px-4 sm:px-6 py-2 sm:py-3 focus-within:border-purple-300 focus-within:ring-2 focus-within:ring-purple-100 transition-all">

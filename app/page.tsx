@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import FeatureCard from '@/components/FeatureCard';
 import PortfolioOverview from '@/components/PortfolioOverview';
@@ -7,16 +8,66 @@ import ChatInput from '@/components/ChatInput';
 import ChatHistory from '@/components/ChatHistory';
 import { useChat } from '@/hooks/useChat';
 
+const DEFAULT_SIDEBAR_WIDTH = 384;
+const STORAGE_KEY = 'portfolio-sidebar-width';
+
 export default function Home() {
   const { messages, isLoading, sendMessage, notifySwapSuccess } = useChat();
   const showWelcome = messages.length === 0;
+
+  // Initialize sidebar width from localStorage
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
+
+  useEffect(() => {
+    // Check initial screen size and calculate max width
+    const checkScreenSize = () => {
+      const screenWidth = window.innerWidth;
+      setIsLargeScreen(screenWidth >= 1024);
+
+      // Adjust sidebar width if it exceeds 50% of screen
+      const maxWidth = Math.floor(screenWidth * 0.5);
+      setSidebarWidth(prev => Math.min(prev, maxWidth));
+    };
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    // Load stored sidebar width
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      const maxWidth = Math.floor(window.innerWidth * 0.5);
+      if (!isNaN(parsed) && parsed >= 280 && parsed <= maxWidth) {
+        setSidebarWidth(parsed);
+      }
+    }
+
+    // Listen for custom sidebar resize event (immediate sync)
+    const handleSidebarResize = (e: CustomEvent<{ width: number }>) => {
+      const newWidth = e.detail.width;
+      const maxWidth = Math.floor(window.innerWidth * 0.5);
+      if (newWidth >= 280 && newWidth <= maxWidth) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    window.addEventListener('sidebar-resize', handleSidebarResize as EventListener);
+
+    return () => {
+      window.removeEventListener('resize', checkScreenSize);
+      window.removeEventListener('sidebar-resize', handleSidebarResize as EventListener);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Main Content */}
-      <main className="pt-20 pb-24 sm:pb-32 lg:pr-96 flex flex-col min-h-screen">
+      {/* Main Content - sidebar is hidden on screens smaller than lg */}
+      <main
+        className="pt-20 pb-24 sm:pb-32 flex flex-col min-h-screen"
+        style={{ paddingRight: isLargeScreen ? sidebarWidth : 0 }}
+      >
         {showWelcome ? (
           <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
             {/* Welcome Section */}
@@ -62,7 +113,12 @@ export default function Home() {
       <PortfolioOverview />
 
       {/* Chat Input */}
-      <ChatInput onSendMessage={sendMessage} isLoading={isLoading} />
+      <ChatInput
+        onSendMessage={sendMessage}
+        isLoading={isLoading}
+        sidebarWidth={sidebarWidth}
+        isLargeScreen={isLargeScreen}
+      />
     </div>
   );
 }

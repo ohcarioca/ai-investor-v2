@@ -1,14 +1,29 @@
 'use client';
 
-import { Copy, RefreshCw, Wallet } from 'lucide-react';
+import { Copy, RefreshCw, Wallet, GripVertical } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
+import { useSidebarResize } from '@/hooks/useSidebarResize';
 
-export default function PortfolioOverview() {
-  const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000); // Auto-refresh every 30s
+interface PortfolioOverviewProps {
+  width?: number;
+  onWidthChange?: (width: number) => void;
+}
+
+export default function PortfolioOverview({ width: externalWidth, onWidthChange }: PortfolioOverviewProps) {
+  const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000);
   const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 30000);
+  const { width: internalWidth, isResizing, handleMouseDown } = useSidebarResize({
+    minWidth: 280,
+    maxWidthPercent: 50, // Max 50% of screen
+    defaultWidth: 384,
+    storageKey: 'portfolio-sidebar-width',
+  });
   useAccount();
+
+  // Use external width if provided (for syncing with parent), otherwise use internal
+  const width = externalWidth ?? internalWidth;
 
   // Calculate USDC balance only for Total Balance display
   const usdcBalance = balance?.balances.find(b => b.currency === 'USDC');
@@ -29,18 +44,33 @@ export default function PortfolioOverview() {
   };
 
   return (
-    <aside className="hidden lg:block fixed top-20 right-0 w-96 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 p-6 overflow-y-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Portfolio Overview</h2>
-        <button
-          onClick={handleRefresh}
-          disabled={isLoading || isLoadingInvestment}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-          aria-label="Refresh balance"
-        >
-          <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading || isLoadingInvestment ? 'animate-spin' : ''}`} />
-        </button>
+    <aside
+      className={`hidden lg:block fixed top-20 right-0 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 overflow-y-auto ${isResizing ? 'select-none' : ''}`}
+      style={{ width }}
+    >
+      {/* Resize Handle */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-2 cursor-col-resize group z-10 flex items-center justify-center"
+        onMouseDown={handleMouseDown}
+      >
+        <div className={`w-1 h-full transition-colors ${isResizing ? 'bg-purple-500' : 'group-hover:bg-purple-400'}`} />
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="w-4 h-4 text-gray-400" />
+        </div>
       </div>
+
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Portfolio Overview</h2>
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading || isLoadingInvestment}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+            aria-label="Refresh balance"
+          >
+            <RefreshCw className={`w-5 h-5 text-gray-600 ${isLoading || isLoadingInvestment ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
 
       {/* Wallet Not Connected State */}
       {!isConnected && (
@@ -116,6 +146,7 @@ export default function PortfolioOverview() {
           </div>
         </>
       )}
+      </div>
     </aside>
   );
 }
