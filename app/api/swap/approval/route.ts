@@ -75,20 +75,26 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Build approval transaction with MAX_UINT256 (unlimited approval)
-    // This avoids needing to re-approve for each swap
+    // Build approval transaction with exact amount + 20% margin
+    // This is more secure than unlimited approval (doesn't expose entire balance)
+    // User may need to re-approve for larger swaps, but security is improved
     // ERC20 approve function signature: approve(address spender, uint256 amount)
     // Function selector: 0x095ea7b3
-    const MAX_UINT256 = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+    const APPROVAL_MARGIN_PERCENT = 20;
+    const requiredAmount = BigInt(amount);
+    const approvalAmount = requiredAmount + (requiredAmount * BigInt(APPROVAL_MARGIN_PERCENT) / BigInt(100));
+    const approvalAmountHex = approvalAmount.toString(16).padStart(64, '0');
     const spenderPadded = spenderAddress.slice(2).padStart(64, '0');
-    const approveData = `0x095ea7b3${spenderPadded}${MAX_UINT256}`;
+    const approveData = `0x095ea7b3${spenderPadded}${approvalAmountHex}`;
 
-    console.log('[Approval] Building unlimited approval transaction for:', {
+    console.log('[Approval] Building exact+margin approval transaction for:', {
       chain: chainIdNum,
       token: tokenAddress,
       spender: spenderAddress,
       currentAllowance: currentAllowanceString,
       requiredAllowance: amount,
+      approvalAmount: approvalAmount.toString(),
+      marginPercent: APPROVAL_MARGIN_PERCENT,
     });
 
     return NextResponse.json({

@@ -189,11 +189,14 @@ export async function POST(request: NextRequest) {
         if (BigInt(allowance) < BigInt(amount)) {
           console.log('[Swap Build] Allowance insufficient - building approval transaction');
 
-          // Build approval transaction with MAX_UINT256 (unlimited approval)
-          const MAX_UINT256 =
-            'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
+          // Build approval transaction with exact amount + 20% margin
+          // More secure than unlimited approval (doesn't expose entire balance)
+          const APPROVAL_MARGIN_PERCENT = 20;
+          const requiredAmount = BigInt(amount);
+          const approvalAmount = requiredAmount + (requiredAmount * BigInt(APPROVAL_MARGIN_PERCENT) / BigInt(100));
+          const approvalAmountHex = approvalAmount.toString(16).padStart(64, '0');
           const routerPadded = actualRouter.slice(2).toLowerCase().padStart(64, '0');
-          const approveData = `0x095ea7b3${routerPadded}${MAX_UINT256}`;
+          const approveData = `0x095ea7b3${routerPadded}${approvalAmountHex}`;
 
           // Continue building the swap transaction but include approval info
           // The frontend will execute approval first, then swap

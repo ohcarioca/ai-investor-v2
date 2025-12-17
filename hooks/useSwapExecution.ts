@@ -9,6 +9,8 @@ import {
 import type { Token, SwapState, SwapQuote } from '@/types/swap';
 import { sendSwapWebhook } from '@/lib/webhook-service';
 import { buildWebhookPayload } from '@/lib/webhook-utils';
+import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
+import { useOptimizedGas } from '@/hooks/useOptimizedGas';
 
 export function useSwapExecution() {
   const { address, chain } = useAccount();
@@ -16,6 +18,10 @@ export function useSwapExecution() {
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txData,
   });
+
+  // Get optimized gas prices and estimator
+  const { optimizedGas } = useOptimizedGas();
+  const gasEstimator = getGasEstimator();
 
   const [swapState, setSwapState] = useState<SwapState>({
     step: 'input',
@@ -110,24 +116,51 @@ export function useSwapExecution() {
           gasLimit: transaction.gasLimit,
         });
 
-        // Add 50% safety margin to gas limit to avoid out of gas errors
-        // Higher margin for complex tokens like SIERRA
-        const gasWithMargin = transaction.gasLimit
-          ? BigInt(Math.floor(Number(transaction.gasLimit) * 1.5))
-          : BigInt(500000); // Fallback gas limit
+        // Use dynamic gas margin based on tokens involved
+        // Simple swaps get lower margin, complex swaps (SIERRA) get higher margin
+        const { gasLimit: gasWithMargin, margin, operationType } = gasEstimator.estimateSwapGas(
+          transaction.gasLimit,
+          fromToken.symbol,
+          toToken.symbol,
+          fromToken.address,
+          toToken.address
+        );
 
-        console.log('Gas calculation:', {
+        console.log('Gas calculation (optimized):', {
           original: transaction.gasLimit,
           withMargin: gasWithMargin.toString(),
+          margin: `${((margin - 1) * 100).toFixed(0)}%`,
+          operationType,
+          networkStatus: optimizedGas?.networkStatus || 'unknown',
         });
 
-        // Send transaction via wagmi
-        sendTransaction({
+        // Build transaction with optimized gas parameters
+        const txParams: {
+          to: `0x${string}`;
+          data: `0x${string}`;
+          value: bigint;
+          gas: bigint;
+          maxFeePerGas?: bigint;
+          maxPriorityFeePerGas?: bigint;
+        } = {
           to: transaction.to as `0x${string}`,
           data: transaction.data as `0x${string}`,
           value: BigInt(transaction.value),
           gas: gasWithMargin,
-        });
+        };
+
+        // Add EIP-1559 gas parameters if available (for better gas optimization)
+        if (optimizedGas) {
+          txParams.maxFeePerGas = optimizedGas.maxFeePerGas;
+          txParams.maxPriorityFeePerGas = optimizedGas.maxPriorityFeePerGas;
+          console.log('Using optimized EIP-1559 gas:', {
+            maxFeePerGas: optimizedGas.totalFeeGwei.toFixed(2) + ' Gwei',
+            priorityFee: optimizedGas.priorityFeeGwei.toFixed(2) + ' Gwei',
+          });
+        }
+
+        // Send transaction via wagmi
+        sendTransaction(txParams);
       } catch (err) {
         setSwapState({
           step: 'error',
@@ -137,7 +170,7 @@ export function useSwapExecution() {
         });
       }
     },
-    [address, chain, sendTransaction]
+    [address, chain, sendTransaction, gasEstimator, optimizedGas]
   );
 
   // Send webhook data after successful transaction

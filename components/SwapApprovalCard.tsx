@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   useAccount,
   useChainId,
@@ -18,6 +18,8 @@ import {
   getExplorerName,
 } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
+import { useOptimizedGas } from '@/hooks/useOptimizedGas';
+import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
 
 interface SwapApprovalCardProps {
   swapData: SwapData;
@@ -60,6 +62,34 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
 
   // Check if we're on a supported network (Ethereum or Avalanche)
   const isCorrectNetwork = SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number]);
+
+  // Get optimized gas prices and estimator
+  const { optimizedGas, formatUsd } = useOptimizedGas();
+  const gasEstimator = getGasEstimator();
+
+  // Calculate estimated fee in USD
+  const estimatedFeeUsd = useMemo(() => {
+    if (!optimizedGas || !swapData.estimatedGas) return null;
+
+    const { gasLimit: swapGasWithMargin } = gasEstimator.estimateSwapGas(
+      swapData.estimatedGas,
+      swapData.fromToken,
+      swapData.toToken
+    );
+
+    // If needs approval, add approval gas
+    let totalGas = swapGasWithMargin;
+    if (swapData.needsApproval) {
+      const { gasLimit: approvalGas } = gasEstimator.estimateApprovalGas();
+      totalGas = totalGas + approvalGas;
+    }
+
+    const costWei = optimizedGas.maxFeePerGas * totalGas;
+    const costEth = Number(costWei) / 1e18;
+    // Use a default price if not available (ETH ~$3500, AVAX ~$35)
+    const nativePrice = chainId === 43114 ? 35 : 3500;
+    return costEth * nativePrice;
+  }, [optimizedGas, swapData, gasEstimator, chainId]);
 
   // Helper functions to map token symbols to addresses and decimals using TokenRegistry
   const getTokenAddress = useCallback((symbol: string): string => {
@@ -233,16 +263,34 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     setError(null);
 
     try {
-      sendTransaction({
+      // Use optimized gas estimation for approval (15% margin - simple operation)
+      const { gasLimit: gasWithMargin, margin } = gasEstimator.estimateApprovalGas();
+
+      console.log('[SwapApprovalCard] Executing approval:', {
+        gasLimit: gasWithMargin.toString(),
+        margin: `${((margin - 1) * 100).toFixed(0)}%`,
+      });
+
+      // Build transaction with optimized gas parameters
+      const txParams: Parameters<typeof sendTransaction>[0] = {
         to: swapData.approvalTransaction.to as `0x${string}`,
         data: swapData.approvalTransaction.data as `0x${string}`,
         value: BigInt(swapData.approvalTransaction.value),
-      });
+        gas: gasWithMargin,
+      };
+
+      // Add EIP-1559 gas parameters if available
+      if (optimizedGas) {
+        txParams.maxFeePerGas = optimizedGas.maxFeePerGas;
+        txParams.maxPriorityFeePerGas = optimizedGas.maxPriorityFeePerGas;
+      }
+
+      sendTransaction(txParams);
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to approve token');
     }
-  }, [swapData.approvalTransaction, address, sendTransaction]);
+  }, [swapData.approvalTransaction, address, sendTransaction, gasEstimator, optimizedGas]);
 
   // Handle swap
   const handleSwap = useCallback(async () => {
@@ -272,29 +320,41 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         throw new Error('No swap transaction available');
       }
 
-      // Add 50% gas safety margin for complex tokens
-      const gasWithMargin = swapTransaction.gasLimit
-        ? BigInt(Math.floor(Number(swapTransaction.gasLimit) * 1.5))
-        : BigInt(500000); // Fallback gas limit
+      // Use dynamic gas margin based on tokens involved
+      const { gasLimit: gasWithMargin, margin, operationType } = gasEstimator.estimateSwapGas(
+        swapTransaction.gasLimit,
+        swapData.fromToken,
+        swapData.toToken
+      );
 
       console.log('[SwapApprovalCard] Executing swap:', {
         to: swapTransaction.to,
         value: swapTransaction.value,
         gasLimit: swapTransaction.gasLimit,
         gasWithMargin: gasWithMargin.toString(),
+        margin: `${((margin - 1) * 100).toFixed(0)}%`,
+        operationType,
         dataLength: swapTransaction.data?.length,
         dataPreview: swapTransaction.data?.substring(0, 100),
       });
 
+      // Build transaction with optimized gas parameters
+      const txParams: Parameters<typeof sendTransaction>[0] = {
+        to: swapTransaction.to as `0x${string}`,
+        data: swapTransaction.data as `0x${string}`,
+        value: BigInt(swapTransaction.value),
+        gas: gasWithMargin,
+      };
+
+      // Add EIP-1559 gas parameters if available
+      if (optimizedGas) {
+        txParams.maxFeePerGas = optimizedGas.maxFeePerGas;
+        txParams.maxPriorityFeePerGas = optimizedGas.maxPriorityFeePerGas;
+      }
+
       // Execute the swap transaction
-      // Using a higher gas limit to ensure complex swap routes complete
       sendTransaction(
-        {
-          to: swapTransaction.to as `0x${string}`,
-          data: swapTransaction.data as `0x${string}`,
-          value: BigInt(swapTransaction.value),
-          gas: gasWithMargin,
-        },
+        txParams,
         {
           onSuccess: (hash) => {
             console.log('[SwapApprovalCard] Transaction sent successfully:', hash);
@@ -310,7 +370,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to execute swap');
     }
-  }, [swapData.swapTransaction, address, sendTransaction, rebuildSwapTransaction]);
+  }, [swapData.swapTransaction, swapData.fromToken, swapData.toToken, address, sendTransaction, rebuildSwapTransaction, gasEstimator, optimizedGas]);
 
   // Handle transaction status updates
   useEffect(() => {
@@ -424,6 +484,42 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
             </span>
           </div>
         )}
+
+        {/* Estimated Fee */}
+        <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+          <span className="text-sm text-gray-600">
+            Est. Network Fee:
+            {swapData.needsApproval && (
+              <span className="text-xs text-gray-400 ml-1">(incl. approval)</span>
+            )}
+          </span>
+          <div className="flex items-center gap-2">
+            {estimatedFeeUsd !== null ? (
+              <span className="text-sm font-medium text-gray-900">
+                {formatUsd(estimatedFeeUsd)}
+              </span>
+            ) : (
+              <span className="text-sm text-gray-400">Calculating...</span>
+            )}
+            {optimizedGas && (
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded ${
+                  optimizedGas.networkStatus === 'low'
+                    ? 'bg-green-100 text-green-700'
+                    : optimizedGas.networkStatus === 'high'
+                    ? 'bg-orange-100 text-orange-700'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {optimizedGas.networkStatus === 'low'
+                  ? 'Low fees'
+                  : optimizedGas.networkStatus === 'high'
+                  ? 'High fees'
+                  : 'Normal'}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Error Display */}

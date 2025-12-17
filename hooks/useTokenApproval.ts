@@ -7,6 +7,8 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi';
 import type { Token, ApprovalStatus } from '@/types/swap';
+import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
+import { useOptimizedGas } from '@/hooks/useOptimizedGas';
 
 export function useTokenApproval() {
   const { address, chain } = useAccount();
@@ -14,6 +16,10 @@ export function useTokenApproval() {
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({
     hash: txData,
   });
+
+  // Get optimized gas prices and estimator
+  const { optimizedGas } = useOptimizedGas();
+  const gasEstimator = getGasEstimator();
 
   const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus | null>(
     null
@@ -91,25 +97,50 @@ export function useTokenApproval() {
           throw new Error('No approval transaction data');
         }
 
+        // Use optimized gas estimation for approval (15% margin - simple operation)
+        const { gasLimit: gasWithMargin, margin } = gasEstimator.estimateApprovalGas();
+
         console.log('Executing approval transaction:', {
           to: approvalData.transaction.to,
           value: approvalData.transaction.value,
+          gasLimit: gasWithMargin.toString(),
+          margin: `${((margin - 1) * 100).toFixed(0)}%`,
         });
 
-        // Send approval transaction via wagmi
-        // Let wagmi estimate gas automatically for approval
-        sendTransaction({
+        // Build transaction with optimized gas parameters
+        const txParams: {
+          to: `0x${string}`;
+          data: `0x${string}`;
+          value: bigint;
+          gas: bigint;
+          maxFeePerGas?: bigint;
+          maxPriorityFeePerGas?: bigint;
+        } = {
           to: approvalData.transaction.to as `0x${string}`,
           data: approvalData.transaction.data as `0x${string}`,
           value: BigInt(approvalData.transaction.value),
-        });
+          gas: gasWithMargin,
+        };
+
+        // Add EIP-1559 gas parameters if available (for better gas optimization)
+        if (optimizedGas) {
+          txParams.maxFeePerGas = optimizedGas.maxFeePerGas;
+          txParams.maxPriorityFeePerGas = optimizedGas.maxPriorityFeePerGas;
+          console.log('Using optimized EIP-1559 gas for approval:', {
+            maxFeePerGas: optimizedGas.totalFeeGwei.toFixed(2) + ' Gwei',
+            priorityFee: optimizedGas.priorityFeeGwei.toFixed(2) + ' Gwei',
+          });
+        }
+
+        // Send approval transaction via wagmi
+        sendTransaction(txParams);
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to approve token'
         );
       }
     },
-    [address, checkApproval, sendTransaction]
+    [address, checkApproval, sendTransaction, gasEstimator, optimizedGas]
   );
 
   return {

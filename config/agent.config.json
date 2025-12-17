@@ -236,6 +236,25 @@
     }
   },
 
+  "gas": {
+    "optimization_enabled": true,
+    "margin_by_operation": {
+      "approval": 1.15,
+      "simple_swap": 1.25,
+      "standard_swap": 1.35,
+      "complex_swap": 1.50
+    },
+    "complex_tokens": ["SIERRA"],
+    "max_gas_price_gwei": {
+      "1": 150,
+      "43114": 100
+    },
+    "approval_strategy": "exact_with_margin",
+    "approval_margin_percent": 20,
+    "show_fee_estimate": true,
+    "cache_duration_ms": 15000
+  },
+
   "ui": {
     "theme": {
       "mode": "light",

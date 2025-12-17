@@ -144,6 +144,21 @@ export interface AgentConfig {
       optimize_for: 'best_price' | 'lowest_gas' | 'fastest';
     };
   };
+  gas: {
+    optimization_enabled: boolean;
+    margin_by_operation: {
+      approval: number;
+      simple_swap: number;
+      standard_swap: number;
+      complex_swap: number;
+    };
+    complex_tokens: string[];
+    max_gas_price_gwei: Record<string, number>;
+    approval_strategy: 'exact_with_margin' | 'unlimited';
+    approval_margin_percent: number;
+    show_fee_estimate: boolean;
+    cache_duration_ms: number;
+  };
   ui: {
     theme: {
       mode: 'light' | 'dark';
@@ -460,6 +475,56 @@ export function getRetryConfig() {
     maxAttempts: config.api.retries.max_attempts,
     backoffMultiplier: config.api.retries.backoff_multiplier,
     initialDelay: config.api.retries.initial_delay_ms,
+  };
+}
+
+/**
+ * Get gas optimization configuration
+ */
+export function getGasConfig() {
+  return config.gas;
+}
+
+/**
+ * Check if gas optimization is enabled
+ */
+export function isGasOptimizationEnabled(): boolean {
+  return config.gas.optimization_enabled;
+}
+
+/**
+ * Get gas margin for a specific operation type
+ */
+export function getGasMargin(operationType: 'approval' | 'simple_swap' | 'standard_swap' | 'complex_swap'): number {
+  return config.gas.margin_by_operation[operationType];
+}
+
+/**
+ * Check if a token is considered complex (requires higher gas margins)
+ */
+export function isComplexToken(symbol: string): boolean {
+  return config.gas.complex_tokens.some(
+    (token) => token.toLowerCase() === symbol.toLowerCase()
+  );
+}
+
+/**
+ * Get max gas price for a specific chain
+ */
+export function getMaxGasPrice(chainId: number): number | undefined {
+  return config.gas.max_gas_price_gwei[chainId.toString()];
+}
+
+/**
+ * Get approval strategy configuration
+ */
+export function getApprovalStrategy(): {
+  strategy: 'exact_with_margin' | 'unlimited';
+  marginPercent: number;
+} {
+  return {
+    strategy: config.gas.approval_strategy,
+    marginPercent: config.gas.approval_margin_percent,
   };
 }
 
