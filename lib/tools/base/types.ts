@@ -81,18 +81,102 @@ export interface ChartResult extends ToolResult {
 }
 
 /**
- * Chart configuration for rendering
+ * Chart types supported by the system
+ */
+export type ChartType = 'line' | 'area' | 'bar' | 'pie' | 'donut' | 'composed';
+
+/**
+ * Dynamic chart types that can be requested by users
+ */
+export type DynamicChartType =
+  | 'portfolio_value'
+  | 'token_distribution'
+  | 'transaction_volume'
+  | 'balance_history'
+  | 'profit_loss'
+  | 'apy_performance'
+  | 'token_comparison'
+  | 'future_projection';
+
+/**
+ * Chart configuration for rendering elegant, dynamic charts
  */
 export interface ChartConfig {
-  type: 'portfolio' | 'growth' | 'profit';
+  /** Chart title */
+  title: string;
+  /** Optional description/subtitle */
+  description?: string;
+  /** Visual chart type */
+  type: ChartType;
+  /** Chart data points */
   data: ChartDataPoint[];
-  period: string;
+  /** Data key mappings for x and y axes */
+  dataKeys: {
+    x: string;
+    y: string[];
+  };
+
+  // Styling options
+  /** Color palette for chart elements */
+  colors?: string[];
+  /** Enable gradient fill for area/bar charts */
+  gradient?: boolean;
+  /** Show data point dots on lines (default: false for elegant look) */
+  showDots?: boolean;
+  /** Curve interpolation type */
+  curveType?: 'monotone' | 'linear' | 'natural';
+
+  // Layout options
+  /** Show Y axis (default: true) */
+  showYAxis?: boolean;
+  /** Show X axis (default: true) */
+  showXAxis?: boolean;
+  /** Show grid lines (default: false for minimalist look) */
+  showGrid?: boolean;
+  /** Show legend */
+  showLegend?: boolean;
+  /** Legend position */
+  legendPosition?: 'top' | 'bottom' | 'right' | 'left';
+
+  // KPI highlight (displayed in header like the reference design)
+  highlightValue?: {
+    /** Main value to display (e.g., "6.2%", "$1,234") */
+    value: string;
+    /** Optional label for the value */
+    label?: string;
+    /** Trend direction */
+    trend?: 'up' | 'down' | 'neutral';
+    /** Trend percentage (e.g., "+5.2%") */
+    trendPercent?: string;
+  };
+
+  // Axis labels
+  /** Y axis label */
+  yAxisLabel?: string;
+  /** X axis label */
+  xAxisLabel?: string;
+
+  // Footer stats
+  /** Show footer statistics */
+  showFooterStats?: boolean;
+  /** Custom footer stats */
+  footerStats?: Array<{
+    label: string;
+    value: string;
+    color?: string;
+  }>;
 }
 
+/**
+ * Individual data point in a chart
+ */
 export interface ChartDataPoint {
-  date: string;
+  /** Display name/label for the data point */
+  name: string;
+  /** Primary value */
   value: number;
-  label?: string;
+  /** Additional dynamic properties for multi-series charts */
+  [key: string]: string | number;
 }
 
 // ============================================================================

@@ -1,61 +1,65 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ChartDataService } from '@/lib/services/charts/ChartDataService';
+import type { DynamicChartType } from '@/lib/tools/base/types';
 
-interface HistoricalDataPoint {
-  date: string;
-  value: number;
-  invested: number;
-}
-
-// Mock function to generate historical investment data
-// In production, this would fetch from a database or external API
-function generateHistoricalData(walletAddress: string, period: string): HistoricalDataPoint[] {
-  const now = new Date();
-  const data: HistoricalDataPoint[] = [];
-
-  let days = 30;
-  if (period === '7d') days = 7;
-  else if (period === '1m') days = 30;
-  else if (period === '3m') days = 90;
-  else if (period === '6m') days = 180;
-  else if (period === '1y') days = 365;
-
-  // Generate mock data with realistic growth
-  const baseInvestment = 100;
-  const apy = 0.0585; // 5.85% APY
-  const dailyRate = Math.pow(1 + apy, 1 / 365) - 1;
-
-  for (let i = days; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-
-    // Calculate value with some random fluctuation
-    const daysElapsed = days - i;
-    const growthFactor = Math.pow(1 + dailyRate, daysElapsed);
-    const randomFluctuation = 1 + (Math.random() - 0.5) * 0.02; // ±1% daily fluctuation
-
-    const invested = baseInvestment + (daysElapsed * 5); // Simulating periodic investments
-    const value = invested * growthFactor * randomFluctuation;
-
-    data.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      value: parseFloat(value.toFixed(2)),
-      invested: parseFloat(invested.toFixed(2)),
-    });
-  }
-
-  return data;
-}
-
+/**
+ * GET /api/charts/historical
+ *
+ * Generates chart configurations with real on-chain data from the connected wallet.
+ *
+ * Query Parameters:
+ * - wallet_address: Required. The wallet address to fetch data for.
+ * - type: Required. The chart type to generate.
+ * - period: Optional. Time period (7d, 1m, 3m, 6m, 1y). Default: 1m
+ * - chain_id: Optional. Blockchain chain ID. Default: 1 (Ethereum)
+ * - tokens: Optional. Comma-separated token symbols for filtering.
+ */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const walletAddress = searchParams.get('wallet_address');
-    const period = searchParams.get('period') || '1m';
-    const chartType = searchParams.get('type') || 'portfolio';
 
+    // Extract parameters
+    const walletAddress = searchParams.get('wallet_address');
+    const chartType = searchParams.get('type') as DynamicChartType;
+    const period = (searchParams.get('period') || '1m') as '7d' | '1m' | '3m' | '6m' | '1y';
+    const chainId = parseInt(searchParams.get('chain_id') || '1', 10);
+    const tokensParam = searchParams.get('tokens');
+    const tokens = tokensParam ? tokensParam.split(',').map(t => t.trim()) : undefined;
+    const additionalInvestment = parseFloat(searchParams.get('additional_investment') || '0');
+
+    // Validate required parameters
     if (!walletAddress) {
       return NextResponse.json(
-        { error: 'Wallet address is required' },
+        { success: false, error: 'Wallet address is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!chartType) {
+      return NextResponse.json(
+        { success: false, error: 'Chart type is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate chart type
+    const validChartTypes: DynamicChartType[] = [
+      'portfolio_value',
+      'token_distribution',
+      'transaction_volume',
+      'balance_history',
+      'profit_loss',
+      'apy_performance',
+      'token_comparison',
+      'future_projection',
+    ];
+
+    if (!validChartTypes.includes(chartType)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Invalid chart type. Valid types: ${validChartTypes.join(', ')}`,
+        },
         { status: 400 }
       );
     }
@@ -64,90 +68,63 @@ export async function GET(req: NextRequest) {
     const validPeriods = ['7d', '1m', '3m', '6m', '1y'];
     if (!validPeriods.includes(period)) {
       return NextResponse.json(
-        { error: 'Invalid period. Valid periods: 7d, 1m, 3m, 6m, 1y' },
+        {
+          success: false,
+          error: `Invalid period. Valid periods: ${validPeriods.join(', ')}`,
+        },
         { status: 400 }
       );
     }
 
-    // Generate historical data
-    const historicalData = generateHistoricalData(walletAddress, period);
-
-    // Return chart configuration based on type
-    if (chartType === 'portfolio') {
-      return NextResponse.json({
-        success: true,
-        chartConfig: {
-          title: 'Portfolio Performance',
-          description: `Last ${period}`,
-          type: 'area',
-          data: historicalData.map(d => ({
-            name: d.date,
-            value: d.value,
-            invested: d.invested,
-          })),
-          dataKeys: {
-            x: 'name',
-            y: ['value', 'invested'],
-          },
-          colors: ['#9333ea', '#ec4899'],
-          yAxisLabel: 'Value (USD)',
-          showLegend: true,
-          showGrid: true,
+    // Validate chain ID
+    const supportedChains = [1, 43114]; // Ethereum and Avalanche
+    if (!supportedChains.includes(chainId)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Unsupported chain ID. Supported chains: ${supportedChains.join(', ')}`,
         },
-      });
-    } else if (chartType === 'growth') {
-      return NextResponse.json({
-        success: true,
-        chartConfig: {
-          title: 'Investment Growth',
-          description: `Comparing invested vs current value - ${period}`,
-          type: 'line',
-          data: historicalData.map(d => ({
-            name: d.date,
-            value: d.value,
-            invested: d.invested,
-          })),
-          dataKeys: {
-            x: 'name',
-            y: ['value', 'invested'],
-          },
-          colors: ['#10b981', '#6b7280'],
-          yAxisLabel: 'Amount (USD)',
-          showLegend: true,
-          showGrid: true,
-        },
-      });
-    } else if (chartType === 'profit') {
-      return NextResponse.json({
-        success: true,
-        chartConfig: {
-          title: 'Profit Over Time',
-          description: `Net profit - ${period}`,
-          type: 'bar',
-          data: historicalData.map(d => ({
-            name: d.date,
-            profit: parseFloat((d.value - d.invested).toFixed(2)),
-          })),
-          dataKeys: {
-            x: 'name',
-            y: ['profit'],
-          },
-          colors: ['#10b981'],
-          yAxisLabel: 'Profit (USD)',
-          showLegend: false,
-          showGrid: true,
-        },
-      });
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json(
-      { error: 'Invalid chart type' },
-      { status: 400 }
-    );
+    console.log('[Charts API] Generating chart:', {
+      chartType,
+      walletAddress: `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+      period,
+      chainId,
+      tokens,
+    });
+
+    // Generate chart using ChartDataService
+    const chartService = new ChartDataService();
+    const chartConfig = await chartService.generateChart({
+      chartType,
+      walletAddress,
+      chainId,
+      period,
+      tokens,
+      additionalInvestment: additionalInvestment > 0 ? additionalInvestment : undefined,
+    });
+
+    console.log('[Charts API] Chart generated successfully:', {
+      title: chartConfig.title,
+      type: chartConfig.type,
+      dataPoints: chartConfig.data.length,
+    });
+
+    return NextResponse.json({
+      success: true,
+      chartConfig,
+    });
   } catch (error) {
-    console.error('Error generating historical data:', error);
+    console.error('[Charts API] Error generating chart:', error);
+
     return NextResponse.json(
-      { error: 'Failed to generate historical data' },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to generate chart',
+      },
       { status: 500 }
     );
   }
