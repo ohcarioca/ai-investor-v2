@@ -16,6 +16,7 @@ import {
 import { GetWalletBalanceTool, GetInvestmentDataTool, GenerateChartTool } from './implementations/balance';
 import { InvestTool, ConfirmInvestTool, WithdrawTool, ConfirmWithdrawTool } from './implementations/investment';
 import { SwapTokensTool, ConfirmSwapTool } from './implementations/swap';
+import { GetTransactionHistoryTool } from './implementations/history';
 
 /**
  * Registry for managing all available tools
@@ -164,6 +165,9 @@ export function createDefaultRegistry(): ToolRegistry {
   // Swap tools
   registry.register(new SwapTokensTool());
   registry.register(new ConfirmSwapTool());
+
+  // History tools
+  registry.register(new GetTransactionHistoryTool());
 
   console.log(`[ToolRegistry] Created default registry with ${registry.count} tools`);
 

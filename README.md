@@ -5,21 +5,49 @@ Interface conversacional de agente de IA para assistência financeira, desenvolv
 ## Funcionalidades
 
 ### Interface Agêntica
-- **Chat conversacional em tempo real** integrado com webhook n8n
+- **Chat conversacional em tempo real** integrado com OpenAI GPT-4
+- **Sistema de Tools modular** com 11 ferramentas disponíveis
 - **Histórico de mensagens** com scroll automático
 - **Estados de loading** com animações durante processamento
 - **Tratamento de erros** com mensagens amigáveis
 
-### Funcionalidades Financeiras (Mockadas)
-- 💰 **Invest in Funds** - Alocação em fundos de crescimento, estáveis ou alto rendimento
-- 🏦 **Wire Transfers** - Recebimento de pagamentos via transferência bancária
-- 💱 **Currency Exchange** - Conversão de USDC para COP, MXN, BRL e outras moedas
-- 📊 **Reports & Receipts** - Geração de relatórios e recibos de transações
+### Funcionalidades do Agente (Tools)
+
+#### Balance & Portfolio
+- 💰 **get_wallet_balance** - Obtém saldo completo da carteira (ETH/AVAX + USDC + SIERRA)
+- 📊 **get_investment_data** - Dados de investimento e APY do protocolo
+- 📈 **generate_chart** - Gera gráficos de portfolio, crescimento e lucro
+
+#### Investimentos
+- 🏦 **invest** - Solicita investimento em SIERRA
+- ✅ **confirm_invest** - Confirma e executa investimento
+- 💸 **withdraw** - Solicita resgate de SIERRA
+- ✅ **confirm_withdraw** - Confirma e executa resgate
+
+#### Swaps
+- 💱 **swap_tokens** - Solicita cotação para troca de tokens (via OKX DEX)
+- ✅ **confirm_swap** - Confirma e executa swap com gas otimizado
+
+#### Histórico
+- 📜 **get_transaction_history** - Obtém histórico de transações USDC/SIERRA
+  - Filtra por token (USDC, SIERRA ou ambos)
+  - Filtra por direção (recebidas, enviadas ou todas)
+  - Inclui resumo estatístico
+
+### Otimização de Gas
+- **Margens dinâmicas** por tipo de operação (15% approval, 25-50% swaps)
+- **Aprovações seguras** com valor exato + 20% margem (não expõe todo saldo)
+- **Estimativa de custo em USD** antes da transação
+- **Indicador de congestionamento** da rede
+
+### Redes Suportadas
+- **Ethereum Mainnet** (Chain ID: 1)
+- **Avalanche C-Chain** (Chain ID: 43114)
 
 ### Portfolio Overview
-- **Total Balance**: $24,563.00 (+12.5% vs último mês)
-- **USDC Balance**: $8,450.00 (+3.2% vs último mês)
-- **APY Performance**: Gráfico visual mostrando 6.2% de rendimento
+- **Total Balance**: Saldo em tempo real via blockchain
+- **Token Balances**: USDC, SIERRA com valores em USD
+- **APY Performance**: Dados do protocolo SIERRA
 
 ## Stack Tecnológico
 

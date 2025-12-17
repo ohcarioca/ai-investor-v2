@@ -157,7 +157,7 @@ export interface ToolDefinition {
 /**
  * Tool category for organization
  */
-export type ToolCategory = 'balance' | 'investment' | 'swap' | 'chart';
+export type ToolCategory = 'balance' | 'investment' | 'swap' | 'chart' | 'history';
 
 /**
  * Main interface that all tools must implement
