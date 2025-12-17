@@ -5,6 +5,7 @@ import { useAccount } from 'wagmi';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
 import { useSidebarResize } from '@/hooks/useSidebarResize';
+import APYPerformanceChart from '@/components/charts/APYPerformanceChart';
 
 interface PortfolioOverviewProps {
   width?: number;
@@ -131,19 +132,11 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange 
             </div>
           </div>
 
-          {/* APY Card */}
-          <div className="bg-green-50 rounded-xl p-5 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-green-700 font-medium">APY</span>
-            </div>
-            <div className="text-2xl font-bold text-green-900">
-              {isLoadingInvestment ? (
-                <div className="animate-pulse bg-green-300 h-8 w-24 rounded" />
-              ) : (
-                `${currentAPY.toFixed(2)}%`
-              )}
-            </div>
-          </div>
+          {/* APY Performance Chart */}
+          <APYPerformanceChart
+            currentAPY={currentAPY}
+            isLoading={isLoadingInvestment}
+          />
         </>
       )}
       </div>
