@@ -148,23 +148,20 @@ export class TransactionBuilder {
         };
       }
 
-      // IMPORTANT: Prioritize build API's approval data - it uses the correct router
-      // from OKX v6 API response, while checkApproval uses hardcoded router
+      // Determine if approval is needed
       const finalNeedsApproval = buildResult.needsApproval ?? needsApproval;
-      // Always prefer build API's approval transaction (has correct router)
-      const finalApprovalTx = buildResult.approvalTransaction || approvalTx;
 
-      if (buildResult.needsApproval) {
-        console.log('[TransactionBuilder] Build API detected insufficient allowance:', {
-          currentAllowance: buildResult.approvalDetails?.currentAllowance,
+      // FIXED: Always use approval transaction from /api/swap/approval (uses our fixed router)
+      // The build API may return a different router from OKX response
+      const finalApprovalTx = approvalTx || buildResult.approvalTransaction;
+
+      if (finalNeedsApproval) {
+        console.log('[TransactionBuilder] Approval needed - using fixed router:', {
+          currentAllowance: buildResult.approvalDetails?.currentAllowance || '0',
           required: buildResult.approvalDetails?.requiredAmount,
-          router: buildResult.approvalDetails?.router,
-          note: 'Using build API approval (correct router from OKX v6)',
+          usingApprovalFrom: approvalTx ? '/api/swap/approval' : '/api/swap/build',
+          fixedRouter: '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f',
         });
-      } else if (needsApproval && !buildResult.needsApproval) {
-        // checkApproval said needed, but build API said not needed
-        // Trust build API - it has the actual router being used
-        console.log('[TransactionBuilder] Build API says approval NOT needed (correct router)');
       }
 
       console.log('[TransactionBuilder] Swap built successfully:', {
@@ -199,6 +196,11 @@ export class TransactionBuilder {
     userAddress: string;
   }): Promise<ApprovalCheckResult> {
     try {
+      console.log('[TransactionBuilder] checkApproval calling API with:', {
+        url: `${this.baseUrl}/api/swap/approval`,
+        params,
+      });
+
       const response = await fetch(`${this.baseUrl}/api/swap/approval`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -206,6 +208,14 @@ export class TransactionBuilder {
       });
 
       const data: ApprovalResponse = await response.json();
+
+      console.log('[TransactionBuilder] checkApproval API response:', {
+        ok: response.ok,
+        status: response.status,
+        spenderAddress: data?.status?.spenderAddress,
+        isApproved: data?.status?.isApproved,
+        fullData: JSON.stringify(data),
+      });
 
       if (!response.ok) {
         // Default to needing approval on error

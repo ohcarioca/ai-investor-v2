@@ -168,7 +168,9 @@ export async function POST(request: NextRequest) {
       });
 
       try {
-        const actualRouter = getAddress(txData.to as string);
+        // FIXED: Always use our spender address for approval
+        const actualRouter = getAddress('0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f');
+        console.log('[Swap Build] FIXED_ROUTER:', actualRouter);
         const allowance = await publicClient.readContract({
           address: fromToken as `0x${string}`,
           abi: erc20Abi,

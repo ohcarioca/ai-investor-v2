@@ -12,13 +12,18 @@ import {
   ToolDefinition,
   ValidationResult,
   SwapQuoteResult,
+  TransactionData,
 } from '../../base/types';
-import { getQuoteFetcher } from '../../../services/transaction/QuoteFetcher';
 import { TokenRegistry } from '../../../services/token/TokenRegistry';
+import { getTransactionBuilder } from '../../../services/transaction/TransactionBuilder';
 
 interface SwapResult {
   requiresConfirmation: boolean;
-  swap: SwapQuoteResult;
+  swap: SwapQuoteResult & {
+    needsApproval?: boolean;
+    approvalTransaction?: TransactionData;
+    swapTransaction?: TransactionData;
+  };
 }
 
 export class SwapTokensTool extends BaseTool {
@@ -129,33 +134,36 @@ export class SwapTokensTool extends BaseTool {
     });
 
     try {
-      const quoteFetcher = getQuoteFetcher();
-      const quoteResult = await quoteFetcher.getQuoteBySymbols({
+      // Use TransactionBuilder to get quote AND check approval in one call
+      const transactionBuilder = getTransactionBuilder();
+      const result = await transactionBuilder.buildSwapTransaction({
         fromToken,
         toToken,
         amount,
         slippage,
+        userAddress: context.walletAddress!,
         chainId,
       });
 
-      if (!quoteResult.success || !quoteResult.quote) {
+      if (!result.success || !result.quote) {
         return {
           success: false,
-          error: quoteResult.error || 'Failed to get quote',
+          error: result.error || 'Failed to get quote',
         };
       }
 
       // Format the output amount
       const toAmount = formatUnits(
-        BigInt(quoteResult.quote.toAmount),
+        BigInt(result.quote.toAmount),
         TokenRegistry.getDecimals(toToken, chainId)
       );
 
-      this.log('Swap quote prepared, awaiting user confirmation', {
+      this.log('Swap quote prepared with approval check, awaiting user confirmation', {
         chainId,
         fromAmount: amount,
         toAmount,
-        exchangeRate: quoteResult.quote.exchangeRate,
+        exchangeRate: result.quote.exchangeRate,
+        needsApproval: result.needsApproval,
       });
 
       return {
@@ -167,9 +175,12 @@ export class SwapTokensTool extends BaseTool {
             toToken,
             fromAmount: amount,
             toAmount,
-            exchangeRate: quoteResult.quote.exchangeRate,
-            priceImpact: quoteResult.quote.priceImpact,
-            estimatedGas: quoteResult.quote.estimatedGas,
+            exchangeRate: result.quote.exchangeRate,
+            priceImpact: result.quote.priceImpact,
+            estimatedGas: result.quote.estimatedGas,
+            needsApproval: result.needsApproval,
+            approvalTransaction: result.approvalTransaction,
+            swapTransaction: result.swapTransaction,
           },
         },
       };

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
 import {
   VIEM_CHAINS,
-  OKX_ROUTERS,
   NATIVE_TOKEN_ADDRESS,
 } from '@/lib/constants/blockchain';
 import { validateApprovalRequest } from '@/lib/middleware/wallet-validation';
@@ -34,9 +33,10 @@ export async function POST(request: NextRequest) {
     // Get chain configuration (already validated by middleware)
     const chainIdNum = parseInt(chainId);
     const chain = VIEM_CHAINS[chainIdNum];
-    const routerAddress = OKX_ROUTERS[chainIdNum];
 
-    const spenderAddress = getAddress(routerAddress);
+    // FIXED: Always use our fixed router address for all chains
+    const FIXED_ROUTER = '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f';
+    const spenderAddress = getAddress(FIXED_ROUTER);
     console.log(`[Approval] Using router for chain ${chainIdNum}:`, spenderAddress);
 
     // Check current allowance using viem

@@ -56,7 +56,7 @@ export const NATIVE_SYMBOLS: Record<number, string> = {
  * These are the actual OKX DEX aggregator routers that will be used for swaps
  */
 export const OKX_ROUTERS: Record<number, string> = {
-  [CHAIN_IDS.ETHEREUM]: '0xF6801D319497789f934ec7F83E142a9536312B08',
+  [CHAIN_IDS.ETHEREUM]: '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f',
   [CHAIN_IDS.AVALANCHE]: '0x40aA958dd87FC8305b97f2BA922CDdCa374bcD7f',
 };
 
