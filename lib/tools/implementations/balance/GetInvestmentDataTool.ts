@@ -1,6 +1,9 @@
 /**
  * Get Investment Data Tool
- * Fetches investment metrics (total invested, APY) from webhook
+ * Calculates investment metrics based on SIERRA balance
+ *
+ * Total Invested (USDC) = SIERRA Balance × SIERRA_USDC_RATE
+ * APY = SIERRA_APY from environment
  */
 
 import { BaseTool } from '../../base/BaseTool';
@@ -10,14 +13,18 @@ import {
   ToolDefinition,
   InvestmentData,
 } from '../../base/types';
+import { fetchWalletBalance } from '@/lib/services/balance';
+
+// Get SIERRA configuration from environment
+const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
+// APY is stored as decimal (0.0585 = 5.85%)
+const SIERRA_APY_DECIMAL = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0585');
 
 export class GetInvestmentDataTool extends BaseTool {
   readonly name = 'get_investment_data';
-  readonly description = 'Obtém dados de investimento do usuário, incluindo total investido em USDC e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.';
+  readonly description = 'Obtém dados de investimento do usuário, incluindo total investido em USDC (baseado no saldo de SIERRA) e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.';
   readonly category = 'balance' as const;
   readonly requiresWallet = true;
-
-  private readonly webhookUrl = 'https://n8n.balampay.com/webhook/calc_swaps';
 
   getDefinition(): ToolDefinition {
     return {
@@ -42,29 +49,42 @@ export class GetInvestmentDataTool extends BaseTool {
   ): Promise<ToolResult<InvestmentData>> {
     // Always use connected wallet address
     const addressToUse = context.walletAddress!;
+    const chainId = context.chainId || 1;
+
+    // Convert decimal APY to percentage (0.0585 → 5.85)
+    const apyPercent = SIERRA_APY_DECIMAL * 100;
 
     this.log(`Fetching investment data for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)}`);
+    this.log(`Using SIERRA rate: ${SIERRA_USDC_RATE}, APY: ${apyPercent.toFixed(2)}%`);
 
     try {
-      const response = await fetch(`${this.webhookUrl}?wallet_address=${addressToUse}`);
+      // Fetch wallet balance to get SIERRA amount
+      const balanceData = await fetchWalletBalance({
+        address: addressToUse,
+        chainId,
+      });
 
-      if (!response.ok) {
-        return {
-          success: false,
-          error: 'Failed to fetch investment data',
-        };
-      }
+      // Find SIERRA token balance
+      const sierraToken = balanceData.tokens.find(
+        (token) => token.symbol.toUpperCase() === 'SIERRA'
+      );
 
-      const data = await response.json();
+      const sierraBalance = sierraToken ? parseFloat(sierraToken.balance) : 0;
+
+      // Calculate total invested in USDC
+      // Total Invested = SIERRA Balance × SIERRA_USDC_RATE
+      const totalInvestedUsdc = sierraBalance * SIERRA_USDC_RATE;
 
       const investmentData: InvestmentData = {
         success: true,
-        total_invested_usdc: parseFloat(data.total_invested_usdc),
-        apy: parseFloat(data.apy) * 100, // Convert to percentage
-        raw_apy: parseFloat(data.apy), // Keep raw value for reference
+        total_invested_usdc: parseFloat(totalInvestedUsdc.toFixed(2)),
+        apy: parseFloat(apyPercent.toFixed(2)),
+        raw_apy: SIERRA_APY_DECIMAL, // Decimal format for calculations
       };
 
-      this.log('Investment data fetched successfully', {
+      this.log('Investment data calculated', {
+        sierraBalance,
+        sierraRate: SIERRA_USDC_RATE,
         total_invested_usdc: investmentData.total_invested_usdc,
         apy: investmentData.apy,
       });

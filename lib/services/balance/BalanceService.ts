@@ -12,6 +12,9 @@ import {
 } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 
+// SIERRA rate from environment (1 SIERRA = X USDC)
+const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
+
 // Token prices - placeholder (in production use real price oracle)
 const getTokenPrice = (symbol: string): number => {
   switch (symbol) {
@@ -22,7 +25,7 @@ const getTokenPrice = (symbol: string): number => {
     case 'AVAX':
       return 14.59;
     case 'SIERRA':
-      return 1;
+      return SIERRA_USDC_RATE; // Use rate from .env
     default:
       return 0;
   }

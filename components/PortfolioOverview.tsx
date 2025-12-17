@@ -18,9 +18,9 @@ export default function PortfolioOverview() {
   const sierraBalance = balance?.balances.find(b => b.currency === 'SIERRA');
   const totalSierraUSD = sierraBalance?.usdValue || 0;
 
-  // Get investment data from API
+  // Get investment data (APY already comes as percentage from hook)
   const totalInvestedUSDC = investmentData ? parseFloat(investmentData.total_invested_usdc) : totalSierraUSD;
-  const currentAPY = investmentData ? parseFloat(investmentData.apy) * 100 : 5.1; // Convert to percentage
+  const currentAPY = investmentData ? parseFloat(investmentData.apy) : 5.85;
 
   // Combined refresh function
   const handleRefresh = () => {

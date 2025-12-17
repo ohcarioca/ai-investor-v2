@@ -1,11 +1,20 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useAccount, useChainId } from 'wagmi';
+import { useWalletBalance } from './useWalletBalance';
+
+// SIERRA configuration from environment (with defaults)
+// Note: For client-side, we need NEXT_PUBLIC_ prefix
+const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
+// APY is stored as decimal (0.0585 = 5.85%)
+const SIERRA_APY_DECIMAL = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0585');
 
 interface InvestmentData {
   total_invested_usdc: string;
   apy: string;
+  sierra_balance: string;
+  sierra_rate: string;
 }
 
 interface UseInvestmentDataResult {
@@ -16,47 +25,62 @@ interface UseInvestmentDataResult {
 }
 
 export function useInvestmentData(autoRefresh = false, refreshInterval = 30000): UseInvestmentDataResult {
-  const [investmentData, setInvestmentData] = useState<InvestmentData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+
+  // Use wallet balance hook to get SIERRA balance
+  const { balance, isLoading, refetch: refetchBalance } = useWalletBalance();
+
+  // Calculate investment data from SIERRA balance
+  const investmentData = useMemo<InvestmentData | null>(() => {
+    if (!balance || !isConnected) {
+      return null;
+    }
+
+    // Find SIERRA token in balances array (uses 'currency' field, not 'symbol')
+    const sierraToken = balance.balances?.find(
+      (token) => token.currency.toUpperCase() === 'SIERRA'
+    );
+
+    const sierraBalance = sierraToken ? sierraToken.available : 0;
+
+    // Calculate total invested in USDC
+    const totalInvestedUsdc = sierraBalance * SIERRA_USDC_RATE;
+
+    // Convert decimal APY to percentage (0.0585 → 5.85)
+    const apyPercent = SIERRA_APY_DECIMAL * 100;
+
+    return {
+      total_invested_usdc: totalInvestedUsdc.toFixed(2),
+      apy: apyPercent.toFixed(2),
+      sierra_balance: sierraBalance.toFixed(2),
+      sierra_rate: SIERRA_USDC_RATE.toFixed(2),
+    };
+  }, [balance, isConnected]);
 
   const fetchInvestmentData = useCallback(async () => {
     if (!address || !isConnected) {
-      setInvestmentData(null);
       setError(null);
       return;
     }
 
-    setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(
-        `https://n8n.balampay.com/webhook/calc_swaps?wallet_address=${address}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch investment data');
-      }
-
-      const data: InvestmentData = await response.json();
-      setInvestmentData(data);
+      await refetchBalance();
     } catch (err) {
       console.error('Error fetching investment data:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch investment data');
-      setInvestmentData(null);
-    } finally {
-      setIsLoading(false);
     }
-  }, [address, isConnected]);
+  }, [address, isConnected, refetchBalance]);
 
   // Initial fetch
   useEffect(() => {
     if (isConnected && address) {
       fetchInvestmentData();
     }
-  }, [isConnected, address, fetchInvestmentData]);
+  }, [isConnected, address, chainId, fetchInvestmentData]);
 
   // Auto-refresh
   useEffect(() => {
