@@ -14,8 +14,8 @@ interface PortfolioOverviewProps {
 }
 
 export default function PortfolioOverview({ width: externalWidth, onWidthChange, onSendMessage }: PortfolioOverviewProps) {
-  const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000);
-  const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 30000);
+  const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 90000);
+  const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 90000);
   const { width: internalWidth, isResizing, handleMouseDown } = useSidebarResize({
     minWidth: 280,
     maxWidthPercent: 50, // Max 50% of screen

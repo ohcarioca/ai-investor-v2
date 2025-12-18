@@ -33,7 +33,9 @@
       "Bash(ls -la \"c:\\Kirafin\\ai-investor-agent\\app\\api\\swap\"\" 2>/dev/null || echo \"Directory listing \")",
       "Bash(if exist .next rmdir /s /q .next)",
       "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host ''Node processes killed''\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npx md-to-pdf:*)",
+      "Bash(move \"C:\\Users\\KABUM\\.claude\\plans\\async-tumbling-frost.pdf\" \"c:\\Users\\KABUM\\Documents\\AresFin\\Projects\\ai-investor-v2\\MVP-Canvas-Kira.pdf\")"
     ]
   }
 }

@@ -290,6 +290,12 @@ export function useSwapExecution() {
         error: null,
         txHash: txData || null,
       });
+
+      // Dispatch event to trigger balance refresh after successful transaction
+      window.dispatchEvent(new CustomEvent('transaction-completed', {
+        detail: { txHash: txData, type: 'swap' }
+      }));
+      console.log('[useSwapExecution] Transaction completed event dispatched');
     }
   }, [isSuccess, txData, webhookState.isLoading, webhookState.isError]);
 

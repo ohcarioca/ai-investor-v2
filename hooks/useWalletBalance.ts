@@ -43,11 +43,13 @@ const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; d
  */
 export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: number = 30000) {
   const { address, isConnected, chain } = useAccount();
-  const publicClient = usePublicClient();
+  // Pass chainId to get the correct public client for the connected chain
+  const publicClient = usePublicClient({ chainId: chain?.id });
 
-  // Get native token balance
+  // Get native token balance for the connected chain
   const { data: nativeBalance, refetch: refetchNative } = useBalance({
     address,
+    chainId: chain?.id,
   });
 
   const [balance, setBalance] = useState<AccountBalance | null>(null);
@@ -55,13 +57,50 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
   const [error, setError] = useState<string | null>(null);
 
   const fetchTokenBalances = useCallback(async () => {
-    if (!address || !isConnected || !publicClient) {
+    console.log('[useWalletBalance] fetchTokenBalances called', {
+      address,
+      isConnected,
+      chainId: chain?.id,
+      hasPublicClient: !!publicClient,
+      timestamp: new Date().toISOString(),
+    });
+
+    if (!address || !isConnected) {
+      console.warn('[useWalletBalance] Wallet not connected', { address, isConnected });
       setError('Wallet not connected');
+      return;
+    }
+
+    if (!publicClient) {
+      console.error('[useWalletBalance] Public client not available', {
+        chainId: chain?.id,
+        chainName: chain?.name,
+      });
+      setError('Network client not available. Please check your connection.');
+      return;
+    }
+
+    if (!chain?.id) {
+      console.error('[useWalletBalance] Chain ID not available');
+      setError('Network not detected. Please switch to Ethereum or Avalanche.');
+      return;
+    }
+
+    // Check if we support this chain
+    if (!TOKEN_ADDRESSES[chain.id]) {
+      console.error('[useWalletBalance] Unsupported chain', { chainId: chain.id, chainName: chain.name });
+      setError(`Unsupported network. Please switch to Ethereum or Avalanche.`);
       return;
     }
 
     setIsLoading(true);
     setError(null);
+    console.log('[useWalletBalance] Starting balance fetch', {
+      chain: chain.id,
+      chainName: chain.name,
+      address,
+      tokens: TOKEN_ADDRESSES[chain.id].map(t => t.symbol),
+    });
 
     try {
       const balances: Balance[] = [];
@@ -105,6 +144,11 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       // Fetch ERC20 token balances
       for (const token of tokensForChain) {
         try {
+          console.log(`[useWalletBalance] Fetching ${token.symbol} balance...`, {
+            tokenAddress: token.address,
+            walletAddress: address,
+          });
+
           const tokenBalance = await publicClient.readContract({
             address: token.address as `0x${string}`,
             abi: erc20Abi,
@@ -116,6 +160,12 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
           const tokenPrice = getTokenPrice(token.symbol);
           const usdValue = formattedBalance * tokenPrice;
 
+          console.log(`[useWalletBalance] ${token.symbol} balance fetched`, {
+            raw: tokenBalance.toString(),
+            formatted: formattedBalance,
+            usdValue,
+          });
+
           // Always add token to balances, even if balance is 0
           balances.push({
             currency: token.symbol,
@@ -126,9 +176,19 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
 
           totalEquity += usdValue;
         } catch (tokenError) {
-          console.warn(`Failed to fetch ${token.symbol} balance:`, tokenError);
+          console.error(`[useWalletBalance] Failed to fetch ${token.symbol} balance`, {
+            tokenAddress: token.address,
+            error: tokenError instanceof Error ? tokenError.message : tokenError,
+            errorDetails: tokenError,
+          });
         }
       }
+
+      console.log('[useWalletBalance] All balances fetched successfully', {
+        balanceCount: balances.length,
+        totalEquity,
+        balances: balances.map(b => ({ currency: b.currency, available: b.available, usdValue: b.usdValue })),
+      });
 
       setBalance({
         balances: balances.sort((a, b) => b.usdValue - a.usdValue),
@@ -136,10 +196,14 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
         lastUpdated: new Date(),
       });
     } catch (err) {
+      console.error('[useWalletBalance] Balance fetch error', {
+        error: err instanceof Error ? err.message : err,
+        errorDetails: err,
+      });
       setError(err instanceof Error ? err.message : 'Failed to fetch balances');
-      console.error('Balance fetch error:', err);
     } finally {
       setIsLoading(false);
+      console.log('[useWalletBalance] Fetch completed', { isLoading: false });
     }
   }, [address, isConnected, publicClient, nativeBalance, chain?.id]);
 
@@ -148,12 +212,28 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
     await fetchTokenBalances();
   }, [refetchNative, fetchTokenBalances]);
 
-  // Auto-fetch on mount and when dependencies change
+  // Auto-fetch on mount and when dependencies change (including chain switches)
   useEffect(() => {
-    if (isConnected && address) {
+    console.log('[useWalletBalance] useEffect triggered', {
+      isConnected,
+      address,
+      hasPublicClient: !!publicClient,
+      chainId: chain?.id,
+      chainName: chain?.name,
+    });
+
+    if (isConnected && address && publicClient && chain?.id) {
+      console.log('[useWalletBalance] All conditions met, fetching balances...');
       fetchTokenBalances();
+    } else {
+      console.log('[useWalletBalance] Skipping fetch - missing requirements', {
+        hasAddress: !!address,
+        isConnected,
+        hasPublicClient: !!publicClient,
+        hasChainId: !!chain?.id,
+      });
     }
-  }, [isConnected, address, fetchTokenBalances]);
+  }, [isConnected, address, publicClient, chain?.id, fetchTokenBalances]);
 
   // Auto-refresh
   useEffect(() => {
@@ -164,6 +244,23 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       return () => clearInterval(interval);
     }
   }, [autoRefresh, refreshInterval, isConnected, address, refetch]);
+
+  // Listen for transaction-completed events to refresh balance
+  useEffect(() => {
+    const handleTransactionCompleted = (event: CustomEvent) => {
+      console.log('[useWalletBalance] Transaction completed, refreshing balance...', event.detail);
+      // Small delay to allow blockchain state to update
+      setTimeout(() => {
+        refetch();
+      }, 2000);
+    };
+
+    window.addEventListener('transaction-completed', handleTransactionCompleted as EventListener);
+
+    return () => {
+      window.removeEventListener('transaction-completed', handleTransactionCompleted as EventListener);
+    };
+  }, [refetch]);
 
   return {
     balance,

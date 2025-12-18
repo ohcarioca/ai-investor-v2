@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   useAccount,
   useSendTransaction,
@@ -13,9 +13,19 @@ import { useOptimizedGas } from '@/hooks/useOptimizedGas';
 export function useTokenApproval() {
   const { address, chain } = useAccount();
   const { sendTransaction, data: txData } = useSendTransaction();
-  const { isLoading: isConfirming } = useWaitForTransactionReceipt({
+  const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash: txData,
   });
+
+  // Dispatch event when approval transaction is confirmed
+  useEffect(() => {
+    if (isSuccess && txData) {
+      window.dispatchEvent(new CustomEvent('transaction-completed', {
+        detail: { txHash: txData, type: 'approval' }
+      }));
+      console.log('[useTokenApproval] Approval transaction completed event dispatched');
+    }
+  }, [isSuccess, txData]);
 
   // Get optimized gas prices and estimator
   const { optimizedGas } = useOptimizedGas();
