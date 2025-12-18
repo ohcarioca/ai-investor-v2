@@ -141,8 +141,8 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
         </>
       )}
 
-      {/* Generate Graphs & Reports Card */}
-      {onSendMessage && (
+      {/* Generate Graphs & Reports Card - Only show when wallet is connected */}
+      {isConnected && onSendMessage && (
         <button
           onClick={() => onSendMessage('Show me the available charts and reports for my portfolio')}
           className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-5 transition-all duration-200 text-left"
