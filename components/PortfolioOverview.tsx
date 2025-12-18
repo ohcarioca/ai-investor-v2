@@ -10,9 +10,10 @@ import APYPerformanceChart from '@/components/charts/APYPerformanceChart';
 interface PortfolioOverviewProps {
   width?: number;
   onWidthChange?: (width: number) => void;
+  onSendMessage?: (message: string) => void;
 }
 
-export default function PortfolioOverview({ width: externalWidth, onWidthChange }: PortfolioOverviewProps) {
+export default function PortfolioOverview({ width: externalWidth, onWidthChange, onSendMessage }: PortfolioOverviewProps) {
   const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 30000);
   const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 30000);
   const { width: internalWidth, isResizing, handleMouseDown } = useSidebarResize({
@@ -46,7 +47,7 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange 
 
   return (
     <aside
-      className={`hidden lg:block fixed top-20 right-0 h-[calc(100vh-5rem)] bg-white border-l border-gray-200 overflow-y-auto ${isResizing ? 'select-none' : ''}`}
+      className={`hidden lg:block fixed top-[73px] right-0 h-[calc(100vh-73px)] bg-white border-l border-gray-200 overflow-y-auto ${isResizing ? 'select-none' : ''}`}
       style={{ width }}
     >
       {/* Resize Handle */}
@@ -97,7 +98,7 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange 
       {isConnected && (
         <>
           {/* Total Available for Investment Card */}
-          <div className="bg-gray-50 rounded-xl p-5 mb-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-gray-600 font-medium">Total Available for Investment (USDC)</span>
               <button className="p-1 hover:bg-gray-200 rounded transition-colors" aria-label="Copy balance">
@@ -119,13 +120,13 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange 
           </div>
 
           {/* Total Invested Card */}
-          <div className="bg-purple-50 rounded-xl p-5 mb-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-purple-700 font-medium">Total Invested</span>
+              <span className="text-sm text-gray-600 font-medium">Total Invested</span>
             </div>
-            <div className="text-2xl font-bold text-purple-900">
+            <div className="text-2xl font-bold text-gray-900">
               {isLoading || isLoadingInvestment ? (
-                <div className="animate-pulse bg-purple-300 h-8 w-32 rounded" />
+                <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
               ) : (
                 `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               )}
@@ -138,6 +139,17 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange 
             isLoading={isLoadingInvestment}
           />
         </>
+      )}
+
+      {/* Generate Graphs & Reports Card */}
+      {onSendMessage && (
+        <button
+          onClick={() => onSendMessage('Show me the available charts and reports for my portfolio')}
+          className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-5 transition-all duration-200 text-left"
+        >
+          <h3 className="text-sm font-medium text-gray-600">Generate Graphs & Reports</h3>
+          <p className="text-xs text-gray-500 mt-1">Analyze your portfolio performance</p>
+        </button>
       )}
       </div>
     </aside>

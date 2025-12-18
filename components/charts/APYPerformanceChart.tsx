@@ -78,7 +78,7 @@ export default function APYPerformanceChart({ currentAPY, isLoading }: APYPerfor
 
   if (isLoading) {
     return (
-      <div className="bg-gray-50 rounded-xl p-5 mb-4">
+      <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
         <div className="flex items-center justify-between mb-2">
           <div className="animate-pulse bg-gray-300 h-4 w-28 rounded" />
           <div className="animate-pulse bg-gray-300 h-8 w-16 rounded" />
@@ -89,7 +89,7 @@ export default function APYPerformanceChart({ currentAPY, isLoading }: APYPerfor
   }
 
   return (
-    <div className="bg-gray-50 rounded-xl p-5 mb-4">
+    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
       {/* Header with title and current APY - matching other cards */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600 font-medium">APY Performance</span>

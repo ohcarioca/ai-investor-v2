@@ -65,7 +65,7 @@ export default function Home() {
 
       {/* Main Content - sidebar is hidden on screens smaller than lg */}
       <main
-        className="pt-20 pb-24 sm:pb-32 flex flex-col min-h-screen"
+        className="pt-[73px] pb-24 sm:pb-32 flex flex-col min-h-screen"
         style={{ paddingRight: isLargeScreen ? sidebarWidth : 0 }}
       >
         {showWelcome ? (
@@ -112,7 +112,7 @@ export default function Home() {
       </main>
 
       {/* Portfolio Sidebar */}
-      <PortfolioOverview />
+      <PortfolioOverview onSendMessage={sendMessage} />
 
       {/* Chat Input */}
       <ChatInput
