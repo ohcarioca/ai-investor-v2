@@ -124,16 +124,23 @@ export async function POST(req: NextRequest) {
         if (toolResult.success && toolResult.data) {
           const data = toolResult.data as Record<string, unknown>;
 
-          // Handle swap data (from confirm_* tools)
+          // Handle swap data (from confirm_* tools ONLY)
+          // Only pass swap data to frontend if it has transactions (swapTransaction)
+          // Quote-only results (from invest, withdraw, swap_tokens preview) should NOT be passed
           if (data.swap) {
-            swapDataResult = data.swap;
-            // Debug: Log swap data being passed to frontend
             const swapData = data.swap as Record<string, unknown>;
-            console.log('[Chat API] Passing swap data to frontend:', {
-              needsApproval: swapData.needsApproval,
-              hasApprovalTx: !!swapData.approvalTransaction,
-              hasSwapTx: !!swapData.swapTransaction,
-            });
+
+            // Only pass to frontend if it has actual transactions to execute
+            if (swapData.swapTransaction) {
+              swapDataResult = data.swap;
+              console.log('[Chat API] Passing swap data to frontend:', {
+                needsApproval: swapData.needsApproval,
+                hasApprovalTx: !!swapData.approvalTransaction,
+                hasSwapTx: !!swapData.swapTransaction,
+              });
+            } else {
+              console.log('[Chat API] Swap data is quote-only (no transactions), not passing to frontend');
+            }
           }
 
           // Handle chart data (from generate_chart tool)
