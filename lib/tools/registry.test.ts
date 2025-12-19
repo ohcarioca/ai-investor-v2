@@ -227,8 +227,8 @@ describe('createDefaultRegistry', () => {
   it('should create registry with all default tools', () => {
     const registry = createDefaultRegistry();
 
-    // Should have 9 tools (3 balance + 4 investment + 2 swap)
-    expect(registry.count).toBe(9);
+    // Should have 13 tools (3 balance + 4 investment + 2 swap + 1 history + 3 solana)
+    expect(registry.count).toBe(13);
 
     // Balance tools
     expect(registry.has('get_wallet_balance')).toBe(true);
@@ -244,6 +244,14 @@ describe('createDefaultRegistry', () => {
     // Swap tools
     expect(registry.has('swap_tokens')).toBe(true);
     expect(registry.has('confirm_swap')).toBe(true);
+
+    // History tools
+    expect(registry.has('get_transaction_history')).toBe(true);
+
+    // Solana tools
+    expect(registry.has('get_solana_balance')).toBe(true);
+    expect(registry.has('solana_invest')).toBe(true);
+    expect(registry.has('confirm_solana_invest')).toBe(true);
   });
 });
 
