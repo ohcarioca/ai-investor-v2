@@ -11,7 +11,7 @@ import { EVMTransferService } from './EVMTransferService';
 import { DuplicateTracker } from './DuplicateTracker';
 import { BRIDGE_CONFIG } from '@/lib/constants/blockchain';
 import type { SolanaWebhookPayload } from '@/types/solana';
-import type { BridgeResult, SolanaVerificationResult } from '@/types/bridge';
+import type { BridgeResult } from '@/types/bridge';
 
 export class BridgeOrchestrator {
   private solanaVerifier: SolanaVerifier;

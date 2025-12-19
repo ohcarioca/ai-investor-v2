@@ -46,8 +46,8 @@ export class EVMTransferService {
     }
 
     const rpcUrl = isEthereum
-      ? process.env.BRIDGE_ETH_RPC_URL
-      : process.env.BRIDGE_AVAX_RPC_URL;
+      ? process.env.QUICKNODE_ETH_RPC_URL
+      : process.env.QUICKNODE_AVAX_RPC_URL;
 
     const usdcAddress = EVM_USDC_ADDRESSES[chainId];
     if (!usdcAddress) {

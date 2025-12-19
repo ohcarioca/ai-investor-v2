@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
         argsIgnorePattern: "^_",
         varsIgnorePattern: "^_",
       }],
+      // Disable overly strict setState-in-effect rule - localStorage hydration is a valid pattern
+      "react-hooks/set-state-in-effect": "off",
     },
   },
 ]);

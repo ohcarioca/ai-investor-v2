@@ -205,7 +205,7 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       setIsLoading(false);
       console.log('[useWalletBalance] Fetch completed', { isLoading: false });
     }
-  }, [address, isConnected, publicClient, nativeBalance, chain?.id]);
+  }, [address, isConnected, publicClient, nativeBalance, chain?.id, chain?.name]);
 
   const refetch = useCallback(async () => {
     await refetchNative();
@@ -233,7 +233,7 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
         hasChainId: !!chain?.id,
       });
     }
-  }, [isConnected, address, publicClient, chain?.id, fetchTokenBalances]);
+  }, [isConnected, address, publicClient, chain?.id, chain?.name, fetchTokenBalances]);
 
   // Auto-refresh
   useEffect(() => {

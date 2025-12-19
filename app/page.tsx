@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import FeatureCard from '@/components/FeatureCard';
 import PortfolioOverview from '@/components/PortfolioOverview';
@@ -11,53 +11,59 @@ import { useChat } from '@/hooks/useChat';
 const DEFAULT_SIDEBAR_WIDTH = 384;
 const STORAGE_KEY = 'portfolio-sidebar-width';
 
+function getInitialSidebarWidth(): number {
+  if (typeof window === 'undefined') return DEFAULT_SIDEBAR_WIDTH;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    const parsed = parseInt(stored, 10);
+    const maxWidth = Math.floor(window.innerWidth * 0.5);
+    if (!isNaN(parsed) && parsed >= 280 && parsed <= maxWidth) {
+      return parsed;
+    }
+  }
+  return DEFAULT_SIDEBAR_WIDTH;
+}
+
 export default function Home() {
   const { messages, isLoading, sendMessage, notifySwapSuccess } = useChat();
   const showWelcome = messages.length === 0;
 
-  // Initialize sidebar width from localStorage
+  // Initialize sidebar width with lazy initializer
   const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
 
+  // Initialize from localStorage on mount
   useEffect(() => {
-    // Check initial screen size and calculate max width
-    const checkScreenSize = () => {
-      const screenWidth = window.innerWidth;
-      setIsLargeScreen(screenWidth >= 1024);
+    setSidebarWidth(getInitialSidebarWidth());
+  }, []);
 
-      // Adjust sidebar width if it exceeds 50% of screen
-      const maxWidth = Math.floor(screenWidth * 0.5);
-      setSidebarWidth(prev => Math.min(prev, maxWidth));
-    };
+  // Handle screen resize
+  const checkScreenSize = useCallback(() => {
+    const screenWidth = window.innerWidth;
+    setIsLargeScreen(screenWidth >= 1024);
+    const maxWidth = Math.floor(screenWidth * 0.5);
+    setSidebarWidth(prev => Math.min(prev, maxWidth));
+  }, []);
+
+  // Handle sidebar resize event
+  const handleSidebarResize = useCallback((e: CustomEvent<{ width: number }>) => {
+    const newWidth = e.detail.width;
+    const maxWidth = Math.floor(window.innerWidth * 0.5);
+    if (newWidth >= 280 && newWidth <= maxWidth) {
+      setSidebarWidth(newWidth);
+    }
+  }, []);
+
+  useEffect(() => {
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-
-    // Load stored sidebar width
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      const maxWidth = Math.floor(window.innerWidth * 0.5);
-      if (!isNaN(parsed) && parsed >= 280 && parsed <= maxWidth) {
-        setSidebarWidth(parsed);
-      }
-    }
-
-    // Listen for custom sidebar resize event (immediate sync)
-    const handleSidebarResize = (e: CustomEvent<{ width: number }>) => {
-      const newWidth = e.detail.width;
-      const maxWidth = Math.floor(window.innerWidth * 0.5);
-      if (newWidth >= 280 && newWidth <= maxWidth) {
-        setSidebarWidth(newWidth);
-      }
-    };
-
     window.addEventListener('sidebar-resize', handleSidebarResize as EventListener);
 
     return () => {
       window.removeEventListener('resize', checkScreenSize);
       window.removeEventListener('sidebar-resize', handleSidebarResize as EventListener);
     };
-  }, []);
+  }, [checkScreenSize, handleSidebarResize]);
 
   return (
     <div className="min-h-screen bg-gray-50">

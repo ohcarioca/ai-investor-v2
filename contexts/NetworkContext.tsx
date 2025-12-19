@@ -44,6 +44,18 @@ const NetworkContext = createContext<NetworkContextType | null>(null);
 
 const STORAGE_KEY = 'preferred_network';
 
+function getStoredChainId(): SupportedChainId {
+  if (typeof window === 'undefined') return CHAIN_IDS.ETHEREUM;
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    const parsed = parseInt(stored);
+    if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE || parsed === CHAIN_IDS.SOLANA) {
+      return parsed as SupportedChainId;
+    }
+  }
+  return CHAIN_IDS.ETHEREUM;
+}
+
 export function NetworkProvider({ children }: { children: ReactNode }) {
   // Start with default value for SSR
   const [selectedChainId, setSelectedChainIdState] = useState<SupportedChainId>(CHAIN_IDS.ETHEREUM);
@@ -51,15 +63,9 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
 
   // Load from localStorage after mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    console.log('[NetworkContext] Loading from localStorage:', stored);
-    if (stored) {
-      const parsed = parseInt(stored);
-      if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE || parsed === CHAIN_IDS.SOLANA) {
-        console.log('[NetworkContext] Setting initial chain from storage:', parsed);
-        setSelectedChainIdState(parsed as SupportedChainId);
-      }
-    }
+    const storedChainId = getStoredChainId();
+    console.log('[NetworkContext] Loading from localStorage:', storedChainId);
+    setSelectedChainIdState(storedChainId);
     setIsHydrated(true);
   }, []);
 

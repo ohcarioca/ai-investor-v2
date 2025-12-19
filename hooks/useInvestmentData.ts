@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { useWalletBalance } from './useWalletBalance';
 
@@ -75,10 +75,16 @@ export function useInvestmentData(autoRefresh = false, refreshInterval = 30000):
     }
   }, [address, isConnected, refetchBalance]);
 
-  // Initial fetch
+  // Initial fetch - use ref to track if already fetched
+  const hasInitialFetch = useRef(false);
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && address && !hasInitialFetch.current) {
+      hasInitialFetch.current = true;
       fetchInvestmentData();
+    }
+    // Reset when disconnected
+    if (!isConnected) {
+      hasInitialFetch.current = false;
     }
   }, [isConnected, address, chainId, fetchInvestmentData]);
 

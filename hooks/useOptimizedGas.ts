@@ -229,7 +229,7 @@ export function useOptimizedGas(): UseOptimizedGasReturn {
         estimatedCostUsd,
       };
     },
-    [optimizedGas, nativePrice]
+    [optimizedGas, nativePrice, gasEstimator]
   );
 
   /**
