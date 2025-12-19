@@ -194,3 +194,35 @@ export function getSolscanTxUrl(signature: string): string {
 export function isNativeToken(address: string): boolean {
   return address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
 }
+
+// =============================================================================
+// BRIDGE CONFIGURATION
+// =============================================================================
+
+/**
+ * EVM USDC contract addresses by chain ID
+ */
+export const EVM_USDC_ADDRESSES: Record<number, string> = {
+  [CHAIN_IDS.ETHEREUM]: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  [CHAIN_IDS.AVALANCHE]: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+};
+
+/**
+ * Map network target string to chain ID
+ */
+export const NETWORK_TARGET_TO_CHAIN_ID: Record<'ETH' | 'AVAX', number> = {
+  ETH: CHAIN_IDS.ETHEREUM,
+  AVAX: CHAIN_IDS.AVALANCHE,
+};
+
+/**
+ * Bridge configuration constants
+ */
+export const BRIDGE_CONFIG = {
+  /** Minimum USDC amount for bridge transfer */
+  MIN_AMOUNT_USDC: 1,
+  /** Maximum USDC amount for bridge transfer */
+  MAX_AMOUNT_USDC: 10000,
+  /** Required confirmation level for Solana transactions */
+  CONFIRMATION_REQUIRED: 'confirmed' as const,
+};

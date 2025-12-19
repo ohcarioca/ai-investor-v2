@@ -1,10 +1,12 @@
 /**
  * Solana Investment Webhook API Route
- * Sends notification to backend after successful Solana investment
+ * Processes Solana USDC transfers and bridges to ETH/AVAX
+ * Also forwards notification to n8n webhook
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import type { SolanaWebhookPayload } from '@/types/solana';
+import type { SolanaWebhookPayload, SolanaWebhookResponseExtended } from '@/types/solana';
+import { BridgeOrchestrator } from '@/lib/services/bridge';
 
 const WEBHOOK_URL = 'https://n8n.balampay.com/webhook/new_wallet';
 const MAX_RETRIES = 3;
@@ -30,6 +32,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // =========================================================================
+    // BRIDGE PROCESSING - Verify Solana tx and send USDC on EVM
+    // =========================================================================
+    console.log('[Solana Webhook] Processing bridge request...');
+
+    const orchestrator = new BridgeOrchestrator();
+    const bridgeResult = await orchestrator.processBridgeRequest(payload);
+
+    if (!bridgeResult.success) {
+      console.error('[Solana Webhook] Bridge failed:', bridgeResult.error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: bridgeResult.error,
+          bridgeStatus: {
+            solanaVerified: bridgeResult.solanaVerification.isValid,
+            evmTransferHash: bridgeResult.evmTransfer?.txHash,
+            evmTransferStatus: 'failed' as const,
+          },
+        } satisfies SolanaWebhookResponseExtended,
+        { status: 500 }
+      );
+    }
+
+    console.log('[Solana Webhook] Bridge successful:', {
+      solanaHash: payload.tx_hash.slice(0, 20) + '...',
+      evmHash: bridgeResult.evmTransfer?.txHash,
+      amount: bridgeResult.solanaVerification.details?.amount,
+    });
+
+    // =========================================================================
+    // N8N WEBHOOK FORWARDING - Continue with existing functionality
+    // =========================================================================
+
     // Send webhook with retry logic
     let lastError: Error | null = null;
 
@@ -52,11 +88,16 @@ export async function POST(req: NextRequest) {
         });
 
         if (response.ok) {
-          console.log('[Solana Webhook] Sent successfully');
+          console.log('[Solana Webhook] n8n webhook sent successfully');
           return NextResponse.json({
             success: true,
             attempts: attempt,
-          });
+            bridgeStatus: {
+              solanaVerified: true,
+              evmTransferHash: bridgeResult.evmTransfer?.txHash,
+              evmTransferStatus: 'success' as const,
+            },
+          } satisfies SolanaWebhookResponseExtended);
         }
 
         // Non-200 response
@@ -75,16 +116,20 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // All retries failed
-    console.error('[Solana Webhook] All retries failed:', lastError?.message);
-    return NextResponse.json(
-      {
-        success: false,
-        error: lastError?.message || 'Failed to send webhook after all retries',
-        attempts: MAX_RETRIES,
+    // All n8n retries failed, but bridge was successful
+    // Return partial success since the important part (bridge) succeeded
+    console.error('[Solana Webhook] n8n webhook failed after all retries:', lastError?.message);
+    console.log('[Solana Webhook] Bridge was successful, returning partial success');
+    return NextResponse.json({
+      success: true, // Bridge succeeded, so overall success
+      warning: `n8n webhook failed: ${lastError?.message}`,
+      attempts: MAX_RETRIES,
+      bridgeStatus: {
+        solanaVerified: true,
+        evmTransferHash: bridgeResult.evmTransfer?.txHash,
+        evmTransferStatus: 'success' as const,
       },
-      { status: 500 }
-    );
+    } satisfies SolanaWebhookResponseExtended);
   } catch (error) {
     console.error('[Solana Webhook] Error processing request:', error);
     return NextResponse.json(

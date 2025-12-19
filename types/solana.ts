@@ -64,3 +64,22 @@ export interface SolanaWebhookResponse {
   success: boolean;
   error?: string;
 }
+
+/**
+ * Extended webhook response with bridge status
+ */
+export interface SolanaWebhookResponseExtended extends SolanaWebhookResponse {
+  /** Number of n8n webhook attempts */
+  attempts?: number;
+  /** Warning message (e.g., if n8n webhook failed but bridge succeeded) */
+  warning?: string;
+  /** Bridge operation status */
+  bridgeStatus?: {
+    /** Whether Solana transaction was verified on-chain */
+    solanaVerified: boolean;
+    /** EVM transaction hash for the USDC transfer */
+    evmTransferHash?: string;
+    /** Status of the EVM transfer */
+    evmTransferStatus: 'success' | 'failed';
+  };
+}
