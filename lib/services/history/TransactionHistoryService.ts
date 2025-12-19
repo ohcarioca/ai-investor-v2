@@ -10,7 +10,6 @@
 import { createPublicClient, http, parseAbiItem, formatUnits, getAddress } from 'viem';
 import { mainnet, avalanche } from 'viem/chains';
 import type {
-  Transaction,
   TokenTransfer,
   TransactionHistoryQuery,
   TransactionHistoryResponse,
@@ -57,7 +56,7 @@ const CHAIN_CONFIG: Record<number, { chain: typeof mainnet | typeof avalanche; r
 
 // Default block range for queries (to avoid timeout)
 const DEFAULT_BLOCK_RANGE = 10000;
-const MAX_BLOCK_RANGE = 100000;
+const _MAX_BLOCK_RANGE = 100000;
 
 export class TransactionHistoryService {
   private chainId: number;

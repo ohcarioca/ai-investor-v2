@@ -28,6 +28,21 @@ interface CustomTooltipProps {
   payload?: TooltipPayloadEntry[];
 }
 
+// Custom tooltip component (must be outside render to avoid recreation)
+function CustomTooltip({ active, payload }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white/95 backdrop-blur-sm border border-gray-100 rounded-lg shadow-lg px-3 py-2">
+        <p className="text-xs text-gray-500">{payload[0].payload.month}</p>
+        <p className="text-sm font-bold text-purple-600">
+          {payload[0].value.toFixed(2)}%
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 // Generate APY data for the last 3 months with a growth curve ending at current APY
 function generateAPYData(currentAPY: number) {
   // Get current date
@@ -60,21 +75,6 @@ function generateAPYData(currentAPY: number) {
 
 export default function APYPerformanceChart({ currentAPY, isLoading }: APYPerformanceChartProps) {
   const data = useMemo(() => generateAPYData(currentAPY), [currentAPY]);
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white/95 backdrop-blur-sm border border-gray-100 rounded-lg shadow-lg px-3 py-2">
-          <p className="text-xs text-gray-500">{payload[0].payload.month}</p>
-          <p className="text-sm font-bold text-purple-600">
-            {payload[0].value.toFixed(2)}%
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   if (isLoading) {
     return (

@@ -16,7 +16,7 @@ interface PortfolioOverviewProps {
   onSendMessage?: (message: string) => void;
 }
 
-export default function PortfolioOverview({ width: externalWidth, onWidthChange, onSendMessage }: PortfolioOverviewProps) {
+export default function PortfolioOverview({ width: externalWidth, onWidthChange: _onWidthChange, onSendMessage }: PortfolioOverviewProps) {
   const { isSolana } = useSelectedNetwork();
 
   // EVM balance (ETH/AVAX)
@@ -41,7 +41,7 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
   });
 
   // Use AppKit for unified wallet state
-  const { isConnected: isAppKitConnected } = useAppKitAccount();
+  const { isConnected: _isAppKitConnected } = useAppKitAccount();
   useAccount();
 
   // Use external width if provided (for syncing with parent), otherwise use internal
@@ -170,8 +170,8 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
             <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
               <p className="text-sm text-purple-800 font-medium mb-2">Solana Wallet</p>
               <p className="text-xs text-purple-600">
-                Para investir, você precisará criar uma carteira ETH ou AVAX.
-                Fale com a Kira para começar o processo de investimento.
+                To invest, you will need to create an ETH or AVAX wallet.
+                Talk to Kira to start the investment process.
               </p>
             </div>
           )}

@@ -14,7 +14,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -50,7 +49,7 @@ const formatCurrency = (value: number): string => {
 };
 
 // Format percentage values
-const formatPercent = (value: number): string => {
+const _formatPercent = (value: number): string => {
   return `${value.toFixed(1)}%`;
 };
 

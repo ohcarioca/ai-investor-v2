@@ -573,7 +573,7 @@ export class ChartDataService {
     const data: ChartDataPoint[] = [];
     const totalProfit = currentValue - invested;
     const dates = this.generateDateLabels(days, dataPoints);
-    const step = Math.floor(days / dataPoints);
+    const _step = Math.floor(days / dataPoints);
 
     for (let i = 0; i < dataPoints; i++) {
       const progress = i / (dataPoints - 1);

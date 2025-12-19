@@ -1,9 +1,11 @@
 'use client';
 
-import { Bell, Settings, Moon } from 'lucide-react';
-import UnifiedWalletButton from './UnifiedWalletButton';
+import { Settings } from 'lucide-react';
+import UnifiedWalletButton, { useWalletModal } from './UnifiedWalletButton';
 
 export default function Header() {
+  const { openWalletModal } = useWalletModal();
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-200 z-50">
       <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
@@ -18,23 +20,11 @@ export default function Header() {
         <div className="flex items-center gap-2 sm:gap-4">
           <UnifiedWalletButton />
           <button
-            className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
-            aria-label="Notifications"
-          >
-            <Bell className="w-5 h-5 text-gray-600" />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-purple-500 rounded-full"></span>
-          </button>
-          <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden md:block"
-            aria-label="Settings"
+            onClick={openWalletModal}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Wallet Settings"
           >
             <Settings className="w-5 h-5 text-gray-600" />
-          </button>
-          <button
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors hidden md:block"
-            aria-label="Toggle dark mode"
-          >
-            <Moon className="w-5 h-5 text-gray-600" />
           </button>
         </div>
       </div>

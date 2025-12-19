@@ -117,7 +117,7 @@ export function useSolanaBalance(autoRefresh: boolean = false, refreshInterval: 
           balance: usdcBalance,
           usdValue: usdcUsdValue,
         });
-      } catch (tokenError) {
+      } catch {
         // Token account doesn't exist = 0 balance
         console.log('[useSolanaBalance] USDC token account not found, assuming 0 balance');
         balances.push({
