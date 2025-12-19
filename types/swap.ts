@@ -80,8 +80,9 @@ export interface SwapBuildResponse {
   quote: SwapQuote;
 }
 
-// Chat integration types
-export interface SwapData {
+// Chat integration types - EVM Swap Data
+export interface EVMSwapData {
+  isSolana?: false;
   fromToken: string;
   toToken: string;
   fromAmount: string;
@@ -93,3 +94,16 @@ export interface SwapData {
   approvalTransaction?: ApprovalTransaction;
   swapTransaction: SwapTransaction;
 }
+
+// Solana Invest Data
+export interface SolanaSwapData {
+  isSolana: true;
+  serializedTransaction: string;
+  depositWallet: string;
+  amount: string;
+  targetWallet: string;
+  targetNetwork: 'ETH' | 'AVAX';
+}
+
+// Union type for chat message swapData
+export type SwapData = EVMSwapData | SolanaSwapData;

@@ -139,11 +139,22 @@ export function useChat() {
 
       // Debug: Log the full API response
       if (data.swapData) {
-        console.log('[useChat] Chat API response swapData:', {
-          needsApproval: data.swapData.needsApproval,
-          hasApprovalTx: !!data.swapData.approvalTransaction,
-          hasSwapTx: !!data.swapData.swapTransaction,
-        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const swapDataAny = data.swapData as any;
+        const isSolanaData = swapDataAny.isSolana === true;
+        if (isSolanaData) {
+          console.log('[useChat] Chat API response solanaData:', {
+            isSolana: true,
+            amount: swapDataAny.amount,
+            targetNetwork: swapDataAny.targetNetwork,
+          });
+        } else {
+          console.log('[useChat] Chat API response swapData:', {
+            needsApproval: swapDataAny.needsApproval,
+            hasApprovalTx: !!swapDataAny.approvalTransaction,
+            hasSwapTx: !!swapDataAny.swapTransaction,
+          });
+        }
       }
 
       if (!data.response) {

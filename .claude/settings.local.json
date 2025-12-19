@@ -37,7 +37,8 @@
       "Bash(npx md-to-pdf:*)",
       "Bash(move \"C:\\Users\\KABUM\\.claude\\plans\\async-tumbling-frost.pdf\" \"c:\\Users\\KABUM\\Documents\\AresFin\\Projects\\ai-investor-v2\\MVP-Canvas-Kira.pdf\")",
       "Bash(powershell -Command \"Stop-Process -Id 32148 -Force\")",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }

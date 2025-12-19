@@ -8,7 +8,7 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi';
 import { CheckCircle2, AlertCircle, Loader2, ExternalLink, TrendingDown } from 'lucide-react';
-import type { SwapData, Token } from '@/types/swap';
+import type { EVMSwapData, Token } from '@/types/swap';
 import { sendSwapWebhook } from '@/lib/webhook-service';
 import { buildWebhookPayload } from '@/lib/webhook-utils';
 import WebhookLoadingModal from './WebhookLoadingModal';
@@ -22,7 +22,7 @@ import { useOptimizedGas } from '@/hooks/useOptimizedGas';
 import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
 
 interface SwapApprovalCardProps {
-  swapData: SwapData;
+  swapData: EVMSwapData;
   onSwapSuccess?: (txHash: string, toAmount: string) => void;
 }
 

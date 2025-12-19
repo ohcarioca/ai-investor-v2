@@ -1,7 +1,9 @@
 import { Message } from '@/types/chat';
 import { User, Bot } from 'lucide-react';
 import SwapApprovalCard from './SwapApprovalCard';
+import SolanaInvestCard from './SolanaInvestCard';
 import ChartCard from './charts/ChartCard';
+import type { SolanaSwapData, EVMSwapData } from '@/types/swap';
 
 interface ChatMessageProps {
   message: Message;
@@ -11,14 +13,18 @@ interface ChatMessageProps {
 export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
-  // Handler para swap success
+  // Check if swapData is Solana type
+  const isSolanaData = message.swapData && 'isSolana' in message.swapData && message.swapData.isSolana === true;
+
+  // Handler para swap success (EVM only)
   const handleSwapSuccess = (txHash: string, toAmount: string) => {
-    if (message.swapData && onSwapSuccess) {
+    if (message.swapData && !isSolanaData && onSwapSuccess) {
+      const evmData = message.swapData as EVMSwapData;
       onSwapSuccess(
         txHash,
         toAmount,
-        message.swapData.fromToken,
-        message.swapData.toToken
+        evmData.fromToken,
+        evmData.toToken
       );
     }
   };
@@ -57,10 +63,17 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
           )}
         </div>
 
-        {/* Render SwapApprovalCard if swapData is present */}
-        {!isUser && message.swapData && (
+        {/* Render SolanaInvestCard for Solana transactions */}
+        {!isUser && message.swapData && isSolanaData && (
+          <SolanaInvestCard
+            solanaData={message.swapData as SolanaSwapData}
+          />
+        )}
+
+        {/* Render SwapApprovalCard for EVM swaps */}
+        {!isUser && message.swapData && !isSolanaData && (
           <SwapApprovalCard
-            swapData={message.swapData}
+            swapData={message.swapData as EVMSwapData}
             onSwapSuccess={handleSwapSuccess}
           />
         )}
