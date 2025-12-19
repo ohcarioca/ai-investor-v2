@@ -241,7 +241,7 @@ export interface ToolDefinition {
 /**
  * Tool category for organization
  */
-export type ToolCategory = 'balance' | 'investment' | 'swap' | 'chart' | 'history';
+export type ToolCategory = 'balance' | 'investment' | 'swap' | 'chart' | 'history' | 'solana';
 
 /**
  * Main interface that all tools must implement
@@ -390,4 +390,54 @@ export interface WalletBalance {
     balanceUsd: number;
   }>;
   totalUsd: number;
+}
+
+// ============================================================================
+// Solana Types
+// ============================================================================
+
+/**
+ * Solana investment result (preview before confirmation)
+ */
+export interface SolanaInvestResult {
+  requiresConfirmation: boolean;
+  amount: string;
+  targetWallet: string;
+  targetNetwork: 'ETH' | 'AVAX';
+  depositWallet: string;
+  estimatedFee: string;
+}
+
+/**
+ * Solana investment confirmation result
+ */
+export interface SolanaInvestConfirmResult {
+  success: boolean;
+  txHash: string;
+  amount: string;
+  targetWallet: string;
+  targetNetwork: 'ETH' | 'AVAX';
+  webhookSent: boolean;
+}
+
+/**
+ * Webhook payload for Solana investment notifications
+ */
+export interface SolanaWebhookPayload {
+  wallet_solana: string;
+  wallet_target: string;
+  network_target: 'ETH' | 'AVAX';
+  amount_usdc: number;
+  tx_hash: string;
+  timestamp: string;
+}
+
+/**
+ * Solana balance data
+ */
+export interface SolanaBalanceData {
+  address: string;
+  usdcBalance: number;
+  solBalance: number;
+  lastUpdated: Date;
 }

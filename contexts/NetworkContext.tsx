@@ -1,11 +1,12 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, ReactNode, useSyncExternalStore } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
 
 // Supported chain IDs
 export const CHAIN_IDS = {
   ETHEREUM: 1,
   AVALANCHE: 43114,
+  SOLANA: 101,
 } as const;
 
 export type SupportedChainId = typeof CHAIN_IDS[keyof typeof CHAIN_IDS];
@@ -22,6 +23,11 @@ export const NETWORKS: Record<SupportedChainId, { name: string; shortName: strin
     shortName: 'AVAX',
     icon: '/icons/avalanche.svg',
   },
+  [CHAIN_IDS.SOLANA]: {
+    name: 'Solana',
+    shortName: 'SOL',
+    icon: '/icons/solana.svg',
+  },
 };
 
 interface NetworkContextType {
@@ -31,54 +37,63 @@ interface NetworkContextType {
   networkShortName: string;
   isEthereum: boolean;
   isAvalanche: boolean;
+  isSolana: boolean;
 }
 
 const NetworkContext = createContext<NetworkContextType | null>(null);
 
 const STORAGE_KEY = 'preferred_network';
 
-// Helper to detect hydration using useSyncExternalStore
-const emptySubscribe = () => () => {};
-const getServerSnapshot = () => false;
-const getClientSnapshot = () => true;
-
 export function NetworkProvider({ children }: { children: ReactNode }) {
-  // Use useSyncExternalStore to detect hydration without causing cascading renders
-  const isHydrated = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
+  // Start with default value for SSR
+  const [selectedChainId, setSelectedChainIdState] = useState<SupportedChainId>(CHAIN_IDS.ETHEREUM);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-  // Initialize state from localStorage synchronously to avoid cascading renders
-  const [selectedChainId, setSelectedChainIdState] = useState<SupportedChainId>(() => {
-    if (typeof window === 'undefined') return CHAIN_IDS.ETHEREUM;
+  // Load from localStorage after mount
+  useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
+    console.log('[NetworkContext] Loading from localStorage:', stored);
     if (stored) {
       const parsed = parseInt(stored);
-      if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE) {
-        return parsed;
+      if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE || parsed === CHAIN_IDS.SOLANA) {
+        console.log('[NetworkContext] Setting initial chain from storage:', parsed);
+        setSelectedChainIdState(parsed as SupportedChainId);
       }
     }
-    return CHAIN_IDS.ETHEREUM;
-  });
+    setIsHydrated(true);
+  }, []);
 
   // Save to localStorage when changed
   const setSelectedChainId = useCallback((chainId: SupportedChainId) => {
+    console.log('[NetworkContext] setSelectedChainId called with:', chainId);
     setSelectedChainIdState(chainId);
     localStorage.setItem(STORAGE_KEY, chainId.toString());
+    console.log('[NetworkContext] State updated and saved to localStorage');
   }, []);
 
   const network = NETWORKS[selectedChainId];
 
-  const value: NetworkContextType = {
-    selectedChainId,
-    setSelectedChainId,
-    networkName: network.name,
-    networkShortName: network.shortName,
-    isEthereum: selectedChainId === CHAIN_IDS.ETHEREUM,
-    isAvalanche: selectedChainId === CHAIN_IDS.AVALANCHE,
-  };
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<NetworkContextType>(() => {
+    console.log('[NetworkContext] Creating context value with chainId:', selectedChainId);
+    return {
+      selectedChainId,
+      setSelectedChainId,
+      networkName: network.name,
+      networkShortName: network.shortName,
+      isEthereum: selectedChainId === CHAIN_IDS.ETHEREUM,
+      isAvalanche: selectedChainId === CHAIN_IDS.AVALANCHE,
+      isSolana: selectedChainId === CHAIN_IDS.SOLANA,
+    };
+  }, [selectedChainId, setSelectedChainId, network]);
 
-  // Prevent hydration mismatch
+  // Prevent hydration mismatch - render with default until hydrated
   if (!isHydrated) {
-    return null;
+    return (
+      <NetworkContext.Provider value={value}>
+        {children}
+      </NetworkContext.Provider>
+    );
   }
 
   return (

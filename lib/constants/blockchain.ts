@@ -14,11 +14,12 @@ export const CHAIN_IDS = {
   ETHEREUM: 1,
   AVALANCHE: 43114,
   BASE: 8453,
+  SOLANA: 101,
 } as const;
 
 export type SupportedChainId = (typeof CHAIN_IDS)[keyof typeof CHAIN_IDS];
 
-export const SUPPORTED_CHAIN_IDS = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE] as const;
+export const SUPPORTED_CHAIN_IDS = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE, CHAIN_IDS.SOLANA] as const;
 
 // =============================================================================
 // VIEM CHAIN CONFIGURATIONS
@@ -88,7 +89,36 @@ export const BLOCK_EXPLORERS: Record<number, BlockExplorerConfig> = {
     name: 'Snowtrace',
     url: 'https://snowtrace.io',
   },
+  [CHAIN_IDS.SOLANA]: {
+    name: 'Solscan',
+    url: 'https://solscan.io',
+  },
 };
+
+// =============================================================================
+// SOLANA CONSTANTS
+// =============================================================================
+
+/**
+ * Solana USDC token mint address (SPL Token)
+ */
+export const SOLANA_USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
+
+/**
+ * Solana deposit wallet for investment transfers
+ * Users send USDC here when investing from Solana
+ */
+export const SOLANA_DEPOSIT_WALLET = process.env.NEXT_PUBLIC_SOLANA_DEPOSIT_WALLET || '5Ki6rhVbWxmsLYxhNRT32ePPCUZwtuN7XZN16Dv7aXzg';
+
+/**
+ * Solana RPC endpoint
+ */
+export const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+
+/**
+ * Webhook URL for Solana investment notifications
+ */
+export const SOLANA_WEBHOOK_URL = 'https://n8n.balampay.com/webhook/new_wallet';
 
 // =============================================================================
 // HELPER FUNCTIONS
@@ -137,9 +167,25 @@ export function getChainName(chainId: number): string {
       return 'Avalanche';
     case CHAIN_IDS.BASE:
       return 'Base';
+    case CHAIN_IDS.SOLANA:
+      return 'Solana';
     default:
       return 'Unknown';
   }
+}
+
+/**
+ * Check if the chain is Solana
+ */
+export function isSolanaChain(chainId: number): boolean {
+  return chainId === CHAIN_IDS.SOLANA;
+}
+
+/**
+ * Get Solscan URL for a transaction
+ */
+export function getSolscanTxUrl(signature: string): string {
+  return `https://solscan.io/tx/${signature}`;
 }
 
 /**

@@ -2,9 +2,12 @@
 
 import { Copy, RefreshCw, Wallet, GripVertical } from 'lucide-react';
 import { useAccount } from 'wagmi';
+import { useAppKitAccount } from '@reown/appkit/react';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
+import { useSolanaBalance } from '@/hooks/useSolanaBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
 import { useSidebarResize } from '@/hooks/useSidebarResize';
+import { useSelectedNetwork } from '@/contexts/NetworkContext';
 import APYPerformanceChart from '@/components/charts/APYPerformanceChart';
 
 interface PortfolioOverviewProps {
@@ -14,7 +17,21 @@ interface PortfolioOverviewProps {
 }
 
 export default function PortfolioOverview({ width: externalWidth, onWidthChange, onSendMessage }: PortfolioOverviewProps) {
-  const { balance, isLoading, error, refetch, isConnected } = useWalletBalance(true, 90000);
+  const { isSolana } = useSelectedNetwork();
+
+  // EVM balance (ETH/AVAX)
+  const { balance: evmBalance, isLoading: isEvmLoading, error: evmError, refetch: refetchEvm, isConnected: isEvmConnected } = useWalletBalance(true, 90000);
+
+  // Solana balance
+  const { balance: solanaBalance, isLoading: isSolanaLoading, error: solanaError, refetch: refetchSolana, isConnected: isSolanaConnected } = useSolanaBalance(true, 90000);
+
+  // Use appropriate balance based on network
+  const balance = isSolana ? solanaBalance : evmBalance;
+  const isLoading = isSolana ? isSolanaLoading : isEvmLoading;
+  const error = isSolana ? solanaError : evmError;
+  const refetch = isSolana ? refetchSolana : refetchEvm;
+  const isConnected = isSolana ? isSolanaConnected : isEvmConnected;
+
   const { investmentData, isLoading: isLoadingInvestment, refetch: refetchInvestment } = useInvestmentData(true, 90000);
   const { width: internalWidth, isResizing, handleMouseDown } = useSidebarResize({
     minWidth: 280,
@@ -22,6 +39,9 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
     defaultWidth: 384,
     storageKey: 'portfolio-sidebar-width',
   });
+
+  // Use AppKit for unified wallet state
+  const { isConnected: isAppKitConnected } = useAppKitAccount();
   useAccount();
 
   // Use external width if provided (for syncing with parent), otherwise use internal
@@ -42,7 +62,9 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
   // Combined refresh function
   const handleRefresh = () => {
     refetch();
-    refetchInvestment();
+    if (!isSolana) {
+      refetchInvestment();
+    }
   };
 
   return (
@@ -119,30 +141,45 @@ export default function PortfolioOverview({ width: externalWidth, onWidthChange,
             )}
           </div>
 
-          {/* Total Invested Card */}
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600 font-medium">Total Invested</span>
+          {/* Total Invested Card - Hide for Solana */}
+          {!isSolana && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-gray-600 font-medium">Total Invested</span>
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {isLoading || isLoadingInvestment ? (
+                  <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
+                ) : (
+                  `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                )}
+              </div>
             </div>
-            <div className="text-2xl font-bold text-gray-900">
-              {isLoading || isLoadingInvestment ? (
-                <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
-              ) : (
-                `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              )}
-            </div>
-          </div>
+          )}
 
-          {/* APY Performance Chart */}
-          <APYPerformanceChart
-            currentAPY={currentAPY}
-            isLoading={isLoadingInvestment}
-          />
+          {/* APY Performance Chart - Hide for Solana */}
+          {!isSolana && (
+            <APYPerformanceChart
+              currentAPY={currentAPY}
+              isLoading={isLoadingInvestment}
+            />
+          )}
+
+          {/* Solana Info Card */}
+          {isSolana && (
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-purple-800 font-medium mb-2">Solana Wallet</p>
+              <p className="text-xs text-purple-600">
+                Para investir, você precisará criar uma carteira ETH ou AVAX.
+                Fale com a Kira para começar o processo de investimento.
+              </p>
+            </div>
+          )}
         </>
       )}
 
-      {/* Generate Graphs & Reports Card - Only show when wallet is connected */}
-      {isConnected && onSendMessage && (
+      {/* Generate Graphs & Reports Card - Only show when wallet is connected and NOT Solana */}
+      {isConnected && onSendMessage && !isSolana && (
         <button
           onClick={() => onSendMessage('Show me the available charts and reports for my portfolio')}
           className="w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-5 transition-all duration-200 text-left"

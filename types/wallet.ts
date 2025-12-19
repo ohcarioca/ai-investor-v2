@@ -33,15 +33,10 @@ export interface AccountBalance {
 }
 
 // Ethereum provider type with common methods
+// Note: window.ethereum is already typed by wagmi/viem
 export interface EthereumProvider {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
   on?: (event: string, callback: (...args: unknown[]) => void) => void;
   removeListener?: (event: string, callback: (...args: unknown[]) => void) => void;
   isMetaMask?: boolean;
-}
-
-declare global {
-  interface Window {
-    ethereum?: EthereumProvider;
-  }
 }

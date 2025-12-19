@@ -16,7 +16,11 @@
   },
   "dependencies": {
     "@okx-dex/okx-dex-sdk": "^1.0.17",
-    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@reown/appkit": "^1.8.15",
+    "@reown/appkit-adapter-solana": "^1.8.15",
+    "@reown/appkit-adapter-wagmi": "^1.8.15",
+    "@solana/spl-token": "^0.4.14",
+    "@solana/web3.js": "^1.98.4",
     "@tanstack/react-query": "^5.90.12",
     "lucide-react": "^0.556.0",
     "next": "16.0.8",

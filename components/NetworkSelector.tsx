@@ -10,7 +10,16 @@ interface NetworkSelectorProps {
 export default function NetworkSelector({ disabled = false, compact = false }: NetworkSelectorProps) {
   const { selectedChainId, setSelectedChainId } = useSelectedNetwork();
 
-  const networks: SupportedChainId[] = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE];
+  const networks: SupportedChainId[] = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE, CHAIN_IDS.SOLANA];
+
+  const handleNetworkClick = (chainId: SupportedChainId, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[NetworkSelector] Click on network:', chainId, 'Current:', selectedChainId);
+    if (chainId !== selectedChainId) {
+      setSelectedChainId(chainId);
+    }
+  };
 
   if (compact) {
     return (
@@ -20,8 +29,9 @@ export default function NetworkSelector({ disabled = false, compact = false }: N
           const isSelected = selectedChainId === chainId;
           return (
             <button
+              type="button"
               key={chainId}
-              onClick={() => setSelectedChainId(chainId)}
+              onClick={(e) => handleNetworkClick(chainId, e)}
               disabled={disabled}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                 isSelected
@@ -44,8 +54,9 @@ export default function NetworkSelector({ disabled = false, compact = false }: N
         const isSelected = selectedChainId === chainId;
         return (
           <button
+            type="button"
             key={chainId}
-            onClick={() => setSelectedChainId(chainId)}
+            onClick={(e) => handleNetworkClick(chainId, e)}
             disabled={disabled}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
               isSelected
@@ -72,6 +83,17 @@ function NetworkIcon({ chainId }: { chainId: SupportedChainId }) {
         <path d="M16 32.5v-8.1l-9.7-5.6z"/>
         <path d="M16 22.5l9.7-5.7-9.7-4.4z" opacity="0.2"/>
         <path d="M6.3 16.8l9.7 5.7v-10.1z" opacity="0.6"/>
+      </svg>
+    );
+  }
+
+  if (chainId === CHAIN_IDS.SOLANA) {
+    // Solana icon
+    return (
+      <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
+        <path d="M6.5 22.8c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z"/>
+        <path d="M6.5 5.2c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z"/>
+        <path d="M25.5 14c-0.2-0.2-0.4-0.3-0.7-0.3H6.6c-0.4 0-0.6 0.5-0.3 0.8l3.5 3.5c0.2 0.2 0.4 0.3 0.7 0.3h18.2c0.4 0 0.6-0.5 0.3-0.8l-3.5-3.5z"/>
       </svg>
     );
   }

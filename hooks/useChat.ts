@@ -2,6 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { useAccount } from 'wagmi';
+import { useAppKitAccount } from '@reown/appkit/react';
+import { useSelectedNetwork } from '@/contexts/NetworkContext';
 import { Message, ChatResponse } from '@/types/chat';
 
 const API_URL = '/api/chat';
@@ -10,7 +12,33 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { address, chain } = useAccount();
+
+  // Get wallet info from both wagmi (EVM) and AppKit (unified)
+  const { address: evmAddress, chain } = useAccount();
+  const { address: appKitAddress, caipAddress } = useAppKitAccount();
+  const { selectedChainId, isSolana } = useSelectedNetwork();
+
+  // Check if connected to Solana network (caipAddress format: "solana:mainnet:ADDRESS")
+  const isSolanaWalletConnected = !!caipAddress?.startsWith('solana:');
+  const isEvmWalletConnected = !!caipAddress?.startsWith('eip155:');
+
+  // Determine the correct address and chainId based on selected network and connected wallet
+  // When Solana is selected AND Solana wallet is connected, use Solana address
+  // When EVM is selected AND EVM wallet is connected, use EVM address
+  let walletAddress: string | undefined;
+  let currentChainId: number;
+
+  if (isSolana && isSolanaWalletConnected && appKitAddress) {
+    walletAddress = appKitAddress;
+    currentChainId = 101; // Solana chain ID
+  } else if (!isSolana && (isEvmWalletConnected || evmAddress)) {
+    walletAddress = evmAddress;
+    currentChainId = chain?.id || selectedChainId;
+  } else {
+    // Fallback: use whatever address is available
+    walletAddress = evmAddress || appKitAddress;
+    currentChainId = isSolana ? 101 : (chain?.id || selectedChainId);
+  }
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -35,12 +63,15 @@ export function useChat() {
       const allMessages = [...messages, userMessage];
 
       // Log chain info for debugging
-      const currentChainId = chain?.id;
       console.log('[useChat] Sending message with chain context:', {
         chainId: currentChainId,
-        chainName: chain?.name,
-        address: address?.slice(0, 10) + '...',
-        isConnected: !!address,
+        chainName: isSolana ? 'Solana' : chain?.name,
+        address: walletAddress ? `${walletAddress.slice(0, 10)}...` : 'NOT_CONNECTED',
+        isConnected: !!walletAddress,
+        isSolana,
+        isSolanaWalletConnected,
+        isEvmWalletConnected,
+        caipAddress: caipAddress?.slice(0, 20),
       });
 
       const response = await fetch(API_URL, {
@@ -50,8 +81,8 @@ export function useChat() {
         },
         body: JSON.stringify({
           messages: allMessages,
-          walletAddress: address, // Include wallet address for function calling
-          chainId: currentChainId, // Include chain ID for multi-chain support
+          walletAddress: walletAddress, // Include wallet address for function calling (EVM or Solana)
+          chainId: currentChainId, // Include chain ID for multi-chain support (101 for Solana)
         }),
         signal: controller.signal,
       });
@@ -189,7 +220,7 @@ export function useChat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, address, chain]);
+  }, [messages, walletAddress, currentChainId, isSolana, isSolanaWalletConnected, isEvmWalletConnected, caipAddress, chain]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

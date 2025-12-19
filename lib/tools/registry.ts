@@ -17,6 +17,7 @@ import { GetWalletBalanceTool, GetInvestmentDataTool, GenerateChartTool } from '
 import { InvestTool, ConfirmInvestTool, WithdrawTool, ConfirmWithdrawTool } from './implementations/investment';
 import { SwapTokensTool, ConfirmSwapTool } from './implementations/swap';
 import { GetTransactionHistoryTool } from './implementations/history';
+import { GetSolanaBalanceTool, SolanaInvestTool, ConfirmSolanaInvestTool } from './implementations/solana';
 
 /**
  * Registry for managing all available tools
@@ -168,6 +169,11 @@ export function createDefaultRegistry(): ToolRegistry {
 
   // History tools
   registry.register(new GetTransactionHistoryTool());
+
+  // Solana tools
+  registry.register(new GetSolanaBalanceTool());
+  registry.register(new SolanaInvestTool());
+  registry.register(new ConfirmSolanaInvestTool());
 
   console.log(`[ToolRegistry] Created default registry with ${registry.count} tools`);
 

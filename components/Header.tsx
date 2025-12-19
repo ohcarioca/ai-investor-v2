@@ -1,7 +1,7 @@
 'use client';
 
 import { Bell, Settings, Moon } from 'lucide-react';
-import WalletButton from './WalletButton';
+import UnifiedWalletButton from './UnifiedWalletButton';
 
 export default function Header() {
   return (
@@ -16,7 +16,7 @@ export default function Header() {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          <WalletButton />
+          <UnifiedWalletButton />
           <button
             className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors hidden sm:block"
             aria-label="Notifications"

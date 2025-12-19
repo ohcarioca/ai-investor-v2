@@ -54,7 +54,8 @@ export async function POST(req: NextRequest) {
 
     // Determine network - default to Ethereum (1)
     const currentChainId = chainId || 1;
-    const networkName = currentChainId === 1 ? 'Ethereum' : 'Avalanche';
+    const isSolana = currentChainId === 101;
+    const networkName = isSolana ? 'Solana' : (currentChainId === 1 ? 'Ethereum' : 'Avalanche');
 
     // Log wallet and network info for debugging
     console.log('[Chat API] Wallet address received:', walletAddress
@@ -63,10 +64,15 @@ export async function POST(req: NextRequest) {
     console.log('[Chat API] Chain ID:', currentChainId, `(${networkName})`);
 
     // Build tool context
+    // For Solana, we don't use isValidAddress (which is EVM-specific)
+    const isWalletConnected = isSolana
+      ? !!walletAddress && walletAddress.length >= 32 && walletAddress.length <= 44
+      : !!walletAddress && isValidAddress(walletAddress);
+
     const toolContext: ToolContext = {
       walletAddress,
       chainId: currentChainId,
-      isConnected: !!walletAddress && isValidAddress(walletAddress),
+      isConnected: isWalletConnected,
     };
 
     // Format messages for OpenAI
@@ -78,7 +84,27 @@ export async function POST(req: NextRequest) {
     // Build system prompt with wallet context
     let systemPromptWithContext = SYSTEM_PROMPT;
     if (toolContext.isConnected) {
-      systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- Connected Network: ${networkName} (Chain ID: ${currentChainId})\n- When the user asks about their balance or wallet, use this address on the ${networkName} network: ${walletAddress}`;
+      if (isSolana) {
+        // Solana-specific context with onboarding instructions
+        systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**
+- Connected Wallet Address: ${walletAddress}
+- Connected Network: Solana (Chain ID: 101)
+- Wallet Type: Solana (USDC)
+
+**SOLANA ONBOARDING FLOW:**
+O usuário está conectado com uma carteira Solana. Para investir, ele precisa:
+1. Criar ou informar uma carteira EVM (Ethereum ou Avalanche) - recomende AVAX por menor custo
+2. Usar a função solana_invest para enviar USDC da carteira Solana para nossa carteira de depósito
+3. O valor será disponibilizado na carteira EVM informada em algumas horas
+
+Quando o usuário quiser investir:
+- Pergunte quanto USDC ele quer investir
+- Pergunte o endereço da carteira destino (ETH ou AVAX) - deve começar com 0x
+- Pergunte qual rede prefere (recomende AVAX)
+- Use a tool solana_invest com os parâmetros coletados`;
+      } else {
+        systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Connected Wallet Address: ${walletAddress}\n- Connected Network: ${networkName} (Chain ID: ${currentChainId})\n- When the user asks about their balance or wallet, use this address on the ${networkName} network: ${walletAddress}`;
+      }
     } else {
       systemPromptWithContext += `\n\n**CURRENT USER CONTEXT:**\n- Wallet Status: NOT CONNECTED\n- If the user asks about balance or wallet operations, inform them they need to connect their wallet first.`;
     }
@@ -141,6 +167,15 @@ export async function POST(req: NextRequest) {
             } else {
               console.log('[Chat API] Swap data is quote-only (no transactions), not passing to frontend');
             }
+          }
+
+          // Handle Solana transaction data (from confirm_solana_invest)
+          if (data.solanaTransaction) {
+            swapDataResult = {
+              isSolana: true,
+              ...data.solanaTransaction as object,
+            };
+            console.log('[Chat API] Passing Solana transaction to frontend');
           }
 
           // Handle chart data (from generate_chart tool)

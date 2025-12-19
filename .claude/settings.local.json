@@ -35,7 +35,9 @@
       "Bash(powershell.exe -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host ''Node processes killed''\")",
       "Bash(ls:*)",
       "Bash(npx md-to-pdf:*)",
-      "Bash(move \"C:\\Users\\KABUM\\.claude\\plans\\async-tumbling-frost.pdf\" \"c:\\Users\\KABUM\\Documents\\AresFin\\Projects\\ai-investor-v2\\MVP-Canvas-Kira.pdf\")"
+      "Bash(move \"C:\\Users\\KABUM\\.claude\\plans\\async-tumbling-frost.pdf\" \"c:\\Users\\KABUM\\Documents\\AresFin\\Projects\\ai-investor-v2\\MVP-Canvas-Kira.pdf\")",
+      "Bash(powershell -Command \"Stop-Process -Id 32148 -Force\")",
+      "Bash(powershell:*)"
     ]
   }
 }
