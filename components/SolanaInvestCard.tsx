@@ -98,18 +98,9 @@ interface SolanaInvestCardProps {
   onSuccess?: (txSignature: string) => void;
 }
 
-export default function SolanaInvestCard({
-  solanaData,
-  onSuccess,
-}: SolanaInvestCardProps) {
-  const {
-    state,
-    webhookState,
-    executeInvest,
-    reset,
-    retryWebhook,
-    isConnected,
-  } = useSolanaInvest();
+export default function SolanaInvestCard({ solanaData, onSuccess }: SolanaInvestCardProps) {
+  const { state, webhookState, executeInvest, reset, retryWebhook, isConnected } =
+    useSolanaInvest();
 
   // Get localized strings based on user's browser language
   const t = useMemo(() => i18n[getUserLanguage()], []);
@@ -140,9 +131,7 @@ export default function SolanaInvestCard({
       <div className="bg-white border border-gray-200 rounded-xl p-4 mt-4">
         <div className="flex items-center gap-2 text-orange-600">
           <AlertCircle className="w-5 h-5" />
-          <span className="font-medium">
-            {t.connectWallet}
-          </span>
+          <span className="font-medium">{t.connectWallet}</span>
         </div>
       </div>
     );
@@ -160,9 +149,7 @@ export default function SolanaInvestCard({
       <div className="space-y-3 mb-4">
         <div className="flex justify-between">
           <span className="text-sm text-gray-600">{t.amount}</span>
-          <span className="text-sm font-medium text-gray-900">
-            {solanaData.amount} USDC
-          </span>
+          <span className="text-sm font-medium text-gray-900">{solanaData.amount} USDC</span>
         </div>
         <div className="flex justify-between">
           <span className="text-sm text-gray-600">{t.depositWallet}</span>
@@ -197,9 +184,7 @@ export default function SolanaInvestCard({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            <span className="text-sm font-medium text-blue-900">
-              {t.waitingSignature}
-            </span>
+            <span className="text-sm font-medium text-blue-900">{t.waitingSignature}</span>
           </div>
         </div>
       )}
@@ -208,9 +193,7 @@ export default function SolanaInvestCard({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            <span className="text-sm font-medium text-blue-900">
-              {t.waitingConfirmation}
-            </span>
+            <span className="text-sm font-medium text-blue-900">{t.waitingConfirmation}</span>
           </div>
           {state.txSignature && (
             <a
@@ -230,9 +213,7 @@ export default function SolanaInvestCard({
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            <span className="text-sm font-medium text-blue-900">
-              {t.notifyingServer}
-            </span>
+            <span className="text-sm font-medium text-blue-900">{t.notifyingServer}</span>
           </div>
         </div>
       )}
@@ -241,9 +222,7 @@ export default function SolanaInvestCard({
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-green-600" />
-            <span className="text-sm font-medium text-green-900">
-              {t.investmentSuccess}
-            </span>
+            <span className="text-sm font-medium text-green-900">{t.investmentSuccess}</span>
           </div>
           {state.txSignature && (
             <a
@@ -256,9 +235,7 @@ export default function SolanaInvestCard({
               <ExternalLink className="w-4 h-4" />
             </a>
           )}
-          {state.error && (
-            <p className="text-sm text-orange-600 mt-2">{state.error}</p>
-          )}
+          {state.error && <p className="text-sm text-orange-600 mt-2">{state.error}</p>}
         </div>
       )}
 
@@ -267,9 +244,7 @@ export default function SolanaInvestCard({
           <div className="flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-red-900">
-                {t.transactionFailed}
-              </p>
+              <p className="text-sm font-medium text-red-900">{t.transactionFailed}</p>
               <p className="text-sm text-red-700 mt-1">{state.error}</p>
             </div>
           </div>
@@ -288,7 +263,9 @@ export default function SolanaInvestCard({
           </button>
         )}
 
-        {(state.step === 'signing' || state.step === 'confirming' || state.step === 'sending-webhook') && (
+        {(state.step === 'signing' ||
+          state.step === 'confirming' ||
+          state.step === 'sending-webhook') && (
           <button
             disabled
             className="flex-1 bg-gray-300 text-gray-500 font-medium py-3 px-4 rounded-lg cursor-not-allowed flex items-center justify-center gap-2"

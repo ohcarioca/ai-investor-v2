@@ -8,26 +8,27 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 
 ### 1. **Arquivos de Configuração**
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `config/agent.config.json` | Configuração principal (edite aqui!) |
-| `config/agent.config.schema.json` | Schema JSON para validação |
-| `lib/config.ts` | Sistema de carregamento e utilities |
-| `hooks/useAgentConfig.ts` | React hooks para acesso à config |
+| Arquivo                           | Descrição                            |
+| --------------------------------- | ------------------------------------ |
+| `config/agent.config.json`        | Configuração principal (edite aqui!) |
+| `config/agent.config.schema.json` | Schema JSON para validação           |
+| `lib/config.ts`                   | Sistema de carregamento e utilities  |
+| `hooks/useAgentConfig.ts`         | React hooks para acesso à config     |
 
 ### 2. **Documentação Completa**
 
-| Documento | Conteúdo |
-|-----------|----------|
-| `config/README.md` | Guia completo de configuração |
-| `config/EXAMPLES.md` | 16 cenários práticos de uso |
-| `config/INTEGRATION_EXAMPLE.tsx` | 12 exemplos de código |
-| `CONFIG_GUIDE.md` | Guia rápido de início |
-| `AGENT_SPECIFICATION.md` | Especificação do comportamento |
+| Documento                        | Conteúdo                       |
+| -------------------------------- | ------------------------------ |
+| `config/README.md`               | Guia completo de configuração  |
+| `config/EXAMPLES.md`             | 16 cenários práticos de uso    |
+| `config/INTEGRATION_EXAMPLE.tsx` | 12 exemplos de código          |
+| `CONFIG_GUIDE.md`                | Guia rápido de início          |
+| `AGENT_SPECIFICATION.md`         | Especificação do comportamento |
 
 ### 3. **Áreas Configuráveis**
 
 #### **Personalidade do Agente**
+
 ```json
 {
   "agent": {
@@ -42,6 +43,7 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 ```
 
 #### **Parâmetros de Trading**
+
 ```json
 {
   "capabilities": {
@@ -55,6 +57,7 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 ```
 
 #### **Comportamento de IA**
+
 ```json
 {
   "capabilities": {
@@ -68,6 +71,7 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 ```
 
 #### **Redes e Tokens**
+
 ```json
 {
   "blockchain": {
@@ -81,6 +85,7 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 ```
 
 #### **Segurança**
+
 ```json
 {
   "security": {
@@ -93,6 +98,7 @@ Implementamos um **sistema de configuração dinâmico e completo** que permite 
 ```
 
 #### **Feature Flags**
+
 ```json
 {
   "features": {
@@ -146,6 +152,7 @@ export async function POST(request: Request) {
 ## 📊 Funções Disponíveis
 
 ### Getters Básicos
+
 ```typescript
 getConfig<T>(path: string): T
 isFeatureEnabled(path: string): boolean
@@ -155,6 +162,7 @@ getEnabledTokens(chainId?: number)
 ```
 
 ### Prompts e Mensagens
+
 ```typescript
 getSystemPrompt(): string
 getWelcomeMessage(): string
@@ -164,6 +172,7 @@ getConfirmationPrompt(key: string, vars?: object): string
 ```
 
 ### Validação
+
 ```typescript
 validatePriceImpact(impact: number)
 shouldShowDisclaimer(context: string): boolean
@@ -171,6 +180,7 @@ validateConfig()
 ```
 
 ### API Config
+
 ```typescript
 getTimeout(operation: string): number
 getRetryConfig()
@@ -272,6 +282,7 @@ ai-investor-agent/
 ## 🔍 Validação
 
 O sistema valida automaticamente:
+
 - ✅ Campos obrigatórios presentes
 - ✅ Valores dentro dos limites válidos
 - ✅ Configurações consistentes
@@ -281,6 +292,7 @@ O sistema valida automaticamente:
 ## 🛡️ Segurança
 
 ### Práticas Recomendadas
+
 - ✅ Nunca commitar secrets
 - ✅ Usar variáveis de ambiente para dados sensíveis
 - ✅ Revisar limites de transação
@@ -288,12 +300,13 @@ O sistema valida automaticamente:
 - ✅ Testar mudanças em desenvolvimento
 
 ### Configurações Críticas
+
 ```json
 {
   "behavior": {
     "financial_advice": {
-      "can_recommend": false,        // ⚠️ Manter false
-      "can_predict_prices": false    // ⚠️ Manter false
+      "can_recommend": false, // ⚠️ Manter false
+      "can_predict_prices": false // ⚠️ Manter false
     }
   }
 }
@@ -302,35 +315,39 @@ O sistema valida automaticamente:
 ## 📚 Documentação
 
 ### Leia Primeiro
+
 1. **`CONFIG_GUIDE.md`** - Guia rápido
 2. **`config/README.md`** - Referência completa
 3. **`config/EXAMPLES.md`** - Exemplos práticos
 
 ### Para Desenvolvedores
+
 1. **`lib/config.ts`** - Código do sistema
 2. **`hooks/useAgentConfig.ts`** - React hooks
 3. **`config/INTEGRATION_EXAMPLE.tsx`** - Exemplos de integração
 
 ### Para Product Managers
+
 1. **`AGENT_SPECIFICATION.md`** - Comportamento do agente
 2. **`config/EXAMPLES.md`** - Casos de uso
 3. **`CONFIG_GUIDE.md`** - Guia rápido
 
 ## 🎯 Casos de Uso Comuns
 
-| Objetivo | Arquivo | Seção |
-|----------|---------|-------|
-| Mudar tom do agente | `agent.config.json` | `agent.personality` |
-| Ajustar slippage | `agent.config.json` | `capabilities.token_swaps` |
-| Adicionar token | `agent.config.json` | `tokens.supported` |
-| Habilitar feature | `agent.config.json` | `features` |
-| Customizar mensagens | `agent.config.json` | `prompts` |
-| Ajustar segurança | `agent.config.json` | `security` |
-| Configurar API | `agent.config.json` | `api` |
+| Objetivo             | Arquivo             | Seção                      |
+| -------------------- | ------------------- | -------------------------- |
+| Mudar tom do agente  | `agent.config.json` | `agent.personality`        |
+| Ajustar slippage     | `agent.config.json` | `capabilities.token_swaps` |
+| Adicionar token      | `agent.config.json` | `tokens.supported`         |
+| Habilitar feature    | `agent.config.json` | `features`                 |
+| Customizar mensagens | `agent.config.json` | `prompts`                  |
+| Ajustar segurança    | `agent.config.json` | `security`                 |
+| Configurar API       | `agent.config.json` | `api`                      |
 
 ## 🔧 Troubleshooting
 
 ### Configuração não carrega
+
 ```bash
 # Verificar sintaxe JSON
 npm run build
@@ -340,12 +357,14 @@ npm run dev
 ```
 
 ### Erros de tipo
+
 ```typescript
 // Usar getters type-safe
 const value = getConfig<string>('path.to.value');
 ```
 
 ### Feature não funciona
+
 ```typescript
 // Verificar se está habilitada
 console.log(isFeatureEnabled('features.beta.my_feature'));
@@ -353,15 +372,15 @@ console.log(isFeatureEnabled('features.beta.my_feature'));
 
 ## 📊 Status da Implementação
 
-| Componente | Status | Integrado |
-|------------|--------|-----------|
-| Sistema de Config | ✅ | Sim |
-| Validação | ✅ | Sim |
-| TypeScript Types | ✅ | Sim |
-| React Hooks | ✅ | Sim |
-| Documentação | ✅ | Sim |
-| Exemplos | ✅ | Sim |
-| Tests | ⏳ | Pendente |
+| Componente        | Status | Integrado |
+| ----------------- | ------ | --------- |
+| Sistema de Config | ✅     | Sim       |
+| Validação         | ✅     | Sim       |
+| TypeScript Types  | ✅     | Sim       |
+| React Hooks       | ✅     | Sim       |
+| Documentação      | ✅     | Sim       |
+| Exemplos          | ✅     | Sim       |
+| Tests             | ⏳     | Pendente  |
 
 ## 🚀 Próximos Passos
 
@@ -387,6 +406,7 @@ console.log(isFeatureEnabled('features.beta.my_feature'));
 ## 💡 Dicas
 
 ### Desenvolvimento
+
 ```json
 {
   "logging": { "level": "debug" },
@@ -395,6 +415,7 @@ console.log(isFeatureEnabled('features.beta.my_feature'));
 ```
 
 ### Produção
+
 ```json
 {
   "logging": { "level": "warn" },
@@ -403,6 +424,7 @@ console.log(isFeatureEnabled('features.beta.my_feature'));
 ```
 
 ### Testes
+
 ```json
 {
   "features": { "experimental": { "my_feature": true } }
@@ -412,6 +434,7 @@ console.log(isFeatureEnabled('features.beta.my_feature'));
 ## 📞 Suporte
 
 Precisa de ajuda?
+
 1. Consulte a documentação
 2. Veja os exemplos
 3. Revise o código em `lib/config.ts`

@@ -1,6 +1,7 @@
 # Best Practices Guide - Kira AI Investor Agent
 
 ## Table of Contents
+
 - [Language Requirements](#language-requirements)
 - [Project Overview](#project-overview)
 - [Code Style & Structure](#code-style--structure)
@@ -30,6 +31,7 @@ This is a **non-negotiable requirement** for this project.
 #### What Must Be in English:
 
 ✅ **Code:**
+
 ```typescript
 // ✅ CORRECT - English
 function calculateTotalBalance(amount: number): number {
@@ -43,6 +45,7 @@ function calcularSaldoTotal(cantidad: number): number {
 ```
 
 ✅ **Comments:**
+
 ```typescript
 // ✅ CORRECT - English
 // Calculate the user's total portfolio value
@@ -54,17 +57,19 @@ const total = calculatePortfolio();
 ```
 
 ✅ **Variable & Function Names:**
+
 ```typescript
 // ✅ CORRECT - English
 const userBalance = 1000;
-const errorMessage = "Invalid input";
+const errorMessage = 'Invalid input';
 
 // ❌ WRONG - Other languages
 const saldoUsuario = 1000;
-const mensagemErro = "Entrada inválida";
+const mensagemErro = 'Entrada inválida';
 ```
 
 ✅ **Type Definitions:**
+
 ```typescript
 // ✅ CORRECT - English
 interface UserProfile {
@@ -82,6 +87,7 @@ interface PerfilUsuario {
 ```
 
 ✅ **Commit Messages:**
+
 ```bash
 # ✅ CORRECT - English
 git commit -m "feat(chat): add message retry functionality"
@@ -91,23 +97,29 @@ git commit -m "feat(chat): adicionar funcionalidade de tentar novamente"
 ```
 
 ✅ **Documentation:**
+
 ```markdown
 <!-- ✅ CORRECT - English -->
+
 # User Authentication
+
 This component handles user login and session management.
 
 <!-- ❌ WRONG - Other languages -->
+
 # Autenticação de Usuário
+
 Este componente gerencia login e sessões de usuário.
 ```
 
 ✅ **Error Messages (Developer-Facing):**
+
 ```typescript
 // ✅ CORRECT - English (for developers)
-throw new Error("Failed to connect to database");
+throw new Error('Failed to connect to database');
 
 // ❌ WRONG - Other languages
-throw new Error("Falha ao conectar ao banco de dados");
+throw new Error('Falha ao conectar ao banco de dados');
 ```
 
 #### User-Facing Content Exception:
@@ -117,8 +129,8 @@ throw new Error("Falha ao conectar ao banco de dados");
 ```typescript
 // ✅ ACCEPTABLE - User-facing content in Portuguese
 const userMessage = {
-  success: "Mensagem enviada com sucesso!",
-  error: "Desculpe, ocorreu um erro.",
+  success: 'Mensagem enviada com sucesso!',
+  error: 'Desculpe, ocorreu um erro.',
 };
 
 // But the code around it must be in English:
@@ -147,6 +159,7 @@ function displayUserMessage(type: 'success' | 'error'): void {
 ## Project Overview
 
 This project is a Web3-enabled AI financial assistant built with:
+
 - **Next.js 16** (App Router + Turbopack for dev)
 - **React 19**
 - **TypeScript 5**
@@ -214,6 +227,7 @@ import './styles.css';
 ### Type Safety
 
 ✅ **DO:**
+
 ```typescript
 // Use explicit types for function parameters
 function sendMessage(content: string): Promise<void> {
@@ -233,9 +247,10 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
 ```
 
 ❌ **DON'T:**
+
 ```typescript
 // Avoid using 'any' unless absolutely necessary
-function processData(data: any) { } // Bad
+function processData(data: any) {} // Bad
 
 // Don't use implicit any
 const config = {}; // Implicit any
@@ -284,6 +299,7 @@ export default function ClientComponent() {
 ```
 
 **When to use Client Components:**
+
 - Need React hooks (useState, useEffect, etc.)
 - Event handlers (onClick, onChange, etc.)
 - Browser-only APIs (localStorage, window, etc.)
@@ -296,13 +312,13 @@ export default function ClientComponent() {
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: "Kira AI Investor Agent",
-  description: "AI-powered financial assistant for Web3",
-  keywords: ["AI", "Web3", "DeFi"],
+  title: 'Kira AI Investor Agent',
+  description: 'AI-powered financial assistant for Web3',
+  keywords: ['AI', 'Web3', 'DeFi'],
   openGraph: {
-    title: "Kira AI Investor Agent",
-    description: "Your Web3 financial assistant",
-    type: "website",
+    title: 'Kira AI Investor Agent',
+    description: 'Your Web3 financial assistant',
+    type: 'website',
   },
 };
 ```
@@ -354,17 +370,20 @@ export default function ChatInput({ onSendMessage, isLoading }: ChatInputProps) 
 Use Tailwind's responsive prefixes consistently:
 
 ```tsx
-<div className="
+<div
+  className="
   px-4 sm:px-6           // Padding
   text-sm sm:text-base   // Text size
   hidden lg:block        // Visibility
   grid grid-cols-1 md:grid-cols-2  // Layout
-">
+"
+>
   {/* Content */}
 </div>
 ```
 
 **Breakpoints:**
+
 - `sm`: 640px (mobile landscape)
 - `md`: 768px (tablet)
 - `lg`: 1024px (desktop)
@@ -424,6 +443,7 @@ export function useChat() {
 ### When to Use useCallback
 
 ✅ **DO use:**
+
 ```typescript
 // When passing functions to optimized child components
 const handleClick = useCallback(() => {
@@ -434,6 +454,7 @@ const handleClick = useCallback(() => {
 ```
 
 ❌ **DON'T use unnecessarily:**
+
 ```typescript
 // Not needed for simple event handlers
 const handleClick = () => console.log('clicked'); // OK without useCallback
@@ -455,6 +476,7 @@ API_SECRET_KEY=secret_value
 ```
 
 **Rules:**
+
 - Use `NEXT_PUBLIC_` prefix for client-accessible variables
 - Never commit `.env.local` to git
 - Provide `.env.example` with dummy values
@@ -559,30 +581,28 @@ function getErrorMessage(error: unknown): string {
 ### WCAG 2.1 AA Compliance
 
 **Color Contrast:**
+
 - Normal text: 4.5:1 minimum
 - Large text (18pt+): 3:1 minimum
 
 **Keyboard Navigation:**
+
 ```tsx
 // Ensure all interactive elements are keyboard accessible
-<button
-  onClick={handleClick}
-  onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-  tabIndex={0}
->
+<button onClick={handleClick} onKeyDown={(e) => e.key === 'Enter' && handleClick()} tabIndex={0}>
   Click me
 </button>
 ```
 
 **Focus Management:**
+
 ```tsx
 // Show focus indicators
-<button className="focus:ring-2 focus:ring-purple-500 focus:outline-none">
-  Button
-</button>
+<button className="focus:ring-2 focus:ring-purple-500 focus:outline-none">Button</button>
 ```
 
 **Screen Reader Support:**
+
 ```tsx
 // Use semantic HTML
 <nav aria-label="Main navigation">
@@ -624,7 +644,7 @@ import Image from 'next/image';
   width={200}
   height={100}
   priority // For above-the-fold images
-/>
+/>;
 ```
 
 ### Memoization
@@ -665,15 +685,17 @@ if (!input || input.length > 1000) {
 
 ```tsx
 // React automatically escapes content
-<div>{userInput}</div> // Safe
+<div>{userInput}</div>; // Safe
 
 // Be careful with dangerouslySetInnerHTML
 // Only use with sanitized content
 import DOMPurify from 'isomorphic-dompurify';
 
-<div dangerouslySetInnerHTML={{
-  __html: DOMPurify.sanitize(htmlContent)
-}} />
+<div
+  dangerouslySetInnerHTML={{
+    __html: DOMPurify.sanitize(htmlContent),
+  }}
+/>;
 ```
 
 ### Environment Secrets
@@ -759,6 +781,7 @@ chore(deps): update dependencies to latest versions
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation changes
@@ -784,7 +807,7 @@ docs/update-api-contract
 
 ```typescript
 // next.config.ts
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   turbopack: {},
@@ -828,6 +851,7 @@ vercel --prod
 ```
 
 **Environment Variables in Vercel:**
+
 1. Go to Project Settings → Environment Variables
 2. Add `NEXT_PUBLIC_*` variables for client-side
 3. Add server-only variables without prefix
@@ -885,17 +909,9 @@ if (chain?.id !== 43114) {
 
 ```css
 /* Primary Colors */
---purple-600: #9333EA
---pink-500: #EC4899
-
-/* Gradients */
-.gradient-primary {
-  background: linear-gradient(to right, #9333EA, #EC4899);
-}
-
-/* Neutral Colors */
---gray-50: #F9FAFB
---gray-900: #111827
+--purple-600: #9333ea --pink-500: #ec4899 /* Gradients */ .gradient-primary
+  {background: linear-gradient(to right, #9333ea, #ec4899) ;} /* Neutral Colors */
+  --gray-50: #f9fafb --gray-900: #111827;
 ```
 
 ---

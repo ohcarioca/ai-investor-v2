@@ -273,7 +273,7 @@ To temporarily disable a token without removing it:
         "decimals": 18,
         "is_native": false,
         "chain_id": 43114,
-        "enabled": false,  // Set to false to disable
+        "enabled": false, // Set to false to disable
         "icon_url": "",
         "coingecko_id": ""
       }
@@ -300,9 +300,7 @@ To temporarily disable a token without removing it:
           "symbol": "AVAX",
           "decimals": 18
         },
-        "rpc_urls": [
-          "https://api.avax.network/ext/bc/C/rpc"
-        ],
+        "rpc_urls": ["https://api.avax.network/ext/bc/C/rpc"],
         "block_explorer": "https://snowtrace.io",
         "enabled": true,
         "default": true
@@ -315,10 +313,7 @@ To temporarily disable a token without removing it:
           "symbol": "ETH",
           "decimals": 18
         },
-        "rpc_urls": [
-          "https://eth.llamarpc.com",
-          "https://rpc.ankr.com/eth"
-        ],
+        "rpc_urls": ["https://eth.llamarpc.com", "https://rpc.ankr.com/eth"],
         "block_explorer": "https://etherscan.io",
         "enabled": true,
         "default": false
@@ -572,6 +567,7 @@ Then add tokens for Ethereum:
 Start with experimental off, enable features as they stabilize:
 
 **Week 1: Testing**
+
 ```json
 {
   "features": {
@@ -585,6 +581,7 @@ Start with experimental off, enable features as they stabilize:
 ```
 
 **Week 2: Beta**
+
 ```json
 {
   "features": {
@@ -598,6 +595,7 @@ Start with experimental off, enable features as they stabilize:
 ```
 
 **Week 3: Production**
+
 ```json
 {
   "capabilities": {

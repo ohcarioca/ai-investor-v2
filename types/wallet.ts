@@ -7,11 +7,7 @@ export interface WalletState {
   chain: Chain | undefined;
 }
 
-export type WalletErrorType =
-  | 'USER_REJECTED'
-  | 'NO_METAMASK'
-  | 'WRONG_NETWORK'
-  | 'UNKNOWN';
+export type WalletErrorType = 'USER_REJECTED' | 'NO_METAMASK' | 'WRONG_NETWORK' | 'UNKNOWN';
 
 export interface WalletError {
   type: WalletErrorType;

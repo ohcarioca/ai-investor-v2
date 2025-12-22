@@ -23,7 +23,8 @@ interface InvestResult {
 
 export class InvestTool extends BaseTool {
   readonly name = 'invest';
-  readonly description = 'Investe USDC no fundo SIERRA. Use quando o usuário falar: "quero investir", "investir X USDC", "aportar", "aplicar dinheiro", etc. Sempre converte USDC → SIERRA.';
+  readonly description =
+    'Investe USDC no fundo SIERRA. Use quando o usuário falar: "quero investir", "investir X USDC", "aportar", "aplicar dinheiro", etc. Sempre converte USDC → SIERRA.';
   readonly category = 'investment' as const;
   readonly requiresWallet = true;
 

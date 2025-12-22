@@ -33,17 +33,11 @@ export async function POST(request: NextRequest) {
 
     // Validate required parameters
     if (!address) {
-      return NextResponse.json(
-        { error: 'Wallet address is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Wallet address is required' }, { status: 400 });
     }
 
     if (!isAddress(address)) {
-      return NextResponse.json(
-        { error: 'Invalid wallet address format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 });
     }
 
     if (!chainId || ![1, 43114].includes(chainId)) {
@@ -55,10 +49,7 @@ export async function POST(request: NextRequest) {
 
     // Validate optional parameters
     if (tokens && !Array.isArray(tokens)) {
-      return NextResponse.json(
-        { error: 'tokens must be an array' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'tokens must be an array' }, { status: 400 });
     }
 
     if (tokens) {
@@ -66,23 +57,21 @@ export async function POST(request: NextRequest) {
       const invalidTokens = tokens.filter((t: string) => !validTokens.includes(t));
       if (invalidTokens.length > 0) {
         return NextResponse.json(
-          { error: `Invalid tokens: ${invalidTokens.join(', ')}. Supported: ${validTokens.join(', ')}` },
+          {
+            error: `Invalid tokens: ${invalidTokens.join(', ')}. Supported: ${validTokens.join(', ')}`,
+          },
           { status: 400 }
         );
       }
     }
 
     if (direction && !['in', 'out'].includes(direction)) {
-      return NextResponse.json(
-        { error: 'direction must be "in" or "out"' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'direction must be "in" or "out"' }, { status: 400 });
     }
 
     // Get RPC URL from environment based on chain
-    const rpcUrl = chainId === 1
-      ? process.env.QUICKNODE_ETH_RPC_URL
-      : process.env.QUICKNODE_AVAX_RPC_URL;
+    const rpcUrl =
+      chainId === 1 ? process.env.QUICKNODE_ETH_RPC_URL : process.env.QUICKNODE_AVAX_RPC_URL;
 
     console.log('[Wallet History] Fetching transaction history:', {
       address,
@@ -142,28 +131,21 @@ export async function GET(request: NextRequest) {
 
     // Validate
     if (!address || !isAddress(address)) {
-      return NextResponse.json(
-        { error: 'Valid wallet address is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Valid wallet address is required' }, { status: 400 });
     }
 
     const chainId = chainIdStr ? parseInt(chainIdStr) : 1;
     if (![1, 43114].includes(chainId)) {
-      return NextResponse.json(
-        { error: 'Invalid chain ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid chain ID' }, { status: 400 });
     }
 
     const tokens = tokensStr
       ? (tokensStr.split(',') as ('USDC' | 'SIERRA')[])
-      : ['USDC', 'SIERRA'] as ('USDC' | 'SIERRA')[];
+      : (['USDC', 'SIERRA'] as ('USDC' | 'SIERRA')[]);
 
     // Get RPC URL
-    const rpcUrl = chainId === 1
-      ? process.env.QUICKNODE_ETH_RPC_URL
-      : process.env.QUICKNODE_AVAX_RPC_URL;
+    const rpcUrl =
+      chainId === 1 ? process.env.QUICKNODE_ETH_RPC_URL : process.env.QUICKNODE_AVAX_RPC_URL;
 
     const historyService = getTransactionHistoryService(chainId, rpcUrl);
     const summary = await historyService.getTransactionSummary(address, tokens);
@@ -172,9 +154,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[Wallet History] Summary error:', error);
 
-    return NextResponse.json(
-      { error: 'Failed to fetch transaction summary' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch transaction summary' }, { status: 500 });
   }
 }

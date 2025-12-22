@@ -121,10 +121,7 @@ export function isRealAddress(address: string | undefined): boolean {
 /**
  * Validate wallet connection status
  */
-export function validateWalletConnection(
-  isConnected: boolean,
-  address?: string
-): ValidationResult {
+export function validateWalletConnection(isConnected: boolean, address?: string): ValidationResult {
   // Check configuration
   if (!isWalletRequired()) {
     return { isValid: true };
@@ -324,12 +321,10 @@ export function assertAddressMatch(
  */
 export function getValidationErrorMessage(errorCode: WalletValidationError): string {
   const messages: Record<WalletValidationError, string> = {
-    [WalletValidationError.NOT_CONNECTED]:
-      'Please connect your wallet to continue.',
+    [WalletValidationError.NOT_CONNECTED]: 'Please connect your wallet to continue.',
     [WalletValidationError.INVALID_ADDRESS]:
       'Invalid wallet address. Please check your wallet connection.',
-    [WalletValidationError.WRONG_NETWORK]:
-      'Please switch to the correct network in your wallet.',
+    [WalletValidationError.WRONG_NETWORK]: 'Please switch to the correct network in your wallet.',
     [WalletValidationError.ADDRESS_MISMATCH]:
       'You can only use your connected wallet address for this operation.',
     [WalletValidationError.MISSING_ADDRESS]:
@@ -344,13 +339,7 @@ export function getValidationErrorMessage(errorCode: WalletValidationError): str
  */
 export function isOperationAllowedWithoutWallet(operation: string): boolean {
   // Define operations that don't require wallet
-  const allowedOperations = [
-    'view_prices',
-    'view_tokens',
-    'learn',
-    'info',
-    'help',
-  ];
+  const allowedOperations = ['view_prices', 'view_tokens', 'learn', 'info', 'help'];
 
   return allowedOperations.includes(operation.toLowerCase());
 }

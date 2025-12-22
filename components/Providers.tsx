@@ -15,9 +15,7 @@ export default function Providers({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <NetworkProvider>
-          {children}
-        </NetworkProvider>
+        <NetworkProvider>{children}</NetworkProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

@@ -4,20 +4,27 @@
  * Handles registration, lookup, and execution
  */
 
-import {
-  ITool,
-  ToolContext,
-  ToolResult,
-  ToolDefinition,
-  ToolCategory,
-} from './base/types';
+import { ITool, ToolContext, ToolResult, ToolDefinition, ToolCategory } from './base/types';
 
 // Import all tools
-import { GetWalletBalanceTool, GetInvestmentDataTool, GenerateChartTool } from './implementations/balance';
-import { InvestTool, ConfirmInvestTool, WithdrawTool, ConfirmWithdrawTool } from './implementations/investment';
+import {
+  GetWalletBalanceTool,
+  GetInvestmentDataTool,
+  GenerateChartTool,
+} from './implementations/balance';
+import {
+  InvestTool,
+  ConfirmInvestTool,
+  WithdrawTool,
+  ConfirmWithdrawTool,
+} from './implementations/investment';
 import { SwapTokensTool, ConfirmSwapTool } from './implementations/swap';
 import { GetTransactionHistoryTool } from './implementations/history';
-import { GetSolanaBalanceTool, SolanaInvestTool, ConfirmSolanaInvestTool } from './implementations/solana';
+import {
+  GetSolanaBalanceTool,
+  SolanaInvestTool,
+  ConfirmSolanaInvestTool,
+} from './implementations/solana';
 
 /**
  * Registry for managing all available tools
@@ -41,7 +48,7 @@ export class ToolRegistry {
    * Register multiple tools at once
    */
   registerAll(tools: ITool[]): void {
-    tools.forEach(tool => this.register(tool));
+    tools.forEach((tool) => this.register(tool));
   }
 
   /**
@@ -62,7 +69,7 @@ export class ToolRegistry {
    * Get tools by category
    */
   getByCategory(category: ToolCategory): ITool[] {
-    return this.getAll().filter(tool => tool.category === category);
+    return this.getAll().filter((tool) => tool.category === category);
   }
 
   /**
@@ -70,7 +77,7 @@ export class ToolRegistry {
    * Used for function calling
    */
   getDefinitions(): Array<{ type: 'function'; function: ToolDefinition }> {
-    return this.getAll().map(tool => ({
+    return this.getAll().map((tool) => ({
       type: 'function' as const,
       function: tool.getDefinition(),
     }));

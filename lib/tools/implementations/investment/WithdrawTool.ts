@@ -23,7 +23,8 @@ interface WithdrawResult {
 
 export class WithdrawTool extends BaseTool {
   readonly name = 'withdraw';
-  readonly description = 'Saca/resgata investimento convertendo SIERRA de volta para USDC. Use quando o usuário falar: "quero sacar", "resgatar", "withdraw", "converter para USDC", "tirar do fundo", etc. Sempre converte SIERRA → USDC.';
+  readonly description =
+    'Saca/resgata investimento convertendo SIERRA de volta para USDC. Use quando o usuário falar: "quero sacar", "resgatar", "withdraw", "converter para USDC", "tirar do fundo", etc. Sempre converte SIERRA → USDC.';
   readonly category = 'investment' as const;
   readonly requiresWallet = true;
 

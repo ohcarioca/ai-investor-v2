@@ -17,7 +17,7 @@ vi.mock('./config', () => ({
       'capabilities.wallet_management.require_wallet_for_operations': true,
       'capabilities.wallet_management.always_use_connected_wallet': true,
       'blockchain.default_network_id': 43114,
-      'blockchain': {
+      blockchain: {
         networks: [
           { chain_id: 43114, name: 'Avalanche C-Chain' },
           { chain_id: 1, name: 'Ethereum' },
@@ -65,10 +65,7 @@ describe('wallet-validation', () => {
 
   describe('validateWalletConnection', () => {
     it('should return valid for connected wallet with valid address', () => {
-      const result = validateWalletConnection(
-        true,
-        '0x1234567890abcdef1234567890abcdef12345678'
-      );
+      const result = validateWalletConnection(true, '0x1234567890abcdef1234567890abcdef12345678');
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
     });
@@ -92,10 +89,7 @@ describe('wallet-validation', () => {
     });
 
     it('should return error for placeholder addresses', () => {
-      const result = validateWalletConnection(
-        true,
-        '0x0000000000000000000000000000000000000000'
-      );
+      const result = validateWalletConnection(true, '0x0000000000000000000000000000000000000000');
       expect(result.isValid).toBe(false);
       expect(result.errorCode).toBe(WalletValidationError.INVALID_ADDRESS);
     });
@@ -128,19 +122,13 @@ describe('wallet-validation', () => {
     });
 
     it('should return error when connected address is missing', () => {
-      const result = validateAddressMatch(
-        undefined,
-        '0x1234567890abcdef1234567890abcdef12345678'
-      );
+      const result = validateAddressMatch(undefined, '0x1234567890abcdef1234567890abcdef12345678');
       expect(result.isValid).toBe(false);
       expect(result.errorCode).toBe(WalletValidationError.NOT_CONNECTED);
     });
 
     it('should return error when provided address is missing', () => {
-      const result = validateAddressMatch(
-        '0x1234567890abcdef1234567890abcdef12345678',
-        undefined
-      );
+      const result = validateAddressMatch('0x1234567890abcdef1234567890abcdef12345678', undefined);
       expect(result.isValid).toBe(false);
       expect(result.errorCode).toBe(WalletValidationError.MISSING_ADDRESS);
     });

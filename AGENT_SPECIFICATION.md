@@ -7,6 +7,7 @@ The AI Investor Agent is an intelligent conversational assistant designed to hel
 ## Core Purpose
 
 To democratize cryptocurrency investment by providing an AI-powered assistant that:
+
 - Analyzes investment opportunities
 - Executes token swaps securely
 - Provides portfolio insights
@@ -22,24 +23,28 @@ To democratize cryptocurrency investment by providing an AI-powered assistant th
 The agent can understand and respond to user queries in natural language, including:
 
 #### Investment Queries
+
 - "What's my current portfolio balance?"
 - "Should I invest in SIERRA token?"
 - "What are the best performing tokens today?"
 - "Show me my investment history"
 
 #### Swap Requests
+
 - "Swap 10 USDC for SIERRA"
 - "Exchange my AVAX to USDC"
 - "What's the current price of SIERRA?"
 - "How much USDC will I get for 5 SIERRA?"
 
 #### Portfolio Management
+
 - "How much SIERRA do I own?"
 - "What's my total portfolio value in USD?"
 - "Show me my token balances"
 - "What's my profit/loss today?"
 
 #### Educational Questions
+
 - "What is impermanent loss?"
 - "How does a DEX work?"
 - "What are gas fees?"
@@ -52,18 +57,21 @@ The agent can understand and respond to user queries in natural language, includ
 ### 1. Wallet Integration
 
 #### Connection
+
 - Support for Web3 wallet connection (MetaMask, WalletConnect)
 - Automatic wallet detection
 - Session persistence across page reloads
 - Clear connection status indicators
 
 #### Network Requirements
+
 - **Primary Network:** Avalanche C-Chain (Chain ID: 43114)
 - **Native Token:** AVAX
 - Network switching prompts when user is on wrong chain
 - Validation of network before transactions
 
 #### Security
+
 - Read-only access to wallet balances
 - User approval required for all transactions
 - Clear transaction preview before execution
@@ -73,6 +81,7 @@ The agent can understand and respond to user queries in natural language, includ
 ### 2. Token Swap Functionality
 
 #### Supported Operations
+
 1. **Quote Generation**
    - Real-time price quotes from OKX DEX aggregator
    - Slippage tolerance configuration (default: 0.5%)
@@ -93,6 +102,7 @@ The agent can understand and respond to user queries in natural language, includ
    - Success/failure notifications
 
 #### Swap Flow
+
 ```
 1. User Request → Parse intent and extract parameters
 2. Validation → Check wallet connection, balances, network
@@ -107,6 +117,7 @@ The agent can understand and respond to user queries in natural language, includ
 ```
 
 #### Safety Mechanisms
+
 - Minimum received amount calculation (slippage protection)
 - Maximum price impact warnings (>5% shows warning)
 - Balance validation before transaction
@@ -116,6 +127,7 @@ The agent can understand and respond to user queries in natural language, includ
 ### 3. Portfolio Management
 
 #### Balance Tracking
+
 - **Native Token (AVAX)**
   - Real-time balance via RPC
   - USD value conversion
@@ -127,6 +139,7 @@ The agent can understand and respond to user queries in natural language, includ
   - Multi-token portfolio aggregation
 
 #### Portfolio Metrics
+
 - Total portfolio value (USD)
 - Individual token values
 - Token allocation percentages
@@ -134,6 +147,7 @@ The agent can understand and respond to user queries in natural language, includ
 - Last update timestamp
 
 #### Display Requirements
+
 - Clear, readable balance formatting
 - Proper decimal handling
 - USD conversion for all assets
@@ -145,6 +159,7 @@ The agent can understand and respond to user queries in natural language, includ
 #### Interaction Patterns
 
 **Greeting & Introduction**
+
 ```
 User: "Hello"
 Agent: "Welcome to AI Investor! I'm your cryptocurrency investment assistant.
@@ -153,6 +168,7 @@ portfolio on Avalanche. What would you like to do today?"
 ```
 
 **Investment Analysis**
+
 ```
 User: "Should I invest in SIERRA?"
 Agent: [Analyzes SIERRA token]
@@ -169,6 +185,7 @@ Would you like to swap some tokens for SIERRA?"
 ```
 
 **Swap Assistance**
+
 ```
 User: "Swap 10 USDC for SIERRA"
 Agent: "I'll help you swap 10 USDC for SIERRA. Let me get the current quote...
@@ -186,6 +203,7 @@ Would you like to proceed with this swap?"
 #### Response Guidelines
 
 **Tone & Style**
+
 - Professional yet friendly
 - Clear and concise
 - Educational when appropriate
@@ -193,12 +211,14 @@ Would you like to proceed with this swap?"
 - Encouraging but realistic
 
 **Information Hierarchy**
+
 1. Direct answer to user's question
 2. Relevant context or explanation
 3. Next steps or suggestions
 4. Educational notes (when relevant)
 
 **Error Handling**
+
 - Clear explanation of what went wrong
 - Suggestions for resolution
 - Alternative actions when possible
@@ -211,6 +231,7 @@ Would you like to proceed with this swap?"
 ### 1. Financial Advice Limitations
 
 **What the Agent CAN Do:**
+
 - Provide factual market data
 - Explain DeFi concepts and mechanisms
 - Show historical performance
@@ -218,6 +239,7 @@ Would you like to proceed with this swap?"
 - Present risk factors
 
 **What the Agent CANNOT Do:**
+
 - Guarantee returns or profits
 - Make definitive "buy" or "sell" recommendations
 - Predict future price movements with certainty
@@ -225,6 +247,7 @@ Would you like to proceed with this swap?"
 - Replace professional financial advisors
 
 **Required Disclaimers:**
+
 - "This is not financial advice. Always do your own research."
 - "Cryptocurrency investments carry significant risk."
 - "Past performance does not guarantee future results."
@@ -233,6 +256,7 @@ Would you like to proceed with this swap?"
 ### 2. Transaction Safety Rules
 
 #### Mandatory Validations
+
 1. **Before Any Transaction:**
    - Verify wallet is connected
    - Confirm correct network (Avalanche)
@@ -254,6 +278,7 @@ Would you like to proceed with this swap?"
    - Handle errors gracefully
 
 #### User Confirmation Required For:
+
 - All token swaps (no amount too small)
 - Token approval transactions
 - Network switching
@@ -262,12 +287,14 @@ Would you like to proceed with this swap?"
 ### 3. Data Privacy Rules
 
 **What Can Be Stored:**
+
 - Wallet address (public data)
 - Transaction history (on-chain, public)
 - User preferences (UI settings)
 - Connection status
 
 **What MUST NOT Be Stored:**
+
 - Private keys
 - Seed phrases
 - Passwords
@@ -275,6 +302,7 @@ Would you like to proceed with this swap?"
 - Conversation history with PII
 
 **Data Usage:**
+
 - Read blockchain data for display
 - Cache public market data temporarily
 - No selling of user data
@@ -283,12 +311,14 @@ Would you like to proceed with this swap?"
 ### 4. Operational Boundaries
 
 #### Supported Operations
+
 - Token swaps on Avalanche C-Chain
 - Balance queries for AVAX, USDC, SIERRA
 - Transaction status monitoring
 - Market data display
 
 #### Unsupported Operations
+
 - Cross-chain transfers (other chains)
 - NFT transactions
 - Staking/unstaking
@@ -297,6 +327,7 @@ Would you like to proceed with this swap?"
 - Advanced DeFi strategies (for now)
 
 #### Rate Limits
+
 - API calls: Respect OKX DEX rate limits
 - RPC calls: Batch when possible
 - User actions: No artificial delays
@@ -311,16 +342,19 @@ Would you like to proceed with this swap?"
 **Purpose:** Best execution for token swaps
 
 **Endpoints Used:**
+
 - `getQuote()` - Get swap quotes
 - `getSwapData()` - Build swap transactions
 - `getTokenList()` - Available tokens (future)
 
 **Rate Limits:**
+
 - Follow OKX DEX documentation
 - Implement exponential backoff
 - Cache quotes for 10 seconds
 
 **Error Handling:**
+
 - Network errors: Retry up to 3 times
 - Invalid parameters: Show user-friendly message
 - No liquidity: Suggest alternative tokens
@@ -329,12 +363,14 @@ Would you like to proceed with this swap?"
 ### 2. Wallet Connection (RainbowKit + Wagmi)
 
 **Supported Wallets:**
+
 - MetaMask
 - WalletConnect-compatible wallets
 - Coinbase Wallet
 - Other injected wallets
 
 **Connection Flow:**
+
 ```
 1. User clicks "Connect Wallet"
 2. Modal displays available wallets
@@ -347,6 +383,7 @@ Would you like to proceed with this swap?"
 ```
 
 **Session Management:**
+
 - Auto-reconnect on page load
 - Handle disconnections gracefully
 - Clear state on manual disconnect
@@ -362,22 +399,27 @@ Would you like to proceed with this swap?"
 
 **Function Calling:**
 Available functions for the agent:
+
 - `get_wallet_balance` - Fetch user's portfolio
 - `get_swap_quote` - Get token swap pricing
 - `execute_swap` - Perform token swap (with confirmation)
 
 **Context Management:**
+
 - Maintain conversation history
 - Include relevant wallet state
 - Clear context on new session
 - Max context window: 4096 tokens
 
 **Response Format:**
+
 ```json
 {
   "response": "Agent's natural language response",
   "action": "swap|quote|balance|info|null",
-  "data": { /* relevant data */ }
+  "data": {
+    /* relevant data */
+  }
 }
 ```
 
@@ -386,6 +428,7 @@ Available functions for the agent:
 **Purpose:** Blockchain interaction
 
 **RPC Methods Used:**
+
 - `eth_getBalance` - Native token balance
 - `eth_call` - Smart contract reads
 - `eth_estimateGas` - Gas estimation
@@ -393,6 +436,7 @@ Available functions for the agent:
 - `eth_getTransactionReceipt` - Status checking
 
 **Providers:**
+
 - Primary: Avalanche public RPC
 - Fallback: Alternative RPC endpoints
 - Private RPC: For production (recommended)
@@ -404,12 +448,14 @@ Available functions for the agent:
 ### 1. Onboarding Flow
 
 **First Visit:**
+
 1. Welcome message explaining capabilities
 2. Prompt to connect wallet
 3. Tutorial or guided tour (optional)
 4. Highlight key features
 
 **Returning User:**
+
 1. Auto-connect wallet if permitted
 2. Display portfolio summary
 3. Show recent activity
@@ -418,6 +464,7 @@ Available functions for the agent:
 ### 2. Error Messages
 
 **Guidelines:**
+
 - Use plain language, avoid technical jargon
 - Explain what happened and why
 - Provide clear next steps
@@ -437,6 +484,7 @@ Available functions for the agent:
 ### 3. Loading States
 
 **Types:**
+
 - Fetching quotes: "Getting best price..."
 - Checking approval: "Checking token approval..."
 - Waiting for signature: "Please confirm in your wallet..."
@@ -444,6 +492,7 @@ Available functions for the agent:
 - Refreshing data: Subtle indicator, don't block UI
 
 **Best Practices:**
+
 - Show spinner for >500ms operations
 - Display progress steps for multi-step flows
 - Provide cancel option when possible
@@ -452,6 +501,7 @@ Available functions for the agent:
 ### 4. Success Feedback
 
 **After Successful Swap:**
+
 ```
 ✅ Swap Successful!
 
@@ -467,6 +517,7 @@ Would you like to:
 ```
 
 **After Balance Update:**
+
 - Highlight changed amounts
 - Show USD value changes
 - Brief success message
@@ -477,6 +528,7 @@ Would you like to:
 ## Performance Requirements
 
 ### Response Times
+
 - Chat responses: < 2 seconds
 - Balance queries: < 1 second
 - Swap quotes: < 3 seconds
@@ -484,12 +536,14 @@ Would you like to:
 - Page load: < 2 seconds
 
 ### Reliability
+
 - Uptime target: 99.5%
 - Graceful degradation on API failures
 - Offline detection and messaging
 - Automatic error recovery
 
 ### Scalability
+
 - Support 100+ concurrent users
 - Handle 1000+ daily transactions
 - Cache static data appropriately
@@ -502,17 +556,20 @@ Would you like to:
 ### Smart Contract Interactions
 
 **Validated Contracts:**
+
 - USDC: `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E`
 - SIERRA: `0x6E6080e15f8C0010d333D8CAeEaD29292ADb78f7`
 - OKX Router: (from OKX DEX API response)
 
 **Security Checks:**
+
 - Verify contract addresses match known addresses
 - Validate transaction data before signing
 - Check spender addresses for approvals
 - Simulate transactions when possible
 
 ### Frontend Security
+
 - No private key handling in frontend
 - Input sanitization for all user data
 - XSS prevention
@@ -520,6 +577,7 @@ Would you like to:
 - Content Security Policy headers
 
 ### API Security
+
 - Rate limiting on backend endpoints
 - API key rotation
 - Secure environment variable storage
@@ -531,6 +589,7 @@ Would you like to:
 ## Future Enhancements
 
 ### Phase 2 Features
+
 1. **Multi-Chain Support**
    - Ethereum mainnet
    - Polygon
@@ -556,6 +615,7 @@ Would you like to:
    - Educational content
 
 ### Phase 3 Features
+
 1. **DeFi Integration**
    - Yield farming suggestions
    - Staking opportunities
@@ -579,24 +639,28 @@ Would you like to:
 ## Testing Requirements
 
 ### Unit Tests
+
 - All utility functions
 - API route handlers
 - React hooks
 - Type validations
 
 ### Integration Tests
+
 - Wallet connection flow
 - Swap complete flow
 - Balance fetching
 - Error scenarios
 
 ### E2E Tests
+
 - Complete user journeys
 - Multi-step transactions
 - Error recovery
 - Cross-browser compatibility
 
 ### Security Tests
+
 - Smart contract interaction safety
 - Input validation
 - XSS/CSRF protection
@@ -607,6 +671,7 @@ Would you like to:
 ## Monitoring & Analytics
 
 ### Key Metrics
+
 - Active users (daily/monthly)
 - Transaction volume
 - Transaction success rate
@@ -615,6 +680,7 @@ Would you like to:
 - User retention
 
 ### Logging
+
 - Transaction attempts and outcomes
 - API errors
 - Performance bottlenecks
@@ -622,6 +688,7 @@ Would you like to:
 - Security events
 
 ### Alerts
+
 - High error rates (>5%)
 - API downtime
 - Slow response times (>5s)
@@ -633,10 +700,12 @@ Would you like to:
 ## Compliance & Legal
 
 ### Disclaimers
+
 **Required on all pages:**
 "This application is provided for informational purposes only and does not constitute financial advice. Cryptocurrency investments are subject to market risk. Always conduct your own research before making investment decisions."
 
 ### Terms of Service
+
 - No guarantee of profits
 - User responsibility for decisions
 - No liability for losses
@@ -644,6 +713,7 @@ Would you like to:
 - Geographic restrictions (if any)
 
 ### Privacy Policy
+
 - Data collection disclosure
 - Data usage explanation
 - User rights (GDPR, CCPA)
@@ -651,6 +721,7 @@ Would you like to:
 - Third-party integrations
 
 ### Regulatory Compliance
+
 - Not a registered investment advisor
 - Not a money transmitter (non-custodial)
 - AML/KYC not required (DEX aggregator)
@@ -661,6 +732,7 @@ Would you like to:
 ## Support & Documentation
 
 ### User Documentation
+
 - Getting started guide
 - Wallet connection help
 - How to swap tokens
@@ -669,6 +741,7 @@ Would you like to:
 - FAQ
 
 ### Developer Documentation
+
 - API documentation
 - Smart contract addresses
 - Integration guides
@@ -676,6 +749,7 @@ Would you like to:
 - Code style guide
 
 ### Support Channels
+
 - In-app help
 - Discord community
 - Twitter support
@@ -687,6 +761,7 @@ Would you like to:
 ## Version History
 
 ### v1.0.0 (Current)
+
 - Initial release
 - Wallet connection (Avalanche)
 - Token swaps (AVAX, USDC, SIERRA)
@@ -695,6 +770,7 @@ Would you like to:
 - Basic error handling
 
 ### Roadmap
+
 - v1.1.0: Enhanced UI/UX, more tokens
 - v1.2.0: Transaction history
 - v2.0.0: Multi-chain support
@@ -711,4 +787,4 @@ Would you like to:
 
 ---
 
-*This specification is a living document and will be updated as the AI Investor Agent evolves.*
+_This specification is a living document and will be updated as the AI Investor Agent evolves._

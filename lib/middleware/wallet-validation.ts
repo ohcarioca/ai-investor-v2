@@ -44,7 +44,8 @@ export function validateWalletAddress(
   if (!isRealAddress(userAddress)) {
     const messages: Record<string, string> = {
       swap: 'Cannot use placeholder or example addresses. This transaction must use your connected wallet.',
-      approval: 'Cannot use placeholder or example addresses. Token approval must use your connected wallet.',
+      approval:
+        'Cannot use placeholder or example addresses. Token approval must use your connected wallet.',
       balance: 'Cannot use placeholder or example addresses for balance queries.',
       general: 'Cannot use placeholder or example addresses.',
     };
@@ -115,7 +116,8 @@ export function validateSwapRequest(params: {
 
   // Validate required parameters
   if (!chainId || !fromToken || !toToken || !amount || !userAddress) {
-    const error = 'Missing required parameters. All swap parameters and wallet address are required.';
+    const error =
+      'Missing required parameters. All swap parameters and wallet address are required.';
     return {
       valid: false,
       error,
@@ -151,7 +153,8 @@ export function validateApprovalRequest(params: {
 
   // Validate required parameters
   if (!chainId || !tokenAddress || !amount || !userAddress) {
-    const error = 'Missing required parameters. All approval parameters and wallet address are required.';
+    const error =
+      'Missing required parameters. All approval parameters and wallet address are required.';
     return {
       valid: false,
       error,

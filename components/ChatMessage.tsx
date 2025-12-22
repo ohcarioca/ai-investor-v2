@@ -14,18 +14,14 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
   const isUser = message.role === 'user';
 
   // Check if swapData is Solana type
-  const isSolanaData = message.swapData && 'isSolana' in message.swapData && message.swapData.isSolana === true;
+  const isSolanaData =
+    message.swapData && 'isSolana' in message.swapData && message.swapData.isSolana === true;
 
   // Handler para swap success (EVM only)
   const handleSwapSuccess = (txHash: string, toAmount: string) => {
     if (message.swapData && !isSolanaData && onSwapSuccess) {
       const evmData = message.swapData as EVMSwapData;
-      onSwapSuccess(
-        txHash,
-        toAmount,
-        evmData.fromToken,
-        evmData.toToken
-      );
+      onSwapSuccess(txHash, toAmount, evmData.fromToken, evmData.toToken);
     }
   };
 
@@ -40,9 +36,7 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
       <div className={`max-w-full sm:max-w-2xl ${isUser ? 'order-first' : ''}`}>
         <div
           className={`rounded-2xl px-4 py-3 sm:px-6 sm:py-4 ${
-            isUser
-              ? 'bg-purple-600 text-white'
-              : 'bg-white border border-gray-200 text-gray-900'
+            isUser ? 'bg-purple-600 text-white' : 'bg-white border border-gray-200 text-gray-900'
           }`}
         >
           <p className="leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -57,7 +51,12 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
             >
               Ver no Snowtrace
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
               </svg>
             </a>
           )}
@@ -65,9 +64,7 @@ export default function ChatMessage({ message, onSwapSuccess }: ChatMessageProps
 
         {/* Render SolanaInvestCard for Solana transactions */}
         {!isUser && message.swapData && isSolanaData && (
-          <SolanaInvestCard
-            solanaData={message.swapData as SolanaSwapData}
-          />
+          <SolanaInvestCard solanaData={message.swapData as SolanaSwapData} />
         )}
 
         {/* Render SwapApprovalCard for EVM swaps */}

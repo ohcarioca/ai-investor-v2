@@ -38,11 +38,13 @@
 ### Sintoma: "Network Error" ou "Failed to fetch"
 
 **Possíveis Causas:**
+
 1. Timeout da API (OpenAI demorou muito)
 2. `NEXT_PUBLIC_APP_URL` incorreta
 3. CORS issues
 
 **Solução:**
+
 ```bash
 # 1. Verifique logs da Vercel
 # Dashboard → Deployments → [deployment] → Functions → /api/chat
@@ -61,11 +63,13 @@ git push
 ### Sintoma: Agente não responde nada
 
 **Possíveis Causas:**
+
 1. `OPENAI_API_KEY` não configurada
 2. Quota da OpenAI esgotada
 3. Timeout
 
 **Solução:**
+
 ```bash
 # 1. Teste sua API key localmente
 curl https://api.openai.com/v1/models \
@@ -81,10 +85,12 @@ curl https://api.openai.com/v1/models \
 ### Sintoma: "Wallet not connected" mesmo conectada
 
 **Possíveis Causas:**
+
 1. `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` incorreto
 2. RainbowKit não inicializado
 
 **Solução:**
+
 1. Obtenha novo Project ID em https://cloud.walletconnect.com/
 2. Atualize na Vercel
 3. Redeploy
@@ -92,11 +98,13 @@ curl https://api.openai.com/v1/models \
 ### Sintoma: Swap não funciona
 
 **Possíveis Causas:**
+
 1. Credenciais OKX incorretas
 2. Token não suportado
 3. Liquidez insuficiente
 
 **Solução:**
+
 1. Verifique todas as 4 variáveis OKX estão configuradas
 2. Teste apenas com USDC ↔ SIERRA
 3. Verifique logs: Dashboard → Functions → /api/swap
@@ -106,12 +114,14 @@ curl https://api.openai.com/v1/models \
 ## 🔍 Como Ver Logs na Vercel
 
 ### Passo 1: Acessar Logs
+
 1. Dashboard → Seu Projeto
 2. Deployments tab
 3. Clique no deployment ativo (com ✓)
 4. Clique em "Functions"
 
 ### Passo 2: Ver Logs de Função Específica
+
 1. Clique em `/api/chat`
 2. Role para ver logs em tempo real
 3. Procure por:
@@ -121,6 +131,7 @@ curl https://api.openai.com/v1/models \
    - ✅ `[Chat API] ...`
 
 ### Passo 3: Filtrar Logs
+
 - Use o campo de busca
 - Filtre por tipo: Errors, Warnings, Info
 - Exporte logs se necessário
@@ -143,6 +154,7 @@ curl -X POST https://seu-app.vercel.app/api/chat \
 ```
 
 **Resposta esperada:**
+
 ```json
 {
   "response": "Hello! I'm your AI investment assistant..."
@@ -173,6 +185,7 @@ curl "https://seu-app.vercel.app/api/swap/quote?chainId=43114&fromToken=0xB97EF9
 Use este checklist para debug sistemático:
 
 ### Frontend
+
 - [ ] App carrega sem erros no console
 - [ ] Wallet conecta (botão fica verde)
 - [ ] Input de chat aparece
@@ -181,6 +194,7 @@ Use este checklist para debug sistemático:
 - [ ] Gráficos aparecem (se solicitado)
 
 ### Backend
+
 - [ ] `/api/chat` retorna 200
 - [ ] `/api/wallet/balance` retorna 200
 - [ ] `/api/swap/quote` retorna 200
@@ -189,6 +203,7 @@ Use este checklist para debug sistemático:
 - [ ] Sem timeouts nos logs
 
 ### Variáveis de Ambiente
+
 - [ ] `OPENAI_API_KEY` definida
 - [ ] `NEXT_PUBLIC_APP_URL` correta
 - [ ] `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` definida
@@ -196,6 +211,7 @@ Use este checklist para debug sistemático:
 - [ ] Todos ambientes marcados (Prod, Preview, Dev)
 
 ### Configuração
+
 - [ ] `vercel.json` existe e está commitado
 - [ ] `next.config.ts` atualizado
 - [ ] `.env.example` completo
@@ -206,18 +222,23 @@ Use este checklist para debug sistemático:
 ## 💡 Dicas Pro
 
 ### Dica 1: Use Environment Groups
+
 Crie um grupo de variáveis na Vercel para reutilizar em múltiplos projetos.
 
 ### Dica 2: Ative Preview Deployments
+
 Teste mudanças em preview antes de produção.
 
 ### Dica 3: Configure Notifications
+
 Receba alertas quando deployments falharem.
 
 ### Dica 4: Use Vercel Analytics
+
 Monitore performance e erros em tempo real.
 
 ### Dica 5: Edge Functions
+
 Para menor latência, considere usar Edge Functions.
 
 ---
@@ -225,12 +246,14 @@ Para menor latência, considere usar Edge Functions.
 ## 📞 Precisa de Ajuda?
 
 ### Recursos Oficiais
+
 - [Vercel Support](https://vercel.com/support)
 - [Vercel Docs](https://vercel.com/docs)
 - [OpenAI Support](https://help.openai.com/)
 - [Next.js Docs](https://nextjs.org/docs)
 
 ### Community
+
 - [Vercel Discord](https://discord.gg/vercel)
 - [Next.js Discord](https://discord.gg/nextjs)
 - [GitHub Issues](https://github.com/seu-repo/issues)
@@ -240,6 +263,7 @@ Para menor latência, considere usar Edge Functions.
 ## ✅ Tudo Funcionando?
 
 Se tudo estiver funcionando:
+
 - ✅ Agente responde em português/inglês/espanhol
 - ✅ `get_wallet_balance` retorna saldos
 - ✅ `invest` cria cotação USDC → SIERRA

@@ -82,10 +82,7 @@ export function useSolanaInvest() {
    * Send webhook notification after successful transaction
    */
   const sendWebhook = useCallback(
-    async (
-      txSignature: string,
-      solanaData: SolanaSwapData
-    ): Promise<boolean> => {
+    async (txSignature: string, solanaData: SolanaSwapData): Promise<boolean> => {
       if (!address) return false;
 
       setWebhookState({
@@ -132,8 +129,7 @@ export function useSolanaInvest() {
         setWebhookState({
           isLoading: false,
           isError: true,
-          errorMessage:
-            error instanceof Error ? error.message : 'Failed to send webhook',
+          errorMessage: error instanceof Error ? error.message : 'Failed to send webhook',
         });
         return false;
       }
@@ -183,10 +179,7 @@ export function useSolanaInvest() {
       try {
         // Deserialize transaction from base64
         console.log('[useSolanaInvest] Deserializing transaction...');
-        const transactionBuffer = Buffer.from(
-          solanaData.serializedTransaction,
-          'base64'
-        );
+        const transactionBuffer = Buffer.from(solanaData.serializedTransaction, 'base64');
         const transaction = Transaction.from(transactionBuffer);
 
         console.log('[useSolanaInvest] Transaction deserialized:', {
@@ -199,10 +192,7 @@ export function useSolanaInvest() {
         console.log('[useSolanaInvest] Requesting wallet signature...');
         setState((prev) => ({ ...prev, step: 'signing' }));
 
-        const signature = await walletProvider.sendTransaction(
-          transaction,
-          connection
-        );
+        const signature = await walletProvider.sendTransaction(transaction, connection);
 
         console.log('[useSolanaInvest] Transaction sent:', signature);
         setState({
@@ -213,15 +203,10 @@ export function useSolanaInvest() {
 
         // Wait for confirmation
         console.log('[useSolanaInvest] Waiting for confirmation...');
-        const confirmation = await connection.confirmTransaction(
-          signature,
-          'confirmed'
-        );
+        const confirmation = await connection.confirmTransaction(signature, 'confirmed');
 
         if (confirmation.value.err) {
-          throw new Error(
-            `Transaction failed: ${JSON.stringify(confirmation.value.err)}`
-          );
+          throw new Error(`Transaction failed: ${JSON.stringify(confirmation.value.err)}`);
         }
 
         console.log('[useSolanaInvest] Transaction confirmed!');
@@ -233,9 +218,7 @@ export function useSolanaInvest() {
         // Update final state
         setState({
           step: webhookSuccess ? 'success' : 'success', // Success even if webhook fails
-          error: webhookSuccess
-            ? null
-            : t.webhookFailed,
+          error: webhookSuccess ? null : t.webhookFailed,
           txSignature: signature,
         });
 
@@ -251,8 +234,7 @@ export function useSolanaInvest() {
         console.error('[useSolanaInvest] Error:', error);
 
         // Handle user rejection
-        const errorMsg =
-          error instanceof Error ? error.message : t.unknownError;
+        const errorMsg = error instanceof Error ? error.message : t.unknownError;
         const isUserRejection =
           errorMsg.includes('User rejected') ||
           errorMsg.includes('user rejected') ||
@@ -260,9 +242,7 @@ export function useSolanaInvest() {
 
         setState({
           step: 'error',
-          error: isUserRejection
-            ? t.transactionCancelled
-            : errorMsg,
+          error: isUserRejection ? t.transactionCancelled : errorMsg,
           txSignature: null,
         });
       }

@@ -39,9 +39,7 @@ export default function TokenInput({
     },
   });
 
-  const formattedBalance = balance
-    ? parseFloat(balance.formatted).toFixed(6)
-    : '0.00';
+  const formattedBalance = balance ? parseFloat(balance.formatted).toFixed(6) : '0.00';
 
   const handleMaxClick = () => {
     if (balance && !readOnly) {
@@ -88,9 +86,7 @@ export default function TokenInput({
         >
           {token ? (
             <>
-              <span className="font-semibold text-gray-900">
-                {token.symbol}
-              </span>
+              <span className="font-semibold text-gray-900">{token.symbol}</span>
               <ChevronDown className="w-4 h-4 text-gray-600" />
             </>
           ) : (

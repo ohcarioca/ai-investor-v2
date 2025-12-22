@@ -39,28 +39,26 @@ function isModularToolsEnabled(): boolean {
 export async function POST(req: NextRequest) {
   try {
     // Parse request body
-    const { messages, walletAddress, chainId } = await req.json() as {
+    const { messages, walletAddress, chainId } = (await req.json()) as {
       messages: Message[];
       walletAddress?: string;
       chainId?: number;
     };
 
     if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json(
-        { error: 'Messages array is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Messages array is required' }, { status: 400 });
     }
 
     // Determine network - default to Ethereum (1)
     const currentChainId = chainId || 1;
     const isSolana = currentChainId === 101;
-    const networkName = isSolana ? 'Solana' : (currentChainId === 1 ? 'Ethereum' : 'Avalanche');
+    const networkName = isSolana ? 'Solana' : currentChainId === 1 ? 'Ethereum' : 'Avalanche';
 
     // Log wallet and network info for debugging
-    console.log('[Chat API] Wallet address received:', walletAddress
-      ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-      : 'NOT PROVIDED');
+    console.log(
+      '[Chat API] Wallet address received:',
+      walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : 'NOT PROVIDED'
+    );
     console.log('[Chat API] Chain ID:', currentChainId, `(${networkName})`);
 
     // Build tool context
@@ -111,7 +109,9 @@ Quando o usuário quiser investir:
 
     // Get tool registry and configuration
     const registry = getToolRegistry();
-    const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>('capabilities.natural_language');
+    const nlConfig = getConfig<{ model: string; temperature: number; max_tokens: number }>(
+      'capabilities.natural_language'
+    );
 
     console.log(`[Chat API] Using modular tools: ${isModularToolsEnabled()}`);
     console.log(`[Chat API] Registered tools: ${registry.getToolNames().join(', ')}`);
@@ -119,10 +119,7 @@ Quando o usuário quiser investir:
     // Call OpenAI API with function calling
     const completion = await openai.chat.completions.create({
       model: process.env.OPENAI_MODEL || nlConfig.model,
-      messages: [
-        { role: 'system', content: systemPromptWithContext },
-        ...formattedMessages,
-      ],
+      messages: [{ role: 'system', content: systemPromptWithContext }, ...formattedMessages],
       tools: registry.getDefinitions(),
       tool_choice: 'auto',
       temperature: nlConfig.temperature,
@@ -165,7 +162,9 @@ Quando o usuário quiser investir:
                 hasSwapTx: !!swapData.swapTransaction,
               });
             } else {
-              console.log('[Chat API] Swap data is quote-only (no transactions), not passing to frontend');
+              console.log(
+                '[Chat API] Swap data is quote-only (no transactions), not passing to frontend'
+              );
             }
           }
 
@@ -173,7 +172,7 @@ Quando o usuário quiser investir:
           if (data.solanaTransaction) {
             swapDataResult = {
               isSolana: true,
-              ...data.solanaTransaction as object,
+              ...(data.solanaTransaction as object),
             };
             console.log('[Chat API] Passing Solana transaction to frontend');
           }
@@ -217,8 +216,8 @@ Quando o usuário quiser investir:
       }
     }
 
-    const responseContent = responseMessage?.content ||
-      'Desculpe, não consegui gerar uma resposta.';
+    const responseContent =
+      responseMessage?.content || 'Desculpe, não consegui gerar uma resposta.';
 
     // Return response (compatible with existing UI)
     return NextResponse.json({
@@ -226,13 +225,12 @@ Quando o usuário quiser investir:
       swapData: swapDataResult,
       chartData: chartDataResult,
     });
-
   } catch (error) {
     console.error('Error calling OpenAI API:', error);
 
     return NextResponse.json(
       {
-        error: 'Erro ao processar sua mensagem. Tente novamente.'
+        error: 'Erro ao processar sua mensagem. Tente novamente.',
       },
       { status: 500 }
     );

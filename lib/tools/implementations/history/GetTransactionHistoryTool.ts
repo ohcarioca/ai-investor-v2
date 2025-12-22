@@ -5,11 +5,7 @@
  */
 
 import { BaseTool } from '../../base/BaseTool';
-import {
-  ToolContext,
-  ToolResult,
-  ToolDefinition,
-} from '../../base/types';
+import { ToolContext, ToolResult, ToolDefinition } from '../../base/types';
 import { getTransactionHistoryService } from '@/lib/services/history/TransactionHistoryService';
 import type { TransactionHistoryResponse, TransactionSummary } from '@/types/transaction-history';
 
@@ -25,7 +21,8 @@ export interface TransactionHistoryResult {
 
 export class GetTransactionHistoryTool extends BaseTool {
   readonly name = 'get_transaction_history';
-  readonly description = 'Obtém o histórico de transações de USDC e SIERRA da carteira conectada. Retorna transferências recebidas e enviadas, com valores, datas e direção. Útil para verificar movimentações, conferir recebimentos e analisar atividade da carteira.';
+  readonly description =
+    'Obtém o histórico de transações de USDC e SIERRA da carteira conectada. Retorna transferências recebidas e enviadas, com valores, datas e direção. Útil para verificar movimentações, conferir recebimentos e analisar atividade da carteira.';
   readonly category = 'history' as const;
   readonly requiresWallet = true;
 
@@ -44,7 +41,8 @@ export class GetTransactionHistoryTool extends BaseTool {
           },
           direction: {
             type: 'string',
-            description: 'Direção das transferências: "in" (recebidas), "out" (enviadas), ou "all" (todas)',
+            description:
+              'Direção das transferências: "in" (recebidas), "out" (enviadas), ou "all" (todas)',
             enum: ['in', 'out', 'all'],
             default: 'all',
           },
@@ -79,12 +77,11 @@ export class GetTransactionHistoryTool extends BaseTool {
     const includeSummary = (params.includeSummary as string) !== 'false';
 
     // Determine tokens to query
-    const tokens: ('USDC' | 'SIERRA')[] = tokensParam === 'all'
-      ? ['USDC', 'SIERRA']
-      : [tokensParam as 'USDC' | 'SIERRA'];
+    const tokens: ('USDC' | 'SIERRA')[] =
+      tokensParam === 'all' ? ['USDC', 'SIERRA'] : [tokensParam as 'USDC' | 'SIERRA'];
 
     // Determine direction filter
-    const direction = directionParam === 'all' ? undefined : directionParam as 'in' | 'out';
+    const direction = directionParam === 'all' ? undefined : (directionParam as 'in' | 'out');
 
     this.log(`Fetching transaction history for: ${address.slice(0, 6)}...${address.slice(-4)}`, {
       chainId,
@@ -148,9 +145,7 @@ export class GetTransactionHistoryTool extends BaseTool {
 
       return {
         success: false,
-        error: error instanceof Error
-          ? error.message
-          : 'Failed to fetch transaction history',
+        error: error instanceof Error ? error.message : 'Failed to fetch transaction history',
       };
     }
   }

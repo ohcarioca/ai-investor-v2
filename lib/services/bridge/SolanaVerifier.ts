@@ -63,13 +63,17 @@ export class SolanaVerifier {
       // 4. Verify the transfer was to our deposit wallet's token account
       // Note: For SPL tokens, we need to check the token account, not the wallet directly
       // The destination in the parsed instruction is the token account address
-      const depositWalletTokenAccounts = await this.getTokenAccountsForWallet(SOLANA_DEPOSIT_WALLET);
+      const depositWalletTokenAccounts =
+        await this.getTokenAccountsForWallet(SOLANA_DEPOSIT_WALLET);
 
-      const isValidDestination = depositWalletTokenAccounts.includes(transfer.destination) ||
+      const isValidDestination =
+        depositWalletTokenAccounts.includes(transfer.destination) ||
         transfer.destination === SOLANA_DEPOSIT_WALLET;
 
       if (!isValidDestination) {
-        console.log(`[SolanaVerifier] Invalid destination. Expected one of: ${depositWalletTokenAccounts.join(', ')}, got: ${transfer.destination}`);
+        console.log(
+          `[SolanaVerifier] Invalid destination. Expected one of: ${depositWalletTokenAccounts.join(', ')}, got: ${transfer.destination}`
+        );
         return { isValid: false, error: 'Transfer not sent to deposit wallet' };
       }
 
@@ -81,7 +85,9 @@ export class SolanaVerifier {
       // Calculate human-readable amount (USDC has 6 decimals)
       const amountUsdc = transfer.amount / 1_000_000;
 
-      console.log(`[SolanaVerifier] Verified transfer: ${amountUsdc} USDC from ${transfer.source} to deposit wallet`);
+      console.log(
+        `[SolanaVerifier] Verified transfer: ${amountUsdc} USDC from ${transfer.source} to deposit wallet`
+      );
 
       return {
         isValid: true,

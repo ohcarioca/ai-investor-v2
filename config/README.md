@@ -60,6 +60,7 @@ The new configuration will be loaded automatically.
 ```
 
 **Options:**
+
 - `tone`: `"professional"` | `"professional-friendly"` | `"casual"` | `"formal"`
 - `style`: `"concise"` | `"educational"` | `"detailed"` | `"minimalist"`
 - `verbosity`: `"minimal"` | `"balanced"` | `"verbose"`
@@ -68,6 +69,7 @@ The new configuration will be loaded automatically.
 ### Capabilities
 
 #### Natural Language
+
 ```json
 {
   "capabilities": {
@@ -85,6 +87,7 @@ The new configuration will be loaded automatically.
 - `max_tokens`: Maximum response length
 
 #### Token Swaps
+
 ```json
 {
   "capabilities": {
@@ -103,6 +106,7 @@ The new configuration will be loaded automatically.
 - `max_slippage`: Maximum allowed slippage (%)
 
 #### Portfolio Tracking
+
 ```json
 {
   "capabilities": {
@@ -121,6 +125,7 @@ The new configuration will be loaded automatically.
 ### Behavior
 
 #### Financial Advice
+
 ```json
 {
   "behavior": {
@@ -137,6 +142,7 @@ The new configuration will be loaded automatically.
 ⚠️ **Important:** Keep `can_recommend` and `can_predict_prices` as `false` for legal safety.
 
 #### Transaction Safety
+
 ```json
 {
   "behavior": {
@@ -156,6 +162,7 @@ The new configuration will be loaded automatically.
 ### Blockchain
 
 #### Networks
+
 ```json
 {
   "blockchain": {
@@ -172,6 +179,7 @@ The new configuration will be loaded automatically.
 ```
 
 To add a new network:
+
 ```json
 {
   "chain_id": 1,
@@ -208,6 +216,7 @@ To add a new network:
 ```
 
 To add a new token:
+
 1. Add token object to `supported` array
 2. Set `enabled: true`
 3. Provide correct contract address and decimals
@@ -230,6 +239,7 @@ Customize agent's messages:
 ```
 
 #### System Prompt
+
 The system prompt defines the agent's core behavior:
 
 ```json
@@ -241,6 +251,7 @@ The system prompt defines the agent's core behavior:
 ```
 
 **Tips for editing:**
+
 - Keep it clear and concise
 - Define specific capabilities
 - Set clear limitations
@@ -427,7 +438,7 @@ const errorMsg = getErrorMessage('wallet_not_connected');
 
 // Get confirmation prompt with variables
 const confirmMsg = getConfirmationPrompt('high_price_impact', {
-  impact: '8.5'
+  impact: '8.5',
 });
 ```
 
@@ -474,11 +485,13 @@ if (!valid) {
 ## ⚠️ Important Notes
 
 ### Do Not Modify:
+
 - Token contract addresses (unless adding new tokens)
 - Network chain IDs
 - Security-critical settings without understanding implications
 
 ### Safe to Modify:
+
 - UI colors and themes
 - Message text
 - Feature flags
@@ -486,7 +499,9 @@ if (!valid) {
 - Slippage defaults (within reasonable limits)
 
 ### Requires Restart:
+
 Most configuration changes require a server restart. Some changes may also require:
+
 - Cache clearing
 - Wallet reconnection
 - Browser refresh
@@ -494,16 +509,19 @@ Most configuration changes require a server restart. Some changes may also requi
 ## 🐛 Troubleshooting
 
 ### Configuration not loading
+
 - Check for JSON syntax errors
 - Ensure file is in correct location
 - Restart development server
 
 ### Features not working after change
+
 - Verify the feature path is correct
 - Check that dependent features are enabled
 - Look for console errors
 
 ### Type errors in code
+
 - Regenerate types: The configuration is typed automatically
 - Ensure you're accessing valid config paths
 
@@ -574,6 +592,7 @@ Most configuration changes require a server restart. Some changes may also requi
 ## 🆘 Support
 
 If you need help with configuration:
+
 1. Check this README
 2. Review `agent.config.schema.json` for field descriptions
 3. Look at code examples in `/lib/config.ts`

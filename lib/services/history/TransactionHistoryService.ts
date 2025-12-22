@@ -49,7 +49,10 @@ const TOKEN_CONFIG: Record<number, Record<string, { address: string; decimals: n
 };
 
 // Chain configurations
-const CHAIN_CONFIG: Record<number, { chain: typeof mainnet | typeof avalanche; rpcEnvKey: string }> = {
+const CHAIN_CONFIG: Record<
+  number,
+  { chain: typeof mainnet | typeof avalanche; rpcEnvKey: string }
+> = {
   1: { chain: mainnet, rpcEnvKey: 'QUICKNODE_ETH_RPC_URL' },
   43114: { chain: avalanche, rpcEnvKey: 'QUICKNODE_AVAX_RPC_URL' },
 };
@@ -96,9 +99,7 @@ export class TransactionHistoryService {
   /**
    * Fetch transaction history for a wallet
    */
-  async getTransactionHistory(
-    query: TransactionHistoryQuery
-  ): Promise<TransactionHistoryResponse> {
+  async getTransactionHistory(query: TransactionHistoryQuery): Promise<TransactionHistoryResponse> {
     const {
       address,
       tokens = ['USDC', 'SIERRA'],
@@ -311,9 +312,7 @@ export class TransactionHistoryService {
     }
 
     // Find first and last transactions
-    const timestamps = history.transactions
-      .map((tx) => tx.timestamp)
-      .filter((t) => t > 0);
+    const timestamps = history.transactions.map((tx) => tx.timestamp).filter((t) => t > 0);
 
     return {
       byToken,

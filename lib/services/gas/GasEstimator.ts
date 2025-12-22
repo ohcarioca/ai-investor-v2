@@ -6,11 +6,7 @@
  * for complex operations.
  */
 
-import type {
-  OperationType,
-  GasMarginConfig,
-  GasEstimatorResult,
-} from '@/types/gas';
+import type { OperationType, GasMarginConfig, GasEstimatorResult } from '@/types/gas';
 
 // Default gas margins by operation type
 const DEFAULT_GAS_MARGINS: GasMarginConfig = {
@@ -60,8 +56,10 @@ export class GasEstimator {
    * Check if an address is a native token (ETH/AVAX)
    */
   isNativeToken(address: string): boolean {
-    return NATIVE_TOKEN_ADDRESSES.includes(address.toLowerCase()) ||
-           NATIVE_TOKEN_ADDRESSES.includes(address);
+    return (
+      NATIVE_TOKEN_ADDRESSES.includes(address.toLowerCase()) ||
+      NATIVE_TOKEN_ADDRESSES.includes(address)
+    );
   }
 
   /**
@@ -80,16 +78,12 @@ export class GasEstimator {
     }
 
     // Check for complex tokens (SIERRA)
-    if (
-      this.isComplexToken(fromTokenSymbol) ||
-      this.isComplexToken(toTokenSymbol)
-    ) {
+    if (this.isComplexToken(fromTokenSymbol) || this.isComplexToken(toTokenSymbol)) {
       return 'complex_swap';
     }
 
     // Check if either token is native
-    const fromIsNative =
-      fromTokenAddress && this.isNativeToken(fromTokenAddress);
+    const fromIsNative = fromTokenAddress && this.isNativeToken(fromTokenAddress);
     const toIsNative = toTokenAddress && this.isNativeToken(toTokenAddress);
 
     // Simple swap: involves native token
@@ -162,9 +156,7 @@ export class GasEstimator {
     );
 
     // Use provided gas limit or fallback
-    const baseGas = baseGasLimit
-      ? BigInt(baseGasLimit)
-      : DEFAULT_GAS_LIMITS[operationType];
+    const baseGas = baseGasLimit ? BigInt(baseGasLimit) : DEFAULT_GAS_LIMITS[operationType];
 
     return this.estimateGasWithMargin(baseGas, operationType);
   }
@@ -172,12 +164,8 @@ export class GasEstimator {
   /**
    * Estimate gas for an approval transaction
    */
-  estimateApprovalGas(
-    baseGasLimit?: bigint | string | number
-  ): GasEstimatorResult {
-    const baseGas = baseGasLimit
-      ? BigInt(baseGasLimit)
-      : DEFAULT_GAS_LIMITS.approval;
+  estimateApprovalGas(baseGasLimit?: bigint | string | number): GasEstimatorResult {
+    const baseGas = baseGasLimit ? BigInt(baseGasLimit) : DEFAULT_GAS_LIMITS.approval;
 
     return this.estimateGasWithMargin(baseGas, 'approval');
   }
@@ -210,10 +198,7 @@ export class GasEstimator {
 // Singleton instance for global use
 let gasEstimatorInstance: GasEstimator | null = null;
 
-export function getGasEstimator(
-  margins?: GasMarginConfig,
-  complexTokens?: string[]
-): GasEstimator {
+export function getGasEstimator(margins?: GasMarginConfig, complexTokens?: string[]): GasEstimator {
   if (!gasEstimatorInstance) {
     gasEstimatorInstance = new GasEstimator(margins, complexTokens);
   }

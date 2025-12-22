@@ -38,9 +38,7 @@ export default function SwapButton({
   // Get balance for validation
   const { data: balance } = useBalance({
     address,
-    token: fromToken?.isNative
-      ? undefined
-      : (fromToken?.address as `0x${string}`),
+    token: fromToken?.isNative ? undefined : (fromToken?.address as `0x${string}`),
     query: {
       enabled: !!address && !!fromToken,
     },
@@ -124,11 +122,7 @@ export default function SwapButton({
     }
 
     // Needs approval
-    if (
-      !fromToken.isNative &&
-      approvalStatus &&
-      !approvalStatus.isApproved
-    ) {
+    if (!fromToken.isNative && approvalStatus && !approvalStatus.isApproved) {
       return {
         text: `Approve ${fromToken.symbol}`,
         disabled: false,

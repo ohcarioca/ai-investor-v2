@@ -73,10 +73,7 @@ export interface RateLimitResult {
 /**
  * Check if a request should be rate limited
  */
-export function checkRateLimit(
-  clientId: string,
-  config: RateLimitConfig = {}
-): RateLimitResult {
+export function checkRateLimit(clientId: string, config: RateLimitConfig = {}): RateLimitResult {
   const windowMs = config.windowMs ?? DEFAULT_WINDOW_MS;
   const maxRequests = config.maxRequests ?? DEFAULT_MAX_REQUESTS;
   const now = Date.now();
@@ -123,10 +120,7 @@ export function checkRateLimit(
  * Rate limiting middleware for Next.js API routes
  * Returns null if allowed, or a 429 response if rate limited
  */
-export function rateLimit(
-  req: NextRequest,
-  config: RateLimitConfig = {}
-): NextResponse | null {
+export function rateLimit(req: NextRequest, config: RateLimitConfig = {}): NextResponse | null {
   const keyGenerator = config.keyGenerator ?? getClientId;
   const clientId = keyGenerator(req);
   const message = config.message ?? 'Too many requests. Please try again later.';
@@ -159,10 +153,7 @@ export function rateLimit(
 /**
  * Add rate limit headers to a successful response
  */
-export function addRateLimitHeaders(
-  response: NextResponse,
-  result: RateLimitResult
-): NextResponse {
+export function addRateLimitHeaders(response: NextResponse, result: RateLimitResult): NextResponse {
   response.headers.set('X-RateLimit-Limit', String(result.limit));
   response.headers.set('X-RateLimit-Remaining', String(result.remaining));
   response.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetTime / 1000)));

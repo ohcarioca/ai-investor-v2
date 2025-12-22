@@ -219,12 +219,15 @@ export type ToolErrorCode =
  */
 export interface ToolParameterSchema {
   type: 'object';
-  properties: Record<string, {
-    type: string;
-    description: string;
-    enum?: string[];
-    default?: unknown;
-  }>;
+  properties: Record<
+    string,
+    {
+      type: string;
+      description: string;
+      enum?: string[];
+      default?: unknown;
+    }
+  >;
   required: string[];
   [key: string]: unknown; // Index signature for OpenAI FunctionParameters compatibility
 }
@@ -264,18 +267,12 @@ export interface ITool {
   /**
    * Validates parameters before execution
    */
-  validateParams(
-    params: Record<string, unknown>,
-    context: ToolContext
-  ): ValidationResult;
+  validateParams(params: Record<string, unknown>, context: ToolContext): ValidationResult;
 
   /**
    * Executes the tool with given parameters
    */
-  execute(
-    params: Record<string, unknown>,
-    context: ToolContext
-  ): Promise<ToolResult>;
+  execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult>;
 }
 
 // ============================================================================

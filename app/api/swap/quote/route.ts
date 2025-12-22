@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  getOKXClient,
-  CHAIN_INDEX_MAP,
-  NATIVE_TOKEN_ADDRESS,
-} from '@/lib/okx-server';
+import { getOKXClient, CHAIN_INDEX_MAP, NATIVE_TOKEN_ADDRESS } from '@/lib/okx-server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,19 +19,13 @@ export async function GET(request: NextRequest) {
 
     // Validation
     if (!chainId || !fromToken || !toToken || !amount) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
 
     // Get chain index
     const chainIndex = CHAIN_INDEX_MAP[parseInt(chainId)];
     if (!chainIndex) {
-      return NextResponse.json(
-        { error: 'Unsupported chain' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Unsupported chain' }, { status: 400 });
     }
 
     // Call OKX SDK
@@ -72,10 +62,7 @@ export async function GET(request: NextRequest) {
 
     if (!quoteData) {
       console.error('No quote data found in response:', quoteResult);
-      return NextResponse.json(
-        { error: 'No quote data available' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'No quote data available' }, { status: 404 });
     }
 
     console.log('Quote Data:', JSON.stringify(quoteData, null, 2));
@@ -83,8 +70,12 @@ export async function GET(request: NextRequest) {
     // Transform OKX response to our format
     // OKX SDK may use different field names
     const quoteDataRecord = quoteData as unknown as Record<string, unknown>;
-    const fromTokenData = (quoteData.fromToken || quoteDataRecord.fromTokenInfo || {}) as unknown as Record<string, unknown>;
-    const toTokenData = (quoteData.toToken || quoteDataRecord.toTokenInfo || {}) as unknown as Record<string, unknown>;
+    const fromTokenData = (quoteData.fromToken ||
+      quoteDataRecord.fromTokenInfo ||
+      {}) as unknown as Record<string, unknown>;
+    const toTokenData = (quoteData.toToken ||
+      quoteDataRecord.toTokenInfo ||
+      {}) as unknown as Record<string, unknown>;
 
     const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
     const toDecimals = parseInt((toTokenData.decimal as string) || '18');
@@ -131,8 +122,7 @@ export async function GET(request: NextRequest) {
     console.error('Quote error:', error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : 'Failed to fetch quote',
+        error: error instanceof Error ? error.message : 'Failed to fetch quote',
       },
       { status: 500 }
     );

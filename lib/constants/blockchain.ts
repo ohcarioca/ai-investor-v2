@@ -19,7 +19,11 @@ export const CHAIN_IDS = {
 
 export type SupportedChainId = (typeof CHAIN_IDS)[keyof typeof CHAIN_IDS];
 
-export const SUPPORTED_CHAIN_IDS = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE, CHAIN_IDS.SOLANA] as const;
+export const SUPPORTED_CHAIN_IDS = [
+  CHAIN_IDS.ETHEREUM,
+  CHAIN_IDS.AVALANCHE,
+  CHAIN_IDS.SOLANA,
+] as const;
 
 // =============================================================================
 // VIEM CHAIN CONFIGURATIONS
@@ -108,12 +112,14 @@ export const SOLANA_USDC_MINT = 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v';
  * Solana deposit wallet for investment transfers
  * Users send USDC here when investing from Solana
  */
-export const SOLANA_DEPOSIT_WALLET = process.env.NEXT_PUBLIC_SOLANA_DEPOSIT_WALLET || '5Ki6rhVbWxmsLYxhNRT32ePPCUZwtuN7XZN16Dv7aXzg';
+export const SOLANA_DEPOSIT_WALLET =
+  process.env.NEXT_PUBLIC_SOLANA_DEPOSIT_WALLET || '5Ki6rhVbWxmsLYxhNRT32ePPCUZwtuN7XZN16Dv7aXzg';
 
 /**
  * Solana RPC endpoint
  */
-export const SOLANA_RPC_URL = process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
+export const SOLANA_RPC_URL =
+  process.env.NEXT_PUBLIC_SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 
 /**
  * Webhook URL for Solana investment notifications

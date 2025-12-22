@@ -23,7 +23,8 @@ interface ConfirmInvestResult {
 
 export class ConfirmInvestTool extends BaseTool {
   readonly name = 'confirm_invest';
-  readonly description = 'Confirma e executa o investimento (USDC → SIERRA) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).';
+  readonly description =
+    'Confirma e executa o investimento (USDC → SIERRA) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).';
   readonly category = 'investment' as const;
   readonly requiresWallet = true;
 

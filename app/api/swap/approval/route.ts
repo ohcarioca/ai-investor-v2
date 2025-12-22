@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPublicClient, http, erc20Abi, getAddress } from 'viem';
-import {
-  VIEM_CHAINS,
-  NATIVE_TOKEN_ADDRESS,
-} from '@/lib/constants/blockchain';
+import { VIEM_CHAINS, NATIVE_TOKEN_ADDRESS } from '@/lib/constants/blockchain';
 import { validateApprovalRequest } from '@/lib/middleware/wallet-validation';
 import { getErrorMessage } from '@/lib/utils/error-handler';
 
@@ -82,7 +79,8 @@ export async function POST(request: NextRequest) {
     // Function selector: 0x095ea7b3
     const APPROVAL_MARGIN_PERCENT = 20;
     const requiredAmount = BigInt(amount);
-    const approvalAmount = requiredAmount + (requiredAmount * BigInt(APPROVAL_MARGIN_PERCENT) / BigInt(100));
+    const approvalAmount =
+      requiredAmount + (requiredAmount * BigInt(APPROVAL_MARGIN_PERCENT)) / BigInt(100);
     const approvalAmountHex = approvalAmount.toString(16).padStart(64, '0');
     const spenderPadded = spenderAddress.slice(2).padStart(64, '0');
     const approveData = `0x095ea7b3${spenderPadded}${approvalAmountHex}`;

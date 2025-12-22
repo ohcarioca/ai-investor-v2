@@ -25,13 +25,7 @@ export function useSwapQuote({
   const [error, setError] = useState<string | null>(null);
 
   const fetchQuote = useCallback(async () => {
-    if (
-      !enabled ||
-      !fromToken ||
-      !toToken ||
-      !amount ||
-      parseFloat(amount) <= 0
-    ) {
+    if (!enabled || !fromToken || !toToken || !amount || parseFloat(amount) <= 0) {
       setQuote(null);
       return;
     }
@@ -41,9 +35,7 @@ export function useSwapQuote({
 
     try {
       // Convert amount to base units
-      const amountInBaseUnits = (
-        parseFloat(amount) * Math.pow(10, fromToken.decimals)
-      ).toFixed(0);
+      const amountInBaseUnits = (parseFloat(amount) * Math.pow(10, fromToken.decimals)).toFixed(0);
 
       const params = new URLSearchParams({
         chainId: (chain?.id || 1).toString(), // Default to Ethereum

@@ -29,12 +29,12 @@ The AI Investor Agent uses **Vitest** as its primary testing framework, chosen f
 
 ### Test Categories
 
-| Type | Location | Purpose |
-|------|----------|---------|
-| **Unit Tests** | `lib/**/*.test.ts` | Test individual functions and classes |
-| **Component Tests** | `components/**/*.test.tsx` | Test React components in isolation |
-| **Hook Tests** | `hooks/**/*.test.ts` | Test custom React hooks |
-| **Integration Tests** | `app/api/**/*.test.ts` | Test API routes end-to-end |
+| Type                  | Location                   | Purpose                               |
+| --------------------- | -------------------------- | ------------------------------------- |
+| **Unit Tests**        | `lib/**/*.test.ts`         | Test individual functions and classes |
+| **Component Tests**   | `components/**/*.test.tsx` | Test React components in isolation    |
+| **Hook Tests**        | `hooks/**/*.test.ts`       | Test custom React hooks               |
+| **Integration Tests** | `app/api/**/*.test.ts`     | Test API routes end-to-end            |
 
 ---
 
@@ -93,12 +93,12 @@ Tests       40 passed (40)
 
 ### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run test` | Run tests in watch mode (development) |
-| `npm run test:run` | Run tests once and exit |
-| `npm run test:ui` | Open Vitest UI in browser |
-| `npm run test:coverage` | Run tests with coverage report |
+| Command                 | Description                           |
+| ----------------------- | ------------------------------------- |
+| `npm run test`          | Run tests in watch mode (development) |
+| `npm run test:run`      | Run tests once and exit               |
+| `npm run test:ui`       | Open Vitest UI in browser             |
+| `npm run test:coverage` | Run tests with coverage report        |
 
 ### Watch Mode (Recommended for Development)
 
@@ -107,6 +107,7 @@ npm run test
 ```
 
 Features:
+
 - Automatically re-runs tests on file changes
 - Press `f` to run only failed tests
 - Press `a` to run all tests
@@ -119,6 +120,7 @@ npm run test:ui
 ```
 
 Opens an interactive browser-based UI at `http://localhost:51204/__vitest__/` with:
+
 - Test tree visualization
 - Real-time test execution
 - Coverage visualization
@@ -131,6 +133,7 @@ npm run test:coverage
 ```
 
 Generates reports in multiple formats:
+
 - **Terminal** - Summary in console output
 - **HTML** - Detailed report at `coverage/index.html`
 - **LCOV** - Machine-readable format at `coverage/lcov.info`
@@ -267,11 +270,11 @@ ai-investor-agent/
 
 ### Naming Conventions
 
-| Convention | Example |
-|------------|---------|
-| Test file suffix | `*.test.ts` or `*.test.tsx` |
-| Describe blocks | Feature or module name |
-| Test descriptions | Start with "should" |
+| Convention        | Example                     |
+| ----------------- | --------------------------- |
+| Test file suffix  | `*.test.ts` or `*.test.tsx` |
+| Describe blocks   | Feature or module name      |
+| Test descriptions | Start with "should"         |
 
 ---
 
@@ -386,13 +389,13 @@ coverage: {
 
 ### Target Coverage by Module
 
-| Module | Current | Target |
-|--------|---------|--------|
-| `lib/tools/` | 85% | 90% |
-| `lib/services/` | 70% | 85% |
-| `lib/wallet-validation.ts` | 95% | 95% |
-| `components/` | 40% | 70% |
-| `hooks/` | 30% | 70% |
+| Module                     | Current | Target |
+| -------------------------- | ------- | ------ |
+| `lib/tools/`               | 85%     | 90%    |
+| `lib/services/`            | 70%     | 85%    |
+| `lib/wallet-validation.ts` | 95%     | 95%    |
+| `components/`              | 40%     | 70%    |
+| `hooks/`                   | 30%     | 70%    |
 
 ### Generating Coverage Report
 
@@ -420,6 +423,7 @@ xdg-open coverage/index.html
 ### GitHub Actions Workflow
 
 Tests run automatically on:
+
 - Pull requests to `main` or `develop`
 - Pushes to `main` or `develop`
 
@@ -476,6 +480,7 @@ echo "npm run test:run" > .husky/pre-commit
 **Cause:** Async operations not completing.
 
 **Solution:**
+
 - Check for unresolved promises
 - Increase timeout in `vitest.config.ts`:
 
@@ -490,6 +495,7 @@ test: {
 **Cause:** Module not properly mocked.
 
 **Solution:**
+
 - Ensure `vi.mock()` is called before imports
 - Use `vi.mocked()` for type-safe mock access
 - Check mock reset in `beforeEach`

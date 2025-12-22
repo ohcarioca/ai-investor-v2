@@ -38,12 +38,8 @@ export default function WebhookLoadingModal({
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
                 <div className="text-center">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">
-                    Saving Transaction
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Please wait while we record your swap...
-                  </p>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">Saving Transaction</h3>
+                  <p className="text-sm text-gray-600">Please wait while we record your swap...</p>
                 </div>
               </div>
             </>

@@ -20,27 +20,33 @@ O agente responde automaticamente a solicitações como:
 ### Tipos de Gráficos
 
 #### 1. **Portfolio (Desempenho Geral)**
+
 ```
 Comando: "Mostre o gráfico do meu portfólio"
 ```
+
 - Tipo: Gráfico de área
 - Mostra: Valor atual vs Valor investido
 - Cores: Roxo (#9333ea) e Rosa (#ec4899)
 - Ideal para: Visão geral do desempenho
 
 #### 2. **Growth (Crescimento Comparativo)**
+
 ```
 Comando: "Mostre o crescimento do investimento"
 ```
+
 - Tipo: Gráfico de linha
 - Mostra: Comparação entre valor investido e valor atual
 - Cores: Verde (#10b981) e Cinza (#6b7280)
 - Ideal para: Análise de crescimento
 
 #### 3. **Profit (Lucro ao Longo do Tempo)**
+
 ```
 Comando: "Mostre o gráfico de lucro"
 ```
+
 - Tipo: Gráfico de barras
 - Mostra: Lucro líquido por período
 - Cor: Verde (#10b981)
@@ -127,19 +133,19 @@ Agente: [Gera gráfico tipo 'growth' com período '1y']
 
 ```typescript
 interface ChartConfig {
-  title: string;              // Título do gráfico
-  description?: string;       // Descrição opcional
-  type: ChartType;           // 'line' | 'area' | 'bar'
-  data: ChartDataPoint[];    // Dados do gráfico
+  title: string; // Título do gráfico
+  description?: string; // Descrição opcional
+  type: ChartType; // 'line' | 'area' | 'bar'
+  data: ChartDataPoint[]; // Dados do gráfico
   dataKeys: {
-    x: string;               // Chave para eixo X
-    y: string[];             // Chaves para eixo Y
+    x: string; // Chave para eixo X
+    y: string[]; // Chaves para eixo Y
   };
-  colors?: string[];         // Cores customizadas
-  yAxisLabel?: string;       // Label do eixo Y
-  xAxisLabel?: string;       // Label do eixo X
-  showLegend?: boolean;      // Mostrar legenda (padrão: true)
-  showGrid?: boolean;        // Mostrar grid (padrão: true)
+  colors?: string[]; // Cores customizadas
+  yAxisLabel?: string; // Label do eixo Y
+  xAxisLabel?: string; // Label do eixo X
+  showLegend?: boolean; // Mostrar legenda (padrão: true)
+  showGrid?: boolean; // Mostrar grid (padrão: true)
 }
 ```
 
@@ -174,7 +180,7 @@ A API `/api/charts/historical` gera dados realistas baseados em:
     "type": "area",
     "data": [
       { "name": "Jan 1", "value": 102.5, "invested": 100 },
-      { "name": "Jan 2", "value": 105.8, "invested": 105 },
+      { "name": "Jan 2", "value": 105.8, "invested": 105 }
       // ...
     ],
     "dataKeys": { "x": "name", "y": ["value", "invested"] },
@@ -199,7 +205,7 @@ A API `/api/charts/historical` gera dados realistas baseados em:
 Edite o array `colors` em cada tipo de gráfico:
 
 ```typescript
-colors: ['#9333ea', '#ec4899'] // Roxo e Rosa
+colors: ['#9333ea', '#ec4899']; // Roxo e Rosa
 ```
 
 ### Adicionar Novos Períodos
@@ -225,6 +231,7 @@ colors: ['#9333ea', '#ec4899'] // Roxo e Rosa
 ## Exemplos de Interação
 
 ### Exemplo 1: Gráfico Simples
+
 ```
 👤 Usuário: mostre um gráfico
 🤖 Agente: Aqui está o gráfico do seu portfólio no último mês:
@@ -232,6 +239,7 @@ colors: ['#9333ea', '#ec4899'] // Roxo e Rosa
 ```
 
 ### Exemplo 2: Gráfico Específico
+
 ```
 👤 Usuário: quero ver o lucro dos últimos 6 meses
 🤖 Agente: Aqui está o gráfico de lucro dos últimos 6 meses:
@@ -239,6 +247,7 @@ colors: ['#9333ea', '#ec4899'] // Roxo e Rosa
 ```
 
 ### Exemplo 3: Análise de Crescimento
+
 ```
 👤 Usuário: comparar investido vs valor atual no último ano
 🤖 Agente: Aqui está a comparação entre o valor investido e o valor atual no último ano:
@@ -259,21 +268,25 @@ colors: ['#9333ea', '#ec4899'] // Roxo e Rosa
 ## Troubleshooting
 
 ### Gráfico não aparece
+
 - Verificar se a wallet está conectada
 - Verificar console do navegador para erros
 - Verificar se a API retornou dados válidos
 
 ### Dados incorretos
+
 - Atualmente usa dados mock
 - Para dados reais, integrar com blockchain/database
 
 ### Erro de tipo TypeScript
+
 - Garantir que ChartConfig está importado corretamente
 - Verificar tipos em `types/chat.ts`
 
 ## Suporte
 
 Para problemas ou sugestões relacionadas aos gráficos, consulte:
+
 - Código: `components/charts/ChartCard.tsx`
 - API: `app/api/charts/historical/route.ts`
 - Agente: `app/api/chat/route.ts` (função `generate_chart`)

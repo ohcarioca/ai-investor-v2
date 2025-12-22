@@ -96,7 +96,9 @@ export default function ChartCard({ config }: ChartCardProps) {
     if (!showLegend) return null;
 
     return (
-      <div className={`flex flex-wrap gap-4 ${legendPosition === 'bottom' ? 'mt-4 justify-center' : 'mb-4'}`}>
+      <div
+        className={`flex flex-wrap gap-4 ${legendPosition === 'bottom' ? 'mt-4 justify-center' : 'mb-4'}`}
+      >
         {dataKeys.y.map((key, index) => (
           <div key={key} className="flex items-center gap-2">
             <div
@@ -126,9 +128,7 @@ export default function ChartCard({ config }: ChartCardProps) {
       <div className={`flex items-center gap-1 px-2 py-1 rounded-full ${bg}`}>
         <Icon className={`w-3.5 h-3.5 ${color}`} />
         {highlightValue.trendPercent && (
-          <span className={`text-xs font-semibold ${color}`}>
-            {highlightValue.trendPercent}
-          </span>
+          <span className={`text-xs font-semibold ${color}`}>{highlightValue.trendPercent}</span>
         )}
       </div>
     );
@@ -173,16 +173,13 @@ export default function ChartCard({ config }: ChartCardProps) {
           <AreaChart data={data} margin={chartMargin}>
             {renderGradientDefs()}
             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />}
-            {showXAxis && (
-              <XAxis
-                dataKey={dataKeys.x}
-                {...commonAxisProps}
-              />
-            )}
+            {showXAxis && <XAxis dataKey={dataKeys.x} {...commonAxisProps} />}
             {showYAxis && (
               <YAxis
                 {...commonAxisProps}
-                tickFormatter={(value) => `$${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                tickFormatter={(value) =>
+                  `$${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`
+                }
                 width={50}
               />
             )}
@@ -206,16 +203,13 @@ export default function ChartCard({ config }: ChartCardProps) {
         return (
           <LineChart data={data} margin={chartMargin}>
             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />}
-            {showXAxis && (
-              <XAxis
-                dataKey={dataKeys.x}
-                {...commonAxisProps}
-              />
-            )}
+            {showXAxis && <XAxis dataKey={dataKeys.x} {...commonAxisProps} />}
             {showYAxis && (
               <YAxis
                 {...commonAxisProps}
-                tickFormatter={(value) => `$${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
+                tickFormatter={(value) =>
+                  `$${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`
+                }
                 width={50}
               />
             )}
@@ -239,16 +233,13 @@ export default function ChartCard({ config }: ChartCardProps) {
           <BarChart data={data} margin={chartMargin}>
             {renderGradientDefs()}
             {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />}
-            {showXAxis && (
-              <XAxis
-                dataKey={dataKeys.x}
-                {...commonAxisProps}
-              />
-            )}
+            {showXAxis && <XAxis dataKey={dataKeys.x} {...commonAxisProps} />}
             {showYAxis && (
               <YAxis
                 {...commonAxisProps}
-                tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()}
+                tickFormatter={(value) =>
+                  value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value.toString()
+                }
                 width={40}
               />
             )}
@@ -282,10 +273,7 @@ export default function ChartCard({ config }: ChartCardProps) {
               strokeWidth={0}
             >
               {data.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={colors[index % colors.length]}
-                />
+                <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
               ))}
             </Pie>
             <Tooltip
@@ -354,15 +342,11 @@ export default function ChartCard({ config }: ChartCardProps) {
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900">{title}</h3>
-          {description && (
-            <p className="text-sm text-gray-500 mt-0.5">{description}</p>
-          )}
+          {description && <p className="text-sm text-gray-500 mt-0.5">{description}</p>}
         </div>
         {highlightValue && (
           <div className="flex flex-col items-end gap-1">
-            <span className="text-2xl font-bold text-purple-600">
-              {highlightValue.value}
-            </span>
+            <span className="text-2xl font-bold text-purple-600">{highlightValue.value}</span>
             {highlightValue.label && (
               <span className="text-xs text-gray-500">{highlightValue.label}</span>
             )}
@@ -394,10 +378,7 @@ export default function ChartCard({ config }: ChartCardProps) {
           {footerStats.map((stat, index) => (
             <div key={index}>
               <p className="text-xs text-gray-500">{stat.label}</p>
-              <p
-                className="text-sm font-bold mt-0.5"
-                style={{ color: stat.color || '#111827' }}
-              >
+              <p className="text-sm font-bold mt-0.5" style={{ color: stat.color || '#111827' }}>
                 {stat.value}
               </p>
             </div>

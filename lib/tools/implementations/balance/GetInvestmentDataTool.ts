@@ -7,12 +7,7 @@
  */
 
 import { BaseTool } from '../../base/BaseTool';
-import {
-  ToolContext,
-  ToolResult,
-  ToolDefinition,
-  InvestmentData,
-} from '../../base/types';
+import { ToolContext, ToolResult, ToolDefinition, InvestmentData } from '../../base/types';
 import { fetchWalletBalance } from '@/lib/services/balance';
 
 // Get SIERRA configuration from environment
@@ -22,7 +17,8 @@ const SIERRA_APY_DECIMAL = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0
 
 export class GetInvestmentDataTool extends BaseTool {
   readonly name = 'get_investment_data';
-  readonly description = 'Obtém dados de investimento do usuário, incluindo total investido em USDC (baseado no saldo de SIERRA) e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.';
+  readonly description =
+    'Obtém dados de investimento do usuário, incluindo total investido em USDC (baseado no saldo de SIERRA) e APY atual. Use esta função quando o usuário perguntar sobre: quanto tem investido, qual o APY, rentabilidade, retorno do investimento, ou dados de investimento.';
   readonly category = 'balance' as const;
   readonly requiresWallet = true;
 
@@ -54,7 +50,9 @@ export class GetInvestmentDataTool extends BaseTool {
     // Convert decimal APY to percentage (0.0585 → 5.85)
     const apyPercent = SIERRA_APY_DECIMAL * 100;
 
-    this.log(`Fetching investment data for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)}`);
+    this.log(
+      `Fetching investment data for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)}`
+    );
     this.log(`Using SIERRA rate: ${SIERRA_USDC_RATE}, APY: ${apyPercent.toFixed(2)}%`);
 
     try {

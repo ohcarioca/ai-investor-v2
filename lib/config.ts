@@ -331,8 +331,10 @@ export function getNetworkConfig(chainId: number) {
  * Get the default network
  */
 export function getDefaultNetwork() {
-  return config.blockchain.networks.find((network) => network.default) ||
-    config.blockchain.networks.find((network) => network.enabled);
+  return (
+    config.blockchain.networks.find((network) => network.default) ||
+    config.blockchain.networks.find((network) => network.enabled)
+  );
 }
 
 /**
@@ -495,7 +497,9 @@ export function isGasOptimizationEnabled(): boolean {
 /**
  * Get gas margin for a specific operation type
  */
-export function getGasMargin(operationType: 'approval' | 'simple_swap' | 'standard_swap' | 'complex_swap'): number {
+export function getGasMargin(
+  operationType: 'approval' | 'simple_swap' | 'standard_swap' | 'complex_swap'
+): number {
   return config.gas.margin_by_operation[operationType];
 }
 
@@ -503,9 +507,7 @@ export function getGasMargin(operationType: 'approval' | 'simple_swap' | 'standa
  * Check if a token is considered complex (requires higher gas margins)
  */
 export function isComplexToken(symbol: string): boolean {
-  return config.gas.complex_tokens.some(
-    (token) => token.toLowerCase() === symbol.toLowerCase()
-  );
+  return config.gas.complex_tokens.some((token) => token.toLowerCase() === symbol.toLowerCase());
 }
 
 /**
@@ -595,8 +597,10 @@ export function validateConfig(): { valid: boolean; errors: string[] } {
     errors.push('Min slippage cannot be greater than max slippage');
   }
 
-  if (slippage.default_slippage < slippage.min_slippage ||
-      slippage.default_slippage > slippage.max_slippage) {
+  if (
+    slippage.default_slippage < slippage.min_slippage ||
+    slippage.default_slippage > slippage.max_slippage
+  ) {
     errors.push('Default slippage must be between min and max slippage');
   }
 

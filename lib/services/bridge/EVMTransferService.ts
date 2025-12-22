@@ -42,7 +42,9 @@ export class EVMTransferService {
       : process.env.BRIDGE_AVAX_PRIVATE_KEY;
 
     if (!privateKey) {
-      throw new Error(`Missing private key for ${networkTarget}. Set BRIDGE_${networkTarget}_PRIVATE_KEY in environment.`);
+      throw new Error(
+        `Missing private key for ${networkTarget}. Set BRIDGE_${networkTarget}_PRIVATE_KEY in environment.`
+      );
     }
 
     const rpcUrl = isEthereum
@@ -88,7 +90,9 @@ export class EVMTransferService {
   /**
    * Check hot wallet USDC balance
    */
-  async checkBalance(networkTarget: 'ETH' | 'AVAX'): Promise<{ balance: bigint; formatted: string }> {
+  async checkBalance(
+    networkTarget: 'ETH' | 'AVAX'
+  ): Promise<{ balance: bigint; formatted: string }> {
     const config = this.getChainConfig(networkTarget);
     const { publicClient, account } = this.createClients(config);
 
@@ -111,7 +115,9 @@ export class EVMTransferService {
   async sendUSDC(params: EVMTransferParams): Promise<EVMTransferResult> {
     const { targetWallet, networkTarget, amountUsdc } = params;
 
-    console.log(`[EVMTransferService] Initiating transfer: ${amountUsdc} USDC to ${targetWallet} on ${networkTarget}`);
+    console.log(
+      `[EVMTransferService] Initiating transfer: ${amountUsdc} USDC to ${targetWallet} on ${networkTarget}`
+    );
 
     try {
       const config = this.getChainConfig(networkTarget);

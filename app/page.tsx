@@ -42,7 +42,7 @@ export default function Home() {
     const screenWidth = window.innerWidth;
     setIsLargeScreen(screenWidth >= 1024);
     const maxWidth = Math.floor(screenWidth * 0.5);
-    setSidebarWidth(prev => Math.min(prev, maxWidth));
+    setSidebarWidth((prev) => Math.min(prev, maxWidth));
   }, []);
 
   // Handle sidebar resize event
@@ -84,10 +84,14 @@ export default function Home() {
                 </div>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 px-4">
-                Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">Kira</span>
+                Welcome to{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">
+                  Kira
+                </span>
               </h1>
               <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed px-4">
-                Your AI-powered financial assistant. I can help you invest, manage payouts, exchange currencies, and track your portfolio.
+                Your AI-powered financial assistant. I can help you invest, manage payouts, exchange
+                currencies, and track your portfolio.
               </p>
             </div>
 

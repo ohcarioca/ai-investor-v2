@@ -1,14 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface APYPerformanceChartProps {
   currentAPY: number;
@@ -34,9 +27,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     return (
       <div className="bg-white/95 backdrop-blur-sm border border-gray-100 rounded-lg shadow-lg px-3 py-2">
         <p className="text-xs text-gray-500">{payload[0].payload.month}</p>
-        <p className="text-sm font-bold text-purple-600">
-          {payload[0].value.toFixed(2)}%
-        </p>
+        <p className="text-sm font-bold text-purple-600">{payload[0].value.toFixed(2)}%</p>
       </div>
     );
   }
@@ -60,11 +51,11 @@ function generateAPYData(currentAPY: number) {
   const startAPY = Math.max(currentAPY * 0.65, 2.0); // Start at ~65% of current or min 2%
   const growthPoints = [
     startAPY,
-    startAPY + (currentAPY - startAPY) * 0.15,  // Small initial growth
-    startAPY + (currentAPY - startAPY) * 0.35,  // Slightly more
-    startAPY + (currentAPY - startAPY) * 0.55,  // Building momentum
-    startAPY + (currentAPY - startAPY) * 0.80,  // Strong growth
-    currentAPY,                                   // Current value
+    startAPY + (currentAPY - startAPY) * 0.15, // Small initial growth
+    startAPY + (currentAPY - startAPY) * 0.35, // Slightly more
+    startAPY + (currentAPY - startAPY) * 0.55, // Building momentum
+    startAPY + (currentAPY - startAPY) * 0.8, // Strong growth
+    currentAPY, // Current value
   ];
 
   return months.map((month, index) => ({
@@ -93,9 +84,7 @@ export default function APYPerformanceChart({ currentAPY, isLoading }: APYPerfor
       {/* Header with title and current APY - matching other cards */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-gray-600 font-medium">APY Performance</span>
-        <span className="text-lg font-bold text-purple-600">
-          {currentAPY.toFixed(2)}%
-        </span>
+        <span className="text-lg font-bold text-purple-600">{currentAPY.toFixed(2)}%</span>
       </div>
 
       {/* Chart */}
@@ -115,10 +104,7 @@ export default function APYPerformanceChart({ currentAPY, isLoading }: APYPerfor
               axisLine={false}
               interval={0}
             />
-            <YAxis
-              hide
-              domain={['dataMin - 0.5', 'dataMax + 0.5']}
-            />
+            <YAxis hide domain={['dataMin - 0.5', 'dataMax + 0.5']} />
             <Tooltip content={<CustomTooltip />} />
             <Area
               type="monotone"

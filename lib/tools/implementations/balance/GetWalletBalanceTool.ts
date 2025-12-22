@@ -5,17 +5,13 @@
  */
 
 import { BaseTool } from '../../base/BaseTool';
-import {
-  ToolContext,
-  ToolResult,
-  ToolDefinition,
-  WalletBalance,
-} from '../../base/types';
+import { ToolContext, ToolResult, ToolDefinition, WalletBalance } from '../../base/types';
 import { fetchWalletBalance } from '../../../services/balance';
 
 export class GetWalletBalanceTool extends BaseTool {
   readonly name = 'get_wallet_balance';
-  readonly description = 'Obtém o saldo completo da carteira conectada, incluindo tokens nativos (ETH/AVAX) e ERC20 (USDC, SIERRA). Retorna valores em USD e quantidade de cada token. Suporta Ethereum (chainId: 1) e Avalanche (chainId: 43114).';
+  readonly description =
+    'Obtém o saldo completo da carteira conectada, incluindo tokens nativos (ETH/AVAX) e ERC20 (USDC, SIERRA). Retorna valores em USD e quantidade de cada token. Suporta Ethereum (chainId: 1) e Avalanche (chainId: 43114).';
   readonly category = 'balance' as const;
   readonly requiresWallet = true;
 
@@ -50,7 +46,9 @@ export class GetWalletBalanceTool extends BaseTool {
     // ALWAYS use context.chainId (from connected wallet) - this is the source of truth
     const chainId = context.chainId || 1;
 
-    this.log(`Fetching balance for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)} on chain ${chainId}`);
+    this.log(
+      `Fetching balance for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)} on chain ${chainId}`
+    );
 
     try {
       // Call the balance service directly (no HTTP request needed)

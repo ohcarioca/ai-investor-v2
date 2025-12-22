@@ -116,10 +116,7 @@
           "symbol": "ETH",
           "decimals": 18
         },
-        "rpc_urls": [
-          "https://eth.llamarpc.com",
-          "https://ethereum.publicnode.com"
-        ],
+        "rpc_urls": ["https://eth.llamarpc.com", "https://ethereum.publicnode.com"],
         "block_explorer": "https://etherscan.io",
         "enabled": true,
         "default": true
@@ -242,7 +239,7 @@
       "approval": 1.15,
       "simple_swap": 1.25,
       "standard_swap": 1.35,
-      "complex_swap": 1.50
+      "complex_swap": 1.5
     },
     "complex_tokens": ["SIERRA"],
     "max_gas_price_gwei": {

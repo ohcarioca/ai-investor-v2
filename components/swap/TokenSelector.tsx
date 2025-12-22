@@ -11,11 +11,7 @@ interface TokenSelectorProps {
   onClose: () => void;
 }
 
-export default function TokenSelector({
-  tokens,
-  onSelect,
-  onClose,
-}: TokenSelectorProps) {
+export default function TokenSelector({ tokens, onSelect, onClose }: TokenSelectorProps) {
   const { address } = useAccount();
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -35,9 +31,7 @@ export default function TokenSelector({
       <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">
-            Select Token
-          </h3>
+          <h3 className="text-lg font-bold text-gray-900">Select Token</h3>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -64,9 +58,7 @@ export default function TokenSelector({
         {/* Token List */}
         <div className="overflow-y-auto flex-1">
           {filteredTokens.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No tokens found
-            </div>
+            <div className="p-8 text-center text-gray-500">No tokens found</div>
           ) : (
             <div className="p-2">
               {filteredTokens.map((token) => (
@@ -103,9 +95,7 @@ function TokenListItem({
     },
   });
 
-  const formattedBalance = balance
-    ? parseFloat(balance.formatted).toFixed(6)
-    : '0.00';
+  const formattedBalance = balance ? parseFloat(balance.formatted).toFixed(6) : '0.00';
 
   return (
     <button
@@ -115,9 +105,7 @@ function TokenListItem({
       <div className="flex items-center gap-3">
         {/* Token icon placeholder */}
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">
-            {token.symbol.charAt(0)}
-          </span>
+          <span className="text-white font-bold text-sm">{token.symbol.charAt(0)}</span>
         </div>
 
         <div className="text-left">
@@ -128,9 +116,7 @@ function TokenListItem({
 
       {address && (
         <div className="text-right">
-          <div className="text-sm font-medium text-gray-900">
-            {formattedBalance}
-          </div>
+          <div className="text-sm font-medium text-gray-900">{formattedBalance}</div>
         </div>
       )}
     </button>

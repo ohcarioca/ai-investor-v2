@@ -4,11 +4,7 @@
  * This tool is called after user confirms the investment preview
  */
 
-import {
-  Connection,
-  PublicKey,
-  Transaction,
-} from '@solana/web3.js';
+import { Connection, PublicKey, Transaction } from '@solana/web3.js';
 import {
   getAssociatedTokenAddress,
   createTransferInstruction,
@@ -34,7 +30,8 @@ import { isValidAddress } from '../../../wallet-validation';
 
 export class ConfirmSolanaInvestTool extends BaseTool {
   readonly name = 'confirm_solana_invest';
-  readonly description = 'Confirma e executa o investimento Solana. Transfere USDC para a carteira de depósito e envia notificação. Use após o usuário confirmar o preview do investimento.';
+  readonly description =
+    'Confirma e executa o investimento Solana. Transfere USDC para a carteira de depósito e envia notificação. Use após o usuário confirmar o preview do investimento.';
   readonly category = 'solana' as const;
   readonly requiresWallet = true;
 
@@ -67,10 +64,7 @@ export class ConfirmSolanaInvestTool extends BaseTool {
   /**
    * Override base validation to use Solana address validation instead of EVM
    */
-  validateParams(
-    _params: Record<string, unknown>,
-    context: ToolContext
-  ): ValidationResult {
+  validateParams(_params: Record<string, unknown>, context: ToolContext): ValidationResult {
     // Check if wallet is connected
     if (!context.isConnected || !context.walletAddress) {
       return {
@@ -184,10 +178,12 @@ export class ConfirmSolanaInvestTool extends BaseTool {
       transaction.feePayer = fromPublicKey;
 
       // Serialize the transaction for frontend signing
-      const serializedTransaction = transaction.serialize({
-        requireAllSignatures: false,
-        verifySignatures: false,
-      }).toString('base64');
+      const serializedTransaction = transaction
+        .serialize({
+          requireAllSignatures: false,
+          verifySignatures: false,
+        })
+        .toString('base64');
 
       this.log('Transaction prepared for signing', {
         serializedTransaction: serializedTransaction.slice(0, 50) + '...',

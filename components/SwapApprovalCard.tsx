@@ -1,22 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  useAccount,
-  useChainId,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-} from 'wagmi';
+import { useAccount, useChainId, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { CheckCircle2, AlertCircle, Loader2, ExternalLink, TrendingDown } from 'lucide-react';
 import type { EVMSwapData, Token } from '@/types/swap';
 import { sendSwapWebhook } from '@/lib/webhook-service';
 import { buildWebhookPayload } from '@/lib/webhook-utils';
 import WebhookLoadingModal from './WebhookLoadingModal';
-import {
-  SUPPORTED_CHAIN_IDS,
-  getExplorerTxUrl,
-  getExplorerName,
-} from '@/lib/constants/blockchain';
+import { SUPPORTED_CHAIN_IDS, getExplorerTxUrl, getExplorerName } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 import { useOptimizedGas } from '@/hooks/useOptimizedGas';
 import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
@@ -51,9 +42,11 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     }
     // If true OR undefined (unknown state), require approval to be safe
     // Having an approvalTransaction also indicates approval is needed
-    return swapData.needsApproval === true ||
-           swapData.needsApproval === undefined ||
-           !!swapData.approvalTransaction;
+    return (
+      swapData.needsApproval === true ||
+      swapData.needsApproval === undefined ||
+      !!swapData.approvalTransaction
+    );
   }, [swapData.needsApproval, swapData.approvalTransaction]);
 
   console.log('[SwapApprovalCard] Approval requirement:', {
@@ -82,7 +75,9 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   });
 
   // Check if we're on a supported network (Ethereum or Avalanche)
-  const isCorrectNetwork = SUPPORTED_CHAIN_IDS.includes(chainId as typeof SUPPORTED_CHAIN_IDS[number]);
+  const isCorrectNetwork = SUPPORTED_CHAIN_IDS.includes(
+    chainId as (typeof SUPPORTED_CHAIN_IDS)[number]
+  );
 
   // Get optimized gas prices and estimator
   const { optimizedGas, formatUsd } = useOptimizedGas();
@@ -113,21 +108,27 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
   }, [optimizedGas, swapData, gasEstimator, chainId, requiresApproval]);
 
   // Helper functions to map token symbols to addresses and decimals using TokenRegistry
-  const getTokenAddress = useCallback((symbol: string): string => {
-    try {
-      return TokenRegistry.getAddress(symbol, chainId);
-    } catch {
-      return symbol; // Return as-is if not found (might be an address already)
-    }
-  }, [chainId]);
+  const getTokenAddress = useCallback(
+    (symbol: string): string => {
+      try {
+        return TokenRegistry.getAddress(symbol, chainId);
+      } catch {
+        return symbol; // Return as-is if not found (might be an address already)
+      }
+    },
+    [chainId]
+  );
 
-  const getTokenDecimals = useCallback((symbol: string): number => {
-    try {
-      return TokenRegistry.getDecimals(symbol, chainId);
-    } catch {
-      return 18; // Default decimals
-    }
-  }, [chainId]);
+  const getTokenDecimals = useCallback(
+    (symbol: string): number => {
+      try {
+        return TokenRegistry.getDecimals(symbol, chainId);
+      } catch {
+        return 18; // Default decimals
+      }
+    },
+    [chainId]
+  );
 
   // Send webhook data after successful swap
   const sendWebhookData = useCallback(
@@ -220,8 +221,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         setWebhookState({
           isLoading: false,
           isError: true,
-          errorMessage:
-            error instanceof Error ? error.message : 'Unknown error occurred',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error occurred',
         });
       }
     },
@@ -245,8 +245,15 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       // SIERRA has very low liquidity and may have transfer fees
       const isLowLiquidityToken = swapData.fromToken === 'SIERRA' || swapData.toToken === 'SIERRA';
       const slippageDecimal = isLowLiquidityToken ? '0.1' : '0.005'; // 10% or 0.5%
-      
-      console.log('[SwapApprovalCard] Using slippage:', slippageDecimal, 'for tokens:', swapData.fromToken, '->', swapData.toToken);
+
+      console.log(
+        '[SwapApprovalCard] Using slippage:',
+        slippageDecimal,
+        'for tokens:',
+        swapData.fromToken,
+        '->',
+        swapData.toToken
+      );
 
       // Skip allowance check when rebuilding after approval - we've already approved
       const response = await fetch('/api/swap/build?skipAllowanceCheck=true', {
@@ -340,9 +347,9 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       // 2. Current prices (prevents slippage failures)
       // 3. Valid routing data
       console.log('[SwapApprovalCard] Rebuilding swap transaction with fresh data...');
-      
+
       let swapTransaction = await rebuildSwapTransaction();
-      
+
       if (!swapTransaction) {
         console.warn('[SwapApprovalCard] Rebuild failed, falling back to original transaction');
         swapTransaction = swapData.swapTransaction;
@@ -355,7 +362,11 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       }
 
       // Use dynamic gas margin based on tokens involved
-      const { gasLimit: gasWithMargin, margin, operationType } = gasEstimator.estimateSwapGas(
+      const {
+        gasLimit: gasWithMargin,
+        margin,
+        operationType,
+      } = gasEstimator.estimateSwapGas(
         swapTransaction.gasLimit,
         swapData.fromToken,
         swapData.toToken
@@ -387,24 +398,33 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
       }
 
       // Execute the swap transaction
-      sendTransaction(
-        txParams,
-        {
-          onSuccess: (hash) => {
-            console.log('[SwapApprovalCard] Transaction sent successfully:', hash);
-          },
-          onError: (error) => {
-            console.error('[SwapApprovalCard] Transaction failed:', error);
-            setStatus('error');
-            setError(error.message || 'Transaction failed');
-          },
-        }
-      );
+      sendTransaction(txParams, {
+        onSuccess: (hash) => {
+          console.log('[SwapApprovalCard] Transaction sent successfully:', hash);
+        },
+        onError: (error) => {
+          console.error('[SwapApprovalCard] Transaction failed:', error);
+          setStatus('error');
+          setError(error.message || 'Transaction failed');
+        },
+      });
     } catch (err) {
       setStatus('error');
       setError(err instanceof Error ? err.message : 'Failed to execute swap');
     }
-  }, [swapData.swapTransaction, swapData.fromToken, swapData.toToken, address, sendTransaction, rebuildSwapTransaction, gasEstimator, optimizedGas, requiresApproval, status, approvalTxHash]);
+  }, [
+    swapData.swapTransaction,
+    swapData.fromToken,
+    swapData.toToken,
+    address,
+    sendTransaction,
+    rebuildSwapTransaction,
+    gasEstimator,
+    optimizedGas,
+    requiresApproval,
+    status,
+    approvalTxHash,
+  ]);
 
   // Handle transaction status updates
   useEffect(() => {
@@ -421,7 +441,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
     if (isSuccess && status === 'approving') {
       setStatus('approved');
       reset(); // Reset for next transaction
-      
+
       // Rebuild swap transaction with fresh data after approval
       console.log('[SwapApprovalCard] Approval confirmed, preparing fresh swap transaction...');
     } else if (isSuccess && status === 'confirming' && swapTxHash && !hasNotified) {
@@ -502,7 +522,8 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         <div className="flex justify-between">
           <span className="text-sm text-gray-600">Exchange Rate:</span>
           <span className="text-sm font-medium text-gray-900">
-            1 {swapData.fromToken} ≈ {parseFloat(swapData.exchangeRate).toFixed(6)} {swapData.toToken}
+            1 {swapData.fromToken} ≈ {parseFloat(swapData.exchangeRate).toFixed(6)}{' '}
+            {swapData.toToken}
           </span>
         </div>
         {parseFloat(swapData.priceImpact) > 0 && (
@@ -541,15 +562,15 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
                   optimizedGas.networkStatus === 'low'
                     ? 'bg-green-100 text-green-700'
                     : optimizedGas.networkStatus === 'high'
-                    ? 'bg-orange-100 text-orange-700'
-                    : 'bg-gray-100 text-gray-600'
+                      ? 'bg-orange-100 text-orange-700'
+                      : 'bg-gray-100 text-gray-600'
                 }`}
               >
                 {optimizedGas.networkStatus === 'low'
                   ? 'Low fees'
                   : optimizedGas.networkStatus === 'high'
-                  ? 'High fees'
-                  : 'Normal'}
+                    ? 'High fees'
+                    : 'Normal'}
               </span>
             )}
           </div>
@@ -586,9 +607,7 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <div className="flex items-center gap-2">
             <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-            <span className="text-sm font-medium text-blue-900">
-              Waiting for confirmation...
-            </span>
+            <span className="text-sm font-medium text-blue-900">Waiting for confirmation...</span>
           </div>
           {swapTxHash && (
             <a
@@ -631,22 +650,24 @@ export default function SwapApprovalCard({ swapData, onSwapSuccess }: SwapApprov
         )}
 
         {/* Only show Swap button when approval is explicitly NOT required OR already approved */}
-        {(!requiresApproval || status === 'approved') && status !== 'confirming' && !hasNotified && (
-          <button
-            onClick={handleSwap}
-            disabled={isConfirming || status === 'swapping'}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-          >
-            {status === 'swapping' && isConfirming ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Swapping...
-              </>
-            ) : (
-              'Swap Tokens'
-            )}
-          </button>
-        )}
+        {(!requiresApproval || status === 'approved') &&
+          status !== 'confirming' &&
+          !hasNotified && (
+            <button
+              onClick={handleSwap}
+              disabled={isConfirming || status === 'swapping'}
+              className="flex-1 bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              {status === 'swapping' && isConfirming ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Swapping...
+                </>
+              ) : (
+                'Swap Tokens'
+              )}
+            </button>
+          )}
 
         {status === 'error' && (
           <button

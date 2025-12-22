@@ -8,7 +8,10 @@ import type { AccountBalance, Balance } from '@/types/wallet';
 /**
  * Token addresses - USDC and SIERRA on Ethereum and Avalanche
  */
-const TOKEN_ADDRESSES: Record<number, Array<{ address: string; symbol: string; decimals: number }>> = {
+const TOKEN_ADDRESSES: Record<
+  number,
+  Array<{ address: string; symbol: string; decimals: number }>
+> = {
   // Ethereum Mainnet (1)
   1: [
     {
@@ -88,7 +91,10 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
 
     // Check if we support this chain
     if (!TOKEN_ADDRESSES[chain.id]) {
-      console.error('[useWalletBalance] Unsupported chain', { chainId: chain.id, chainName: chain.name });
+      console.error('[useWalletBalance] Unsupported chain', {
+        chainId: chain.id,
+        chainName: chain.name,
+      });
       setError(`Unsupported network. Please switch to Ethereum or Avalanche.`);
       return;
     }
@@ -99,7 +105,7 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       chain: chain.id,
       chainName: chain.name,
       address,
-      tokens: TOKEN_ADDRESSES[chain.id].map(t => t.symbol),
+      tokens: TOKEN_ADDRESSES[chain.id].map((t) => t.symbol),
     });
 
     try {
@@ -187,7 +193,11 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
       console.log('[useWalletBalance] All balances fetched successfully', {
         balanceCount: balances.length,
         totalEquity,
-        balances: balances.map(b => ({ currency: b.currency, available: b.available, usdValue: b.usdValue })),
+        balances: balances.map((b) => ({
+          currency: b.currency,
+          available: b.available,
+          usdValue: b.usdValue,
+        })),
       });
 
       setBalance({
@@ -258,7 +268,10 @@ export function useWalletBalance(autoRefresh: boolean = false, refreshInterval: 
     window.addEventListener('transaction-completed', handleTransactionCompleted as EventListener);
 
     return () => {
-      window.removeEventListener('transaction-completed', handleTransactionCompleted as EventListener);
+      window.removeEventListener(
+        'transaction-completed',
+        handleTransactionCompleted as EventListener
+      );
     };
   }, [refetch]);
 

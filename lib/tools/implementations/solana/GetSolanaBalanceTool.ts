@@ -22,7 +22,8 @@ interface BalanceResult {
 
 export class GetSolanaBalanceTool extends BaseTool {
   readonly name = 'get_solana_balance';
-  readonly description = 'Obtém o saldo da carteira Solana. Retorna saldo em USDC e SOL. Use quando o usuário perguntar sobre seu saldo na rede Solana.';
+  readonly description =
+    'Obtém o saldo da carteira Solana. Retorna saldo em USDC e SOL. Use quando o usuário perguntar sobre seu saldo na rede Solana.';
   readonly category = 'solana' as const;
   readonly requiresWallet = true;
 
@@ -42,10 +43,7 @@ export class GetSolanaBalanceTool extends BaseTool {
    * Override base validation to use Solana address validation instead of EVM
    * The base class validates for 0x addresses, but Solana uses base58
    */
-  validateParams(
-    _params: Record<string, unknown>,
-    context: ToolContext
-  ): ValidationResult {
+  validateParams(_params: Record<string, unknown>, context: ToolContext): ValidationResult {
     // Check if wallet is connected
     if (!context.isConnected || !context.walletAddress) {
       return {

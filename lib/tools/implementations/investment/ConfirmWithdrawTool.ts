@@ -23,7 +23,8 @@ interface ConfirmWithdrawResult {
 
 export class ConfirmWithdrawTool extends BaseTool {
   readonly name = 'confirm_withdraw';
-  readonly description = 'Confirma e executa o saque (SIERRA → USDC) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).';
+  readonly description =
+    'Confirma e executa o saque (SIERRA → USDC) após o usuário aprovar. Chame esta função APENAS após o usuário confirmar explicitamente (ex: "sim", "yes", "confirmar", "ok", etc.).';
   readonly category = 'investment' as const;
   readonly requiresWallet = true;
 

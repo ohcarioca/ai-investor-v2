@@ -18,7 +18,8 @@ import { isValidAddress } from '../../../wallet-validation';
 
 export class SolanaInvestTool extends BaseTool {
   readonly name = 'solana_invest';
-  readonly description = 'Prepara investimento de USDC da carteira Solana. O usuário precisa informar: quantidade de USDC, endereço da carteira destino (ETH ou AVAX), e rede destino. Use quando usuário Solana quiser investir.';
+  readonly description =
+    'Prepara investimento de USDC da carteira Solana. O usuário precisa informar: quantidade de USDC, endereço da carteira destino (ETH ou AVAX), e rede destino. Use quando usuário Solana quiser investir.';
   readonly category = 'solana' as const;
   readonly requiresWallet = true;
 
@@ -51,10 +52,7 @@ export class SolanaInvestTool extends BaseTool {
   /**
    * Override base validation to use Solana address validation instead of EVM
    */
-  validateParams(
-    _params: Record<string, unknown>,
-    context: ToolContext
-  ): ValidationResult {
+  validateParams(_params: Record<string, unknown>, context: ToolContext): ValidationResult {
     // Check if wallet is connected
     if (!context.isConnected || !context.walletAddress) {
       return {
@@ -93,7 +91,8 @@ export class SolanaInvestTool extends BaseTool {
     if (!targetWallet || !isValidAddress(targetWallet)) {
       return {
         isValid: false,
-        error: 'Invalid target wallet address. Must be a valid Ethereum/Avalanche address starting with 0x',
+        error:
+          'Invalid target wallet address. Must be a valid Ethereum/Avalanche address starting with 0x',
         errorCode: 'INVALID_ADDRESS',
       };
     }

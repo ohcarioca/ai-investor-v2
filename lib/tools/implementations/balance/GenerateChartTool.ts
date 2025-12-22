@@ -80,17 +80,20 @@ Charts display REAL data from the connected wallet.`;
           },
           period: {
             type: 'string',
-            description: 'Time period for historical data: "7d" (7 days), "1m" (1 month), "3m" (3 months), "6m" (6 months), "1y" (1 year)',
+            description:
+              'Time period for historical data: "7d" (7 days), "1m" (1 month), "3m" (3 months), "6m" (6 months), "1y" (1 year)',
             enum: ['7d', '1m', '3m', '6m', '1y'],
             default: '1m',
           },
           tokens: {
             type: 'string',
-            description: 'Comma-separated token symbols for filtering (e.g., "USDC,SIERRA"). Used for balance_history and token_comparison.',
+            description:
+              'Comma-separated token symbols for filtering (e.g., "USDC,SIERRA"). Used for balance_history and token_comparison.',
           },
           additional_investment: {
             type: 'number',
-            description: 'Additional investment amount in USD for future_projection chart. Use when user asks "if I invest X more" or "what if I add X".',
+            description:
+              'Additional investment amount in USD for future_projection chart. Use when user asks "if I invest X more" or "what if I add X".',
           },
         },
         required: ['chart_type'],
@@ -109,13 +112,16 @@ Charts display REAL data from the connected wallet.`;
     const tokens = params.tokens as string | undefined;
     const additionalInvestment = params.additional_investment as number | undefined;
 
-    this.log(`Generating ${chartType} chart for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)}`, {
-      chartType,
-      period,
-      tokens,
-      additionalInvestment,
-      chainId: context.chainId,
-    });
+    this.log(
+      `Generating ${chartType} chart for: ${addressToUse.slice(0, 6)}...${addressToUse.slice(-4)}`,
+      {
+        chartType,
+        period,
+        tokens,
+        additionalInvestment,
+        chainId: context.chainId,
+      }
+    );
 
     try {
       // Build API URL with all parameters

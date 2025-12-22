@@ -217,9 +217,19 @@ export class ChartDataService {
       },
       showFooterStats: true,
       footerStats: [
-        { label: 'Starting', value: `$${firstValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-        { label: 'Current', value: `$${lastValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
-        { label: 'Change', value: `$${Math.abs(change).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, color: change >= 0 ? '#10b981' : '#ef4444' },
+        {
+          label: 'Starting',
+          value: `$${firstValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        },
+        {
+          label: 'Current',
+          value: `$${lastValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        },
+        {
+          label: 'Change',
+          value: `$${Math.abs(change).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          color: change >= 0 ? '#10b981' : '#ef4444',
+        },
       ],
     };
   }
@@ -237,7 +247,9 @@ export class ChartDataService {
     let currentBalance = balance.totalUsd;
 
     if (tokenSymbol !== 'TOTAL') {
-      const token = balance.tokens.find(t => t.symbol.toUpperCase() === tokenSymbol.toUpperCase());
+      const token = balance.tokens.find(
+        (t) => t.symbol.toUpperCase() === tokenSymbol.toUpperCase()
+      );
       currentBalance = token?.balanceUsd || 0;
     }
 
@@ -274,7 +286,7 @@ export class ChartDataService {
     const periodConfig = PERIOD_CONFIG[period];
 
     // Calculate invested vs current value based on SIERRA holdings
-    const sierraToken = balance.tokens.find(t => t.symbol === 'SIERRA');
+    const sierraToken = balance.tokens.find((t) => t.symbol === 'SIERRA');
     const sierraBalance = sierraToken ? parseFloat(sierraToken.balance) : 0;
     const investedUsdc = sierraBalance / SIERRA_USDC_RATE; // Original USDC invested
     const currentValue = sierraBalance * SIERRA_USDC_RATE; // Current value
@@ -317,7 +329,7 @@ export class ChartDataService {
     const periodConfig = PERIOD_CONFIG[period];
 
     // Calculate APY performance based on SIERRA holdings
-    const sierraToken = balance.tokens.find(t => t.symbol === 'SIERRA');
+    const sierraToken = balance.tokens.find((t) => t.symbol === 'SIERRA');
     const currentValue = sierraToken?.balanceUsd || 0;
 
     const data = this.generateApyData(currentValue, periodConfig.days, periodConfig.dataPoints);
@@ -352,7 +364,7 @@ export class ChartDataService {
     const periodConfig = PERIOD_CONFIG[period];
 
     // Get tokens to compare (default to all available)
-    const tokensToCompare = tokens || balance.tokens.map(t => t.symbol);
+    const tokensToCompare = tokens || balance.tokens.map((t) => t.symbol);
     const data: ChartDataPoint[] = [];
     const yKeys: string[] = [];
 
@@ -363,7 +375,9 @@ export class ChartDataService {
       const point: ChartDataPoint = { name: dates[i], value: 0 };
 
       for (const tokenSymbol of tokensToCompare) {
-        const token = balance.tokens.find(t => t.symbol.toUpperCase() === tokenSymbol.toUpperCase());
+        const token = balance.tokens.find(
+          (t) => t.symbol.toUpperCase() === tokenSymbol.toUpperCase()
+        );
         if (token && token.balanceUsd > 0) {
           const key = tokenSymbol.toLowerCase();
           if (!yKeys.includes(key)) yKeys.push(key);
@@ -402,7 +416,7 @@ export class ChartDataService {
     const balance = await this.fetchBalance(request);
 
     // Get current SIERRA holdings value
-    const sierraToken = balance.tokens.find(t => t.symbol === 'SIERRA');
+    const sierraToken = balance.tokens.find((t) => t.symbol === 'SIERRA');
     const currentInvested = sierraToken?.balanceUsd || 0;
 
     // Total investment = current + additional
@@ -410,11 +424,11 @@ export class ChartDataService {
 
     // Generate future projection data
     const projectionPeriods: Record<string, { months: number; dataPoints: number }> = {
-      '7d': { months: 1, dataPoints: 4 },      // Show 1 month projection
-      '1m': { months: 3, dataPoints: 6 },      // Show 3 months projection
-      '3m': { months: 6, dataPoints: 6 },      // Show 6 months projection
-      '6m': { months: 12, dataPoints: 12 },    // Show 1 year projection
-      '1y': { months: 24, dataPoints: 12 },    // Show 2 years projection
+      '7d': { months: 1, dataPoints: 4 }, // Show 1 month projection
+      '1m': { months: 3, dataPoints: 6 }, // Show 3 months projection
+      '3m': { months: 6, dataPoints: 6 }, // Show 6 months projection
+      '6m': { months: 12, dataPoints: 12 }, // Show 1 year projection
+      '1y': { months: 24, dataPoints: 12 }, // Show 2 years projection
     };
 
     const config = projectionPeriods[period] || projectionPeriods['1y'];
@@ -428,7 +442,8 @@ export class ChartDataService {
     // Calculate projected gains
     const finalValue = (data[data.length - 1]?.projected as number) || totalInvestment;
     const totalGain = finalValue - totalInvestment;
-    const gainPercent = totalInvestment > 0 ? ((totalGain / totalInvestment) * 100).toFixed(1) : '0';
+    const gainPercent =
+      totalInvestment > 0 ? ((totalGain / totalInvestment) * 100).toFixed(1) : '0';
 
     const apyPercent = (SIERRA_APY * 100).toFixed(1);
 
@@ -460,9 +475,10 @@ export class ChartDataService {
         },
         {
           label: additionalInvestment > 0 ? 'Additional Investment' : 'No Additional',
-          value: additionalInvestment > 0
-            ? `+$${additionalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            : '-',
+          value:
+            additionalInvestment > 0
+              ? `+$${additionalInvestment.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+              : '-',
           color: additionalInvestment > 0 ? '#9333ea' : '#9ca3af',
         },
         {
@@ -496,9 +512,10 @@ export class ChartDataService {
       // Generate month label
       const futureDate = new Date();
       futureDate.setMonth(futureDate.getMonth() + month);
-      const label = month === 0
-        ? 'Now'
-        : futureDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      const label =
+        month === 0
+          ? 'Now'
+          : futureDate.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
 
       data.push({
         name: label,
@@ -641,7 +658,7 @@ export class ChartDataService {
     // Initialize buckets
     const buckets: Map<string, number> = new Map();
     const dates = this.generateDateLabels(days, dataPoints);
-    dates.forEach(date => buckets.set(date, 0));
+    dates.forEach((date) => buckets.set(date, 0));
 
     // Count transactions per bucket
     for (const tx of transactions) {
@@ -661,7 +678,7 @@ export class ChartDataService {
     }
 
     // Convert to chart data
-    return dates.map(date => ({
+    return dates.map((date) => ({
       name: date,
       value: 0,
       volume: buckets.get(date) || 0,

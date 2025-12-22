@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const period = (searchParams.get('period') || '1m') as '7d' | '1m' | '3m' | '6m' | '1y';
     const chainId = parseInt(searchParams.get('chain_id') || '1', 10);
     const tokensParam = searchParams.get('tokens');
-    const tokens = tokensParam ? tokensParam.split(',').map(t => t.trim()) : undefined;
+    const tokens = tokensParam ? tokensParam.split(',').map((t) => t.trim()) : undefined;
     const additionalInvestment = parseFloat(searchParams.get('additional_investment') || '0');
 
     // Validate required parameters

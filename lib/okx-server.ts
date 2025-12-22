@@ -34,14 +34,17 @@ export function getOKXClient(): OKXDexClient {
 
 // Direct REST API call to OKX DEX v6 (same as OKX Web uses)
 // Updated from v5 to v6 API which uses different swap methods
-export async function getSwapDataDirect(params: {
-  chainId: string;
-  fromTokenAddress: string;
-  toTokenAddress: string;
-  amount: string;
-  slippage: string;
-  userWalletAddress: string;
-}, retryCount = 0): Promise<Record<string, unknown>> {
+export async function getSwapDataDirect(
+  params: {
+    chainId: string;
+    fromTokenAddress: string;
+    toTokenAddress: string;
+    amount: string;
+    slippage: string;
+    userWalletAddress: string;
+  },
+  retryCount = 0
+): Promise<Record<string, unknown>> {
   const apiKey = process.env.OKX_API_KEY!;
   const secretKey = process.env.OKX_SECRET_KEY!;
   const passphrase = process.env.OKX_API_PASSPHRASE!;
@@ -72,10 +75,7 @@ export async function getSwapDataDirect(params: {
 
   // Create signature
   const preHash = timestamp + method + requestPath;
-  const signature = crypto
-    .createHmac('sha256', secretKey)
-    .update(preHash)
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', secretKey).update(preHash).digest('base64');
 
   console.log('[OKX v6 API] Calling:', `https://web3.okx.com${requestPath}`);
 
@@ -91,7 +91,7 @@ export async function getSwapDataDirect(params: {
     },
   });
 
-  const data = await response.json() as Record<string, unknown>;
+  const data = (await response.json()) as Record<string, unknown>;
   console.log('[OKX v6 API] Response:', JSON.stringify(data, null, 2));
 
   // Handle rate limiting with retry
@@ -105,13 +105,16 @@ export async function getSwapDataDirect(params: {
 }
 
 // Direct REST API call to OKX DEX v6 for quotes
-export async function getQuoteDataDirect(params: {
-  chainId: string;
-  fromTokenAddress: string;
-  toTokenAddress: string;
-  amount: string;
-  slippage: string;
-}, retryCount = 0): Promise<Record<string, unknown>> {
+export async function getQuoteDataDirect(
+  params: {
+    chainId: string;
+    fromTokenAddress: string;
+    toTokenAddress: string;
+    amount: string;
+    slippage: string;
+  },
+  retryCount = 0
+): Promise<Record<string, unknown>> {
   const apiKey = process.env.OKX_API_KEY!;
   const secretKey = process.env.OKX_SECRET_KEY!;
   const passphrase = process.env.OKX_API_PASSPHRASE!;
@@ -138,10 +141,7 @@ export async function getQuoteDataDirect(params: {
 
   // Create signature
   const preHash = timestamp + method + requestPath;
-  const signature = crypto
-    .createHmac('sha256', secretKey)
-    .update(preHash)
-    .digest('base64');
+  const signature = crypto.createHmac('sha256', secretKey).update(preHash).digest('base64');
 
   const response = await fetch(`https://web3.okx.com${requestPath}`, {
     method: 'GET',
@@ -155,7 +155,7 @@ export async function getQuoteDataDirect(params: {
     },
   });
 
-  const data = await response.json() as Record<string, unknown>;
+  const data = (await response.json()) as Record<string, unknown>;
 
   // Handle rate limiting with retry
   if (data.code === '50011' && retryCount < 3) {

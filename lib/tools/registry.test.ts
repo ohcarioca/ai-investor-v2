@@ -31,10 +31,7 @@ class MockTool implements ITool {
     };
   }
 
-  async execute(
-    params: Record<string, unknown>,
-    _context: ToolContext
-  ): Promise<ToolResult> {
+  async execute(params: Record<string, unknown>, _context: ToolContext): Promise<ToolResult> {
     return {
       success: true,
       data: { mock: true, params },
@@ -89,19 +86,13 @@ describe('ToolRegistry', () => {
       const tool = new MockTool('test_tool');
       registry.register(tool);
 
-      expect(() => registry.register(tool)).toThrow(
-        'Tool already registered: test_tool'
-      );
+      expect(() => registry.register(tool)).toThrow('Tool already registered: test_tool');
     });
   });
 
   describe('registerAll', () => {
     it('should register multiple tools', () => {
-      const tools = [
-        new MockTool('tool1'),
-        new MockTool('tool2'),
-        new MockTool('tool3'),
-      ];
+      const tools = [new MockTool('tool1'), new MockTool('tool2'), new MockTool('tool3')];
 
       registry.registerAll(tools);
 

@@ -32,7 +32,4 @@ export {
 } from './implementations/investment';
 
 // Swap tools
-export {
-  SwapTokensTool,
-  ConfirmSwapTool,
-} from './implementations/swap';
+export { SwapTokensTool, ConfirmSwapTool } from './implementations/swap';

@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  useAccount,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-} from 'wagmi';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import type { Token, SwapState, SwapQuote } from '@/types/swap';
 import { sendSwapWebhook } from '@/lib/webhook-service';
 import { buildWebhookPayload } from '@/lib/webhook-utils';
@@ -51,12 +47,7 @@ export function useSwapExecution() {
 
   // Execute swap
   const executeSwap = useCallback(
-    async (
-      fromToken: Token,
-      toToken: Token,
-      amount: string,
-      slippage: number
-    ) => {
+    async (fromToken: Token, toToken: Token, amount: string, slippage: number) => {
       if (!address || !chain) {
         setSwapState({
           step: 'error',
@@ -74,9 +65,9 @@ export function useSwapExecution() {
 
       try {
         // Convert amount to base units
-        const amountInBaseUnits = (
-          parseFloat(amount) * Math.pow(10, fromToken.decimals)
-        ).toFixed(0);
+        const amountInBaseUnits = (parseFloat(amount) * Math.pow(10, fromToken.decimals)).toFixed(
+          0
+        );
 
         // CRITICAL: Check approval status BEFORE building swap
         // This prevents executing swaps without proper token approval
@@ -162,7 +153,11 @@ export function useSwapExecution() {
 
         // Use dynamic gas margin based on tokens involved
         // Simple swaps get lower margin, complex swaps (SIERRA) get higher margin
-        const { gasLimit: gasWithMargin, margin, operationType } = gasEstimator.estimateSwapGas(
+        const {
+          gasLimit: gasWithMargin,
+          margin,
+          operationType,
+        } = gasEstimator.estimateSwapGas(
           transaction.gasLimit,
           fromToken.symbol,
           toToken.symbol,
@@ -208,8 +203,7 @@ export function useSwapExecution() {
       } catch (err) {
         setSwapState({
           step: 'error',
-          error:
-            err instanceof Error ? err.message : 'Failed to execute swap',
+          error: err instanceof Error ? err.message : 'Failed to execute swap',
           txHash: null,
         });
       }
@@ -261,8 +255,7 @@ export function useSwapExecution() {
       setWebhookState({
         isLoading: false,
         isError: true,
-        errorMessage:
-          error instanceof Error ? error.message : 'Unknown error occurred',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error occurred',
       });
     }
   }, [address, txData, lastSwapData]);
@@ -292,9 +285,11 @@ export function useSwapExecution() {
       });
 
       // Dispatch event to trigger balance refresh after successful transaction
-      window.dispatchEvent(new CustomEvent('transaction-completed', {
-        detail: { txHash: txData, type: 'swap' }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('transaction-completed', {
+          detail: { txHash: txData, type: 'swap' },
+        })
+      );
       console.log('[useSwapExecution] Transaction completed event dispatched');
     }
   }, [isSuccess, txData, webhookState.isLoading, webhookState.isError]);

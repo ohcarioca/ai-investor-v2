@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, useEffect, useMemo, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  ReactNode,
+} from 'react';
 
 // Supported chain IDs
 export const CHAIN_IDS = {
@@ -9,26 +17,27 @@ export const CHAIN_IDS = {
   SOLANA: 101,
 } as const;
 
-export type SupportedChainId = typeof CHAIN_IDS[keyof typeof CHAIN_IDS];
+export type SupportedChainId = (typeof CHAIN_IDS)[keyof typeof CHAIN_IDS];
 
 // Network metadata
-export const NETWORKS: Record<SupportedChainId, { name: string; shortName: string; icon: string }> = {
-  [CHAIN_IDS.ETHEREUM]: {
-    name: 'Ethereum',
-    shortName: 'ETH',
-    icon: '/icons/ethereum.svg',
-  },
-  [CHAIN_IDS.AVALANCHE]: {
-    name: 'Avalanche',
-    shortName: 'AVAX',
-    icon: '/icons/avalanche.svg',
-  },
-  [CHAIN_IDS.SOLANA]: {
-    name: 'Solana',
-    shortName: 'SOL',
-    icon: '/icons/solana.svg',
-  },
-};
+export const NETWORKS: Record<SupportedChainId, { name: string; shortName: string; icon: string }> =
+  {
+    [CHAIN_IDS.ETHEREUM]: {
+      name: 'Ethereum',
+      shortName: 'ETH',
+      icon: '/icons/ethereum.svg',
+    },
+    [CHAIN_IDS.AVALANCHE]: {
+      name: 'Avalanche',
+      shortName: 'AVAX',
+      icon: '/icons/avalanche.svg',
+    },
+    [CHAIN_IDS.SOLANA]: {
+      name: 'Solana',
+      shortName: 'SOL',
+      icon: '/icons/solana.svg',
+    },
+  };
 
 interface NetworkContextType {
   selectedChainId: SupportedChainId;
@@ -49,7 +58,11 @@ function getStoredChainId(): SupportedChainId {
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored) {
     const parsed = parseInt(stored);
-    if (parsed === CHAIN_IDS.ETHEREUM || parsed === CHAIN_IDS.AVALANCHE || parsed === CHAIN_IDS.SOLANA) {
+    if (
+      parsed === CHAIN_IDS.ETHEREUM ||
+      parsed === CHAIN_IDS.AVALANCHE ||
+      parsed === CHAIN_IDS.SOLANA
+    ) {
       return parsed as SupportedChainId;
     }
   }
@@ -95,18 +108,10 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
 
   // Prevent hydration mismatch - render with default until hydrated
   if (!isHydrated) {
-    return (
-      <NetworkContext.Provider value={value}>
-        {children}
-      </NetworkContext.Provider>
-    );
+    return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
   }
 
-  return (
-    <NetworkContext.Provider value={value}>
-      {children}
-    </NetworkContext.Provider>
-  );
+  return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
 }
 
 export function useSelectedNetwork() {

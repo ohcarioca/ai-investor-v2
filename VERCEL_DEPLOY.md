@@ -43,6 +43,7 @@ OKX_PROJECT_ID=933b52c4bbf9934f6cdeee772426c630
 ```
 
 #### **Configuração das Variáveis:**
+
 - Para cada variável, marque todos os ambientes: **Production, Preview, Development**
 - Clique em "Save" após adicionar cada variável
 
@@ -66,6 +67,7 @@ OKX_PROJECT_ID=933b52c4bbf9934f6cdeee772426c630
 ```
 
 **O que faz:**
+
 - Define timeout de 60s para APIs (necessário para OpenAI)
 - Configura variável de ambiente
 
@@ -82,6 +84,7 @@ Configurações para compatibilidade com Vercel.
 **Causa:** Timeout padrão da Vercel (10s no plano Hobby, 60s no Pro)
 
 **Solução:**
+
 1. Vercel.json configurado com `maxDuration: 60`
 2. Se no plano Hobby, considere upgrade para Pro
 3. Ou otimize as chamadas da API
@@ -91,6 +94,7 @@ Configurações para compatibilidade com Vercel.
 **Causa:** Variáveis de ambiente não configuradas na Vercel
 
 **Solução:**
+
 1. Acesse Settings → Environment Variables
 2. Adicione `OPENAI_API_KEY` com sua chave
 3. **Importante:** Marque todos os ambientes (Production, Preview, Development)
@@ -101,6 +105,7 @@ Configurações para compatibilidade com Vercel.
 **Causa:** Variável não configurada ou usando valor local
 
 **Solução:**
+
 1. Configure na Vercel: `NEXT_PUBLIC_APP_URL=https://seu-app.vercel.app`
 2. Use a URL real do deploy (não localhost)
 3. Redeploy após configurar
@@ -108,12 +113,14 @@ Configurações para compatibilidade com Vercel.
 ### ❌ Problema 4: Funções do agente não respondem
 
 **Causa:** Múltiplas possíveis:
+
 - Timeout
 - Variáveis de ambiente faltando
 - CORS issues
 - API da OpenAI não acessível
 
 **Solução:**
+
 1. Verifique logs da Vercel: **Dashboard → Deployments → [último deploy] → Functions**
 2. Procure por erros específicos
 3. Teste endpoints individualmente:
@@ -126,6 +133,7 @@ Configurações para compatibilidade com Vercel.
 **Causa:** Dependências ou configurações incompatíveis
 
 **Solução:**
+
 1. Verifique package.json (todas as deps instaladas)
 2. Execute `npm run build` localmente primeiro
 3. Verifique logs de build na Vercel
@@ -203,6 +211,7 @@ git push origin main
 ### Logs Importantes
 
 Procure por:
+
 - ✅ `[Chat API] Wallet address received:` - Wallet conectada
 - ✅ `[Chat API] get_wallet_balance called` - Função chamada
 - ❌ `Error:` - Qualquer erro
@@ -305,6 +314,7 @@ git push origin main
 ```
 
 A Vercel vai automaticamente:
+
 - Fazer build
 - Executar testes
 - Fazer deploy
@@ -315,6 +325,7 @@ A Vercel vai automaticamente:
 ## 🎉 Deploy Bem-Sucedido!
 
 Se tudo funcionou, você terá:
+
 - ✅ App online e acessível
 - ✅ Agente respondendo comandos
 - ✅ Swaps funcionando

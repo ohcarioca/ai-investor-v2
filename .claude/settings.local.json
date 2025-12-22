@@ -40,7 +40,10 @@
       "Bash(powershell:*)",
       "Bash(npx eslint:*)",
       "Bash(npx tsc --noEmit)",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(npm run format:write:*)",
+      "Bash(npx prettier:*)",
+      "Bash(npm run format:check:*)"
     ]
   }
 }

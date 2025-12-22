@@ -5,18 +5,21 @@ A conversational AI agent interface for cryptocurrency investment assistance on 
 ## Features
 
 ### AI-Powered Chat Interface
+
 - **Real-time conversational chat** with OpenAI GPT-4o integration
 - **Function calling** for executing blockchain operations
 - **Multi-language support** (English, Portuguese, Spanish, French)
 - **Message history** with auto-scroll
 
 ### DeFi Operations
+
 - 💱 **Token Swaps** - Swap between USDC, SIERRA, and AVAX via OKX DEX Aggregator
 - 💰 **Investments** - Convert USDC to SIERRA tokens
 - 🏦 **Withdrawals** - Convert SIERRA back to USDC
 - 📊 **Portfolio Charts** - Visual representation of holdings and performance
 
 ### Wallet Integration
+
 - **RainbowKit** for seamless wallet connection
 - **Wagmi** hooks for blockchain interactions
 - **Multi-wallet support** (MetaMask, WalletConnect, Coinbase Wallet)
@@ -24,17 +27,17 @@ A conversational AI agent interface for cryptocurrency investment assistance on 
 
 ## Tech Stack
 
-| Category | Technology |
-|----------|------------|
-| Framework | Next.js 16.0.8 (App Router) |
-| UI | React 19.2.1 |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS 4 |
-| Web3 | Wagmi 2, Viem 2, RainbowKit 2 |
-| AI | OpenAI GPT-4o |
-| DEX | OKX DEX Aggregator SDK |
-| Testing | Vitest, React Testing Library |
-| Icons | Lucide React |
+| Category  | Technology                    |
+| --------- | ----------------------------- |
+| Framework | Next.js 16.0.8 (App Router)   |
+| UI        | React 19.2.1                  |
+| Language  | TypeScript 5                  |
+| Styling   | Tailwind CSS 4                |
+| Web3      | Wagmi 2, Viem 2, RainbowKit 2 |
+| AI        | OpenAI GPT-4o                 |
+| DEX       | OKX DEX Aggregator SDK        |
+| Testing   | Vitest, React Testing Library |
+| Icons     | Lucide React                  |
 
 ## Quick Start
 
@@ -103,18 +106,18 @@ npm start
 
 ## Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Create production build |
-| `npm start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
-| `npm run format:check` | Check code formatting |
-| `npm run test` | Run tests in watch mode |
-| `npm run test:run` | Run tests once |
-| `npm run test:ui` | Open Vitest UI |
-| `npm run test:coverage` | Generate coverage report |
+| Script                  | Description               |
+| ----------------------- | ------------------------- |
+| `npm run dev`           | Start development server  |
+| `npm run build`         | Create production build   |
+| `npm start`             | Start production server   |
+| `npm run lint`          | Run ESLint                |
+| `npm run format`        | Format code with Prettier |
+| `npm run format:check`  | Check code formatting     |
+| `npm run test`          | Run tests in watch mode   |
+| `npm run test:run`      | Run tests once            |
+| `npm run test:ui`       | Open Vitest UI            |
+| `npm run test:coverage` | Generate coverage report  |
 
 ## Project Structure
 
@@ -184,10 +187,10 @@ npm run test:coverage
 
 ### Current Test Coverage
 
-| Module | Coverage |
-|--------|----------|
-| `lib/wallet-validation.ts` | 95% |
-| `lib/tools/registry.ts` | 85% |
+| Module                     | Coverage |
+| -------------------------- | -------- |
+| `lib/wallet-validation.ts` | 95%      |
+| `lib/tools/registry.ts`    | 85%      |
 
 📚 For detailed testing instructions, see [docs/TESTING.md](docs/TESTING.md).
 
@@ -231,14 +234,14 @@ In-memory caching for performance:
 
 ## API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/chat` | POST | AI chat with function calling |
-| `/api/swap/quote` | GET | Get swap quote |
-| `/api/swap/build` | POST | Build swap transaction |
-| `/api/swap/approval` | POST | Check/build approval |
-| `/api/wallet/balance` | POST | Get wallet balances |
-| `/api/charts/historical` | GET | Get chart data |
+| Endpoint                 | Method | Description                   |
+| ------------------------ | ------ | ----------------------------- |
+| `/api/chat`              | POST   | AI chat with function calling |
+| `/api/swap/quote`        | GET    | Get swap quote                |
+| `/api/swap/build`        | POST   | Build swap transaction        |
+| `/api/swap/approval`     | POST   | Check/build approval          |
+| `/api/wallet/balance`    | POST   | Get wallet balances           |
+| `/api/charts/historical` | GET    | Get chart data                |
 
 ## Security
 
@@ -290,13 +293,13 @@ CMD ["npm", "start"]
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [TESTING.md](docs/TESTING.md) | Testing guide |
-| [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md) | Deployment guide |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues |
-| [API_CONTRACT.md](API_CONTRACT.md) | API documentation |
-| [CONFIG_GUIDE.md](CONFIG_GUIDE.md) | Configuration reference |
+| Document                                 | Description             |
+| ---------------------------------------- | ----------------------- |
+| [TESTING.md](docs/TESTING.md)            | Testing guide           |
+| [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)     | Deployment guide        |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues           |
+| [API_CONTRACT.md](API_CONTRACT.md)       | API documentation       |
+| [CONFIG_GUIDE.md](CONFIG_GUIDE.md)       | Configuration reference |
 
 ## License
 

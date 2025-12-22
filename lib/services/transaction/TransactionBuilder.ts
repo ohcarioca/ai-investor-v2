@@ -60,11 +60,11 @@ export class TransactionBuilder {
       const fromDecimals = TokenRegistry.getDecimals(params.fromToken, chainId);
 
       // 2. Convert amount to base units
-      const baseAmount = Math.floor(parseFloat(params.amount) * (10 ** fromDecimals));
+      const baseAmount = Math.floor(parseFloat(params.amount) * 10 ** fromDecimals);
 
       // 3. Calculate slippage (use recommended if not provided)
-      const slippagePercent = params.slippage ??
-        TokenRegistry.getRecommendedSlippage(params.fromToken, params.toToken);
+      const slippagePercent =
+        params.slippage ?? TokenRegistry.getRecommendedSlippage(params.fromToken, params.toToken);
       const slippage = (slippagePercent / 100).toString();
 
       console.log('[TransactionBuilder] Building swap:', {
@@ -155,9 +155,12 @@ export class TransactionBuilder {
       // CRITICAL: Determine if approval is needed
       // If any source says approval is needed OR if status is undefined, assume approval is needed
       // This is a safety measure to prevent swaps without proper approval
-      const finalNeedsApproval = buildResult.needsApproval === true ||
-                                  needsApproval === true ||
-                                  (buildResult.needsApproval === undefined && needsApproval === undefined && !!finalApprovalTx);
+      const finalNeedsApproval =
+        buildResult.needsApproval === true ||
+        needsApproval === true ||
+        (buildResult.needsApproval === undefined &&
+          needsApproval === undefined &&
+          !!finalApprovalTx);
 
       if (finalNeedsApproval) {
         console.log('[TransactionBuilder] Approval needed - using fixed router:', {

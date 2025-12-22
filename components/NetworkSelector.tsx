@@ -1,13 +1,21 @@
 'use client';
 
-import { useSelectedNetwork, CHAIN_IDS, NETWORKS, type SupportedChainId } from '@/contexts/NetworkContext';
+import {
+  useSelectedNetwork,
+  CHAIN_IDS,
+  NETWORKS,
+  type SupportedChainId,
+} from '@/contexts/NetworkContext';
 
 interface NetworkSelectorProps {
   disabled?: boolean;
   compact?: boolean;
 }
 
-export default function NetworkSelector({ disabled = false, compact = false }: NetworkSelectorProps) {
+export default function NetworkSelector({
+  disabled = false,
+  compact = false,
+}: NetworkSelectorProps) {
   const { selectedChainId, setSelectedChainId } = useSelectedNetwork();
 
   const networks: SupportedChainId[] = [CHAIN_IDS.ETHEREUM, CHAIN_IDS.AVALANCHE, CHAIN_IDS.SOLANA];
@@ -77,12 +85,12 @@ function NetworkIcon({ chainId }: { chainId: SupportedChainId }) {
   if (chainId === CHAIN_IDS.ETHEREUM) {
     return (
       <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-        <path d="M16 0l-0.3 1v21.2l0.3 0.3 9.7-5.7z" opacity="0.6"/>
-        <path d="M16 0L6.3 16.8l9.7 5.7V0z"/>
-        <path d="M16 24.4l-0.2 0.2v7.4l0.2 0.5 9.7-13.7z" opacity="0.6"/>
-        <path d="M16 32.5v-8.1l-9.7-5.6z"/>
-        <path d="M16 22.5l9.7-5.7-9.7-4.4z" opacity="0.2"/>
-        <path d="M6.3 16.8l9.7 5.7v-10.1z" opacity="0.6"/>
+        <path d="M16 0l-0.3 1v21.2l0.3 0.3 9.7-5.7z" opacity="0.6" />
+        <path d="M16 0L6.3 16.8l9.7 5.7V0z" />
+        <path d="M16 24.4l-0.2 0.2v7.4l0.2 0.5 9.7-13.7z" opacity="0.6" />
+        <path d="M16 32.5v-8.1l-9.7-5.6z" />
+        <path d="M16 22.5l9.7-5.7-9.7-4.4z" opacity="0.2" />
+        <path d="M6.3 16.8l9.7 5.7v-10.1z" opacity="0.6" />
       </svg>
     );
   }
@@ -91,9 +99,9 @@ function NetworkIcon({ chainId }: { chainId: SupportedChainId }) {
     // Solana icon
     return (
       <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-        <path d="M6.5 22.8c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z"/>
-        <path d="M6.5 5.2c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z"/>
-        <path d="M25.5 14c-0.2-0.2-0.4-0.3-0.7-0.3H6.6c-0.4 0-0.6 0.5-0.3 0.8l3.5 3.5c0.2 0.2 0.4 0.3 0.7 0.3h18.2c0.4 0 0.6-0.5 0.3-0.8l-3.5-3.5z"/>
+        <path d="M6.5 22.8c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z" />
+        <path d="M6.5 5.2c0.2-0.2 0.4-0.3 0.7-0.3h18.2c0.4 0 0.6 0.5 0.3 0.8l-3.5 3.5c-0.2 0.2-0.4 0.3-0.7 0.3H3.3c-0.4 0-0.6-0.5-0.3-0.8l3.5-3.5z" />
+        <path d="M25.5 14c-0.2-0.2-0.4-0.3-0.7-0.3H6.6c-0.4 0-0.6 0.5-0.3 0.8l3.5 3.5c0.2 0.2 0.4 0.3 0.7 0.3h18.2c0.4 0 0.6-0.5 0.3-0.8l-3.5-3.5z" />
       </svg>
     );
   }
@@ -101,8 +109,8 @@ function NetworkIcon({ chainId }: { chainId: SupportedChainId }) {
   // Avalanche icon
   return (
     <svg className="w-5 h-5" viewBox="0 0 32 32" fill="currentColor">
-      <path d="M20.7 21.2h4.5c0.5 0 0.8-0.1 1-0.4 0.2-0.3 0.2-0.6 0-1l-9.5-16.5c-0.2-0.4-0.5-0.6-0.9-0.6s-0.7 0.2-0.9 0.6l-2.8 4.9 5.5 9.5c0.6 1.1 1.4 2.1 2.4 2.9 0.2 0.2 0.4 0.4 0.7 0.6z"/>
-      <path d="M5.8 21.2h6.6c-0.5-0.5-0.9-1-1.3-1.6l-3.9-6.8-3.4 5.9c-0.2 0.4-0.2 0.7 0 1 0.2 0.3 0.5 0.5 1 0.5z"/>
+      <path d="M20.7 21.2h4.5c0.5 0 0.8-0.1 1-0.4 0.2-0.3 0.2-0.6 0-1l-9.5-16.5c-0.2-0.4-0.5-0.6-0.9-0.6s-0.7 0.2-0.9 0.6l-2.8 4.9 5.5 9.5c0.6 1.1 1.4 2.1 2.4 2.9 0.2 0.2 0.4 0.4 0.7 0.6z" />
+      <path d="M5.8 21.2h6.6c-0.5-0.5-0.9-1-1.3-1.6l-3.9-6.8-3.4 5.9c-0.2 0.4-0.2 0.7 0 1 0.2 0.3 0.5 0.5 1 0.5z" />
     </svg>
   );
 }

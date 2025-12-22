@@ -28,25 +28,23 @@ interface SwapModalProps {
   defaultFromToken?: Token;
 }
 
-export default function SwapModal({
-  isOpen,
-  onClose,
-  defaultFromToken,
-}: SwapModalProps) {
+export default function SwapModal({ isOpen, onClose, defaultFromToken }: SwapModalProps) {
   const { isConnected, chain } = useAccount();
   const { tokens } = useTokenList();
 
   // State
-  const [fromToken, setFromToken] = useState<Token | null>(
-    defaultFromToken || tokens[1]
-  ); // Default USDC
+  const [fromToken, setFromToken] = useState<Token | null>(defaultFromToken || tokens[1]); // Default USDC
   const [toToken, setToToken] = useState<Token | null>(tokens[0]); // Default AVAX
   const [fromAmount, setFromAmount] = useState('');
   const [slippage, setSlippage] = useState(0.5);
   const [showSettings, setShowSettings] = useState(false);
 
   // Hooks
-  const { quote, isLoading: isQuoteLoading, refetch: refetchQuote } = useSwapQuote({
+  const {
+    quote,
+    isLoading: isQuoteLoading,
+    refetch: refetchQuote,
+  } = useSwapQuote({
     fromToken,
     toToken,
     amount: fromAmount,
@@ -99,13 +97,8 @@ export default function SwapModal({
   const supportedChainIds = [1, 43114];
   if (isConnected && chain?.id && !supportedChainIds.includes(chain.id)) {
     return (
-      <div
-        className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}
-      >
-        <div
-          className="absolute inset-0 bg-black/50"
-          onClick={handleClose}
-        />
+      <div className={`fixed inset-0 z-50 ${isOpen ? 'block' : 'hidden'}`}>
+        <div className="absolute inset-0 bg-black/50" onClick={handleClose} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md mx-4">
           <div className="bg-white rounded-2xl p-6">
             <p className="text-center text-gray-900">
@@ -122,19 +115,14 @@ export default function SwapModal({
   const modalContent = (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">
-              Swap Tokens
-            </h2>
+            <h2 className="text-xl font-bold text-gray-900">Swap Tokens</h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSettings(!showSettings)}
@@ -233,8 +221,7 @@ export default function SwapModal({
                   <span className="text-sm text-gray-600">Exchange Rate</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-900">
-                      1 {fromToken?.symbol} ≈{' '}
-                      {parseFloat(quote.exchangeRate).toFixed(6)}{' '}
+                      1 {fromToken?.symbol} ≈ {parseFloat(quote.exchangeRate).toFixed(6)}{' '}
                       {toToken?.symbol}
                     </span>
                     <button
@@ -248,14 +235,10 @@ export default function SwapModal({
                 </div>
                 {parseFloat(quote.priceImpact) > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Price Impact
-                    </span>
+                    <span className="text-sm text-gray-600">Price Impact</span>
                     <span
                       className={`text-sm font-medium ${
-                        parseFloat(quote.priceImpact) > 5
-                          ? 'text-red-600'
-                          : 'text-gray-900'
+                        parseFloat(quote.priceImpact) > 5 ? 'text-red-600' : 'text-gray-900'
                       }`}
                     >
                       <TrendingDown className="w-4 h-4 inline mr-1" />
@@ -271,15 +254,15 @@ export default function SwapModal({
               <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 className="w-5 h-5 text-green-600" />
-                  <span className="font-medium text-green-900">
-                    Swap Completed!
-                  </span>
+                  <span className="font-medium text-green-900">Swap Completed!</span>
                 </div>
                 {swapState.txHash && (
                   <a
-                    href={chain?.id === 1
-                      ? `https://etherscan.io/tx/${swapState.txHash}`
-                      : `https://snowtrace.io/tx/${swapState.txHash}`}
+                    href={
+                      chain?.id === 1
+                        ? `https://etherscan.io/tx/${swapState.txHash}`
+                        : `https://snowtrace.io/tx/${swapState.txHash}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
@@ -295,9 +278,7 @@ export default function SwapModal({
               <div className="bg-red-50 border border-red-200 rounded-xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertCircle className="w-5 h-5 text-red-600" />
-                  <span className="font-medium text-red-900">
-                    Swap Error
-                  </span>
+                  <span className="font-medium text-red-900">Swap Error</span>
                 </div>
                 <p className="text-sm text-red-700">{swapState.error}</p>
               </div>
@@ -319,9 +300,7 @@ export default function SwapModal({
               swapState={swapState}
               onApprove={() => fromToken && approve(fromToken, fromAmount)}
               onSwap={() =>
-                fromToken &&
-                toToken &&
-                executeSwap(fromToken, toToken, fromAmount, slippage)
+                fromToken && toToken && executeSwap(fromToken, toToken, fromAmount, slippage)
               }
             />
           </div>

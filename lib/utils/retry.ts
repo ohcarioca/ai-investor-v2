@@ -49,10 +49,7 @@ export async function retryWithBackoff<T>(
       // Check if we should retry
       if (attempt < maxAttempts && shouldRetry(error, attempt)) {
         // Calculate delay with exponential backoff
-        const delay = Math.min(
-          baseDelay * Math.pow(backoffMultiplier, attempt - 1),
-          maxDelay
-        );
+        const delay = Math.min(baseDelay * Math.pow(backoffMultiplier, attempt - 1), maxDelay);
 
         // Call onRetry callback if provided
         if (onRetry) {
@@ -72,7 +69,7 @@ export async function retryWithBackoff<T>(
  * Helper function to sleep for a given duration
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -149,7 +146,7 @@ export async function retryWithRateLimitHandling<T>(
       const isRateLimit = isRateLimitError(error);
       console.log(
         `[${context}] ${isRateLimit ? 'Rate limited' : 'Error'}, ` +
-        `attempt ${attempt}, retrying in ${delay}ms...`
+          `attempt ${attempt}, retrying in ${delay}ms...`
       );
     },
   });

@@ -14,7 +14,9 @@ export default function Header() {
             <span className="text-white font-bold text-lg sm:text-xl">K</span>
           </div>
           <span className="text-xl sm:text-2xl font-bold text-gray-900">kira</span>
-          <span className="px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-md">Beta</span>
+          <span className="px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-md">
+            Beta
+          </span>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">

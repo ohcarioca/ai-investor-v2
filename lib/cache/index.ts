@@ -150,11 +150,7 @@ export class SimpleCache<T> {
   /**
    * Get or set pattern - fetch from cache or compute and store
    */
-  async getOrSet(
-    key: string,
-    fetchFn: () => Promise<T>,
-    ttlMs?: number
-  ): Promise<T> {
+  async getOrSet(key: string, fetchFn: () => Promise<T>, ttlMs?: number): Promise<T> {
     const cached = this.get(key);
     if (cached !== null) {
       return cached;

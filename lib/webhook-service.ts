@@ -8,9 +8,7 @@ const BASE_DELAY = 2000; // 2 seconds
  * Send swap data to webhook with retry logic
  * Uses exponential backoff: 2s, 4s, 8s
  */
-export async function sendSwapWebhook(
-  payload: SwapWebhookPayload
-): Promise<WebhookResponse> {
+export async function sendSwapWebhook(payload: SwapWebhookPayload): Promise<WebhookResponse> {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -40,9 +38,7 @@ export async function sendSwapWebhook(
 
       // Non-200 response
       const errorText = await response.text();
-      throw new Error(
-        `Webhook returned ${response.status}: ${errorText}`
-      );
+      throw new Error(`Webhook returned ${response.status}: ${errorText}`);
     } catch (error) {
       lastError = error instanceof Error ? error : new Error('Unknown error');
       console.error(`[Webhook] Attempt ${attempt} failed:`, lastError.message);
@@ -66,7 +62,7 @@ export async function sendSwapWebhook(
 
 // USDC addresses per chain
 const USDC_ADDRESSES: Record<number, string> = {
-  1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',    // Ethereum USDC
+  1: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // Ethereum USDC
   43114: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E', // Avalanche USDC
 };
 

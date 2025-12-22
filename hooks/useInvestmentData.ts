@@ -24,7 +24,10 @@ interface UseInvestmentDataResult {
   refetch: () => Promise<void>;
 }
 
-export function useInvestmentData(autoRefresh = false, refreshInterval = 30000): UseInvestmentDataResult {
+export function useInvestmentData(
+  autoRefresh = false,
+  refreshInterval = 30000
+): UseInvestmentDataResult {
   const [error, setError] = useState<string | null>(null);
   const { address, isConnected } = useAccount();
   const chainId = useChainId();

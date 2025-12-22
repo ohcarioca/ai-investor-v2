@@ -5,6 +5,7 @@ A comprehensive, dynamic configuration system that allows you to customize every
 ## 🌟 Overview
 
 The configuration system provides:
+
 - ✅ **JSON-based configuration** - Easy to read and edit
 - ✅ **Type-safe access** - Full TypeScript support
 - ✅ **Schema validation** - Automatic validation with JSON Schema
@@ -59,48 +60,56 @@ The agent will now use your new configuration!
 ## 🎯 What Can You Configure?
 
 ### 1. **Agent Personality**
+
 - Tone (professional, casual, friendly)
 - Communication style
 - Verbosity level
 - Emoji usage
 
 ### 2. **Trading Behavior**
+
 - Default slippage tolerance
 - Price impact thresholds
 - Transaction safety checks
 - Retry logic
 
 ### 3. **User Interface**
+
 - Theme colors
 - Onboarding flow
 - Notification behavior
 - Loading states
 
 ### 4. **Blockchain Settings**
+
 - Supported networks
 - Token lists
 - RPC endpoints
 - Default network
 
 ### 5. **AI Behavior**
+
 - System prompt
 - Response style
 - Temperature & tokens
 - Function calling
 
 ### 6. **Security & Privacy**
+
 - Transaction limits
 - Validation rules
 - Privacy settings
 - Data storage
 
 ### 7. **API Configuration**
+
 - Timeouts
 - Rate limiting
 - Caching
 - Retry policies
 
 ### 8. **Feature Flags**
+
 - Enable/disable features
 - Beta features
 - Experimental features
@@ -143,7 +152,7 @@ export async function POST(request: Request) {
   const response = await openai.chat.completions.create({
     model,
     temperature,
-    messages: [{ role: 'system', content: systemPrompt }]
+    messages: [{ role: 'system', content: systemPrompt }],
   });
 }
 ```
@@ -298,25 +307,30 @@ useAPIConfig()
 ## ⚠️ Important Notes
 
 ### Always Test Changes
+
 - Test in development before production
 - Validate JSON syntax
 - Check for console errors
 - Verify all features work
 
 ### Configuration Validation
+
 The system validates configuration on load:
+
 - Required fields present
 - Valid value ranges
 - Consistent settings
 - Network/token integrity
 
 ### What Requires Restart
+
 - Most configuration changes
 - System prompt updates
 - Feature flag changes
 - API timeout changes
 
 ### What Doesn't Require Restart
+
 - Runtime feature toggles (if implemented)
 - Dynamic rate limits (if implemented)
 
@@ -331,6 +345,7 @@ The system validates configuration on load:
 ## 🔍 Troubleshooting
 
 ### Configuration not loading
+
 ```bash
 # Check JSON syntax
 npm run build
@@ -340,6 +355,7 @@ npm run dev
 ```
 
 ### Type errors
+
 ```typescript
 // Make sure imports are correct
 import { useAgentConfig } from '@/hooks/useAgentConfig';
@@ -349,6 +365,7 @@ const value = getConfig<string>('path.to.value');
 ```
 
 ### Features not working
+
 ```bash
 # Check feature is enabled
 console.log(isFeatureEnabled('features.beta.my_feature'));
@@ -386,6 +403,7 @@ Before deploying to production:
 ## 💡 Tips & Tricks
 
 ### Development Setup
+
 ```json
 {
   "logging": { "level": "debug" },
@@ -395,6 +413,7 @@ Before deploying to production:
 ```
 
 ### Production Setup
+
 ```json
 {
   "logging": { "level": "warn" },
@@ -404,6 +423,7 @@ Before deploying to production:
 ```
 
 ### Testing New Features
+
 ```json
 {
   "features": {

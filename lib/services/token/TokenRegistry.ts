@@ -209,7 +209,11 @@ class TokenRegistryService {
   /**
    * Convert human-readable amount to base units (with decimals)
    */
-  toBaseUnits(symbol: string, amount: string | number, chainId: number = this.defaultChainId): bigint {
+  toBaseUnits(
+    symbol: string,
+    amount: string | number,
+    chainId: number = this.defaultChainId
+  ): bigint {
     const decimals = this.getDecimals(symbol, chainId);
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return BigInt(Math.floor(numAmount * 10 ** decimals));
@@ -218,7 +222,11 @@ class TokenRegistryService {
   /**
    * Convert base units to human-readable amount
    */
-  fromBaseUnits(symbol: string, amount: string | bigint, chainId: number = this.defaultChainId): string {
+  fromBaseUnits(
+    symbol: string,
+    amount: string | bigint,
+    chainId: number = this.defaultChainId
+  ): string {
     const decimals = this.getDecimals(symbol, chainId);
     const bigAmount = typeof amount === 'string' ? BigInt(amount) : amount;
     const divisor = BigInt(10 ** decimals);

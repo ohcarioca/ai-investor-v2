@@ -7,10 +7,12 @@ This document summarizes the wallet validation system integration across the AI 
 ## ✅ Validation Rules Enforced
 
 ### 1. **Address Format Validation**
+
 - All addresses must match the pattern `0x[a-fA-F0-9]{40}`
 - Invalid formats are rejected immediately
 
 ### 2. **Real Address Validation**
+
 - Placeholder addresses are blocked:
   - `0x0000000000000000000000000000000000000000` (Zero address)
   - `0x1111111111111111111111111111111111111111` (Example pattern)
@@ -18,6 +20,7 @@ This document summarizes the wallet validation system integration across the AI 
   - `0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee` (Native token placeholder)
 
 ### 3. **Address Matching Validation**
+
 - When wallet address is provided by frontend, it must match the requested address
 - Prevents address mismatches in function calls
 
@@ -28,13 +31,10 @@ This document summarizes the wallet validation system integration across the AI 
 **Purpose**: AI agent function calling for wallet operations
 
 **Validation Added**:
+
 ```typescript
 // Import wallet validation utilities
-import {
-  isValidAddress,
-  isRealAddress,
-  validateAddressMatch
-} from '@/lib/wallet-validation';
+import { isValidAddress, isRealAddress, validateAddressMatch } from '@/lib/wallet-validation';
 
 // In get_wallet_balance function handler:
 if (!isValidAddress(requestedAddress)) {
@@ -64,6 +64,7 @@ if (walletAddress) {
 **Purpose**: Fetch wallet balances for connected wallet
 
 **Validation Added**:
+
 ```typescript
 import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
@@ -99,6 +100,7 @@ if (!isRealAddress(address)) {
 **Purpose**: Build swap transaction data for execution
 
 **Validation Added**:
+
 ```typescript
 import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
@@ -112,7 +114,10 @@ if (!isValidAddress(userAddress)) {
 
 if (!isRealAddress(userAddress)) {
   return NextResponse.json(
-    { error: 'Cannot use placeholder or example addresses. This transaction must use your connected wallet.' },
+    {
+      error:
+        'Cannot use placeholder or example addresses. This transaction must use your connected wallet.',
+    },
     { status: 400 }
   );
 }
@@ -127,6 +132,7 @@ if (!isRealAddress(userAddress)) {
 **Purpose**: Check and build token approval transactions
 
 **Validation Added**:
+
 ```typescript
 import { isValidAddress, isRealAddress } from '@/lib/wallet-validation';
 
@@ -140,7 +146,10 @@ if (!isValidAddress(userAddress)) {
 
 if (!isRealAddress(userAddress)) {
   return NextResponse.json(
-    { error: 'Cannot use placeholder or example addresses. Token approval must use your connected wallet.' },
+    {
+      error:
+        'Cannot use placeholder or example addresses. Token approval must use your connected wallet.',
+    },
     { status: 400 }
   );
 }
@@ -157,20 +166,24 @@ Located in: `lib/wallet-validation.ts`
 ### Core Functions Used
 
 #### `isValidAddress(address: string | undefined): boolean`
+
 - Validates Ethereum address format
 - Returns `true` only for properly formatted addresses
 
 #### `isRealAddress(address: string | undefined): boolean`
+
 - Checks address is not a placeholder
 - Blocks common example/test addresses
 
 #### `validateAddressMatch(connected: string, provided: string): ValidationResult`
+
 - Ensures provided address matches connected wallet
 - Returns validation result with error details
 
 ### Full Utility Library Available
 
 Additional functions available but not yet integrated:
+
 - `validateWalletConnection()` - Check wallet connection status
 - `validateNetwork()` - Check correct network
 - `validateWalletContext()` - Complete context validation
@@ -198,12 +211,14 @@ API Endpoint
 ## 🎯 Security Benefits
 
 ### Prevents Common Attacks
+
 1. ✅ **Address Injection** - Can't inject different addresses
 2. ✅ **Example Address Use** - Blocks test/placeholder addresses
 3. ✅ **Address Mismatch** - Ensures frontend/backend agreement
 4. ✅ **Invalid Format** - Catches malformed addresses early
 
 ### Enforces Best Practices
+
 1. ✅ **Always Use Connected Wallet** - No hardcoded addresses
 2. ✅ **Fail Fast** - Validation before expensive operations
 3. ✅ **Clear Error Messages** - Users know how to fix issues
@@ -214,6 +229,7 @@ API Endpoint
 ### Manual Test Cases
 
 #### Test 1: No Address Provided
+
 ```bash
 # Request without address
 curl -X POST http://localhost:3000/api/wallet/balance \
@@ -224,6 +240,7 @@ curl -X POST http://localhost:3000/api/wallet/balance \
 ```
 
 #### Test 2: Invalid Address Format
+
 ```bash
 # Request with invalid format
 curl -X POST http://localhost:3000/api/wallet/balance \
@@ -234,6 +251,7 @@ curl -X POST http://localhost:3000/api/wallet/balance \
 ```
 
 #### Test 3: Placeholder Address
+
 ```bash
 # Request with zero address
 curl -X POST http://localhost:3000/api/wallet/balance \
@@ -244,6 +262,7 @@ curl -X POST http://localhost:3000/api/wallet/balance \
 ```
 
 #### Test 4: Valid Address
+
 ```bash
 # Request with valid connected address
 curl -X POST http://localhost:3000/api/wallet/balance \
@@ -258,17 +277,19 @@ curl -X POST http://localhost:3000/api/wallet/balance \
 Frontend components should:
 
 1. **Always Pass Connected Address**
+
 ```typescript
 const { address } = useAccount();
 
 // Pass connected address to API
 const response = await fetch('/api/wallet/balance', {
   method: 'POST',
-  body: JSON.stringify({ address, chainId: 43114 })
+  body: JSON.stringify({ address, chainId: 43114 }),
 });
 ```
 
 2. **Handle Validation Errors**
+
 ```typescript
 if (!response.ok) {
   const error = await response.json();
@@ -279,6 +300,7 @@ if (!response.ok) {
 ```
 
 3. **Block Operations When Disconnected**
+
 ```typescript
 if (!isConnected || !address) {
   return <ConnectWalletPrompt />;
@@ -306,14 +328,14 @@ When reviewing code changes:
 
 ## 🎉 Implementation Status
 
-| Component | Validation Added | Status |
-|-----------|-----------------|--------|
-| Chat API | ✅ Yes | Complete |
-| Wallet Balance API | ✅ Yes | Complete |
-| Swap Build API | ✅ Yes | Complete |
-| Swap Approval API | ✅ Yes | Complete |
-| Swap Quote API | ⚠️ Partial | No address used |
-| Frontend Components | ⚠️ Partial | Using useAccount |
+| Component           | Validation Added | Status           |
+| ------------------- | ---------------- | ---------------- |
+| Chat API            | ✅ Yes           | Complete         |
+| Wallet Balance API  | ✅ Yes           | Complete         |
+| Swap Build API      | ✅ Yes           | Complete         |
+| Swap Approval API   | ✅ Yes           | Complete         |
+| Swap Quote API      | ⚠️ Partial       | No address used  |
+| Frontend Components | ⚠️ Partial       | Using useAccount |
 
 ## 🚀 Next Steps (Optional)
 

@@ -96,10 +96,7 @@ export function useSolanaBalance(autoRefresh: boolean = false, refreshInterval: 
 
       // 2. Get USDC SPL token balance
       try {
-        const usdcTokenAccount = await getAssociatedTokenAddress(
-          USDC_MINT,
-          solanaPublicKey
-        );
+        const usdcTokenAccount = await getAssociatedTokenAddress(USDC_MINT, solanaPublicKey);
 
         const tokenAccountInfo = await getAccount(connection, usdcTokenAccount);
         const usdcBalance = Number(tokenAccountInfo.amount) / Math.pow(10, USDC_DECIMALS);
@@ -183,7 +180,10 @@ export function useSolanaBalance(autoRefresh: boolean = false, refreshInterval: 
     window.addEventListener('transaction-completed', handleTransactionCompleted as EventListener);
 
     return () => {
-      window.removeEventListener('transaction-completed', handleTransactionCompleted as EventListener);
+      window.removeEventListener(
+        'transaction-completed',
+        handleTransactionCompleted as EventListener
+      );
     };
   }, [refetch]);
 

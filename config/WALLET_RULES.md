@@ -20,6 +20,7 @@ The AI Investor Agent has **strict rules** about wallet data usage to ensure sec
 ```
 
 **What this means:**
+
 - ✅ Agent MUST use the wallet address from Web3 connection
 - ❌ Agent MUST NEVER use hardcoded addresses
 - ❌ Agent MUST NEVER use example/placeholder addresses
@@ -124,7 +125,7 @@ async function executeSwap(params: SwapParams) {
   // NEVER DO THIS
   return await buildSwapTransaction({
     ...params,
-    userAddress: "0x1234...", // Hardcoded!
+    userAddress: '0x1234...', // Hardcoded!
   });
 }
 ```
@@ -141,9 +142,9 @@ const functions = [
       type: 'object',
       properties: {
         // Accept address parameter but validate it matches connected wallet
-      }
-    }
-  }
+      },
+    },
+  },
 ];
 
 // In the function implementation
@@ -245,18 +246,12 @@ export async function GET(request: NextRequest) {
 
   // Validate address is provided
   if (!address) {
-    return NextResponse.json(
-      { error: 'Wallet address required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
   }
 
   // Validate address format
   if (!address.startsWith('0x') || address.length !== 42) {
-    return NextResponse.json(
-      { error: 'Invalid wallet address format' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Invalid wallet address format' }, { status: 400 });
   }
 
   // Fetch balance using the provided address
@@ -273,18 +268,18 @@ export async function GET(request: NextRequest) {
 const functions = [
   {
     name: 'get_wallet_balance',
-    description: 'Get balance for the user\'s CONNECTED wallet. Never use example addresses.',
+    description: "Get balance for the user's CONNECTED wallet. Never use example addresses.",
     parameters: {
       type: 'object',
       properties: {
         address: {
           type: 'string',
           description: 'The connected wallet address from the Web3 provider (required)',
-        }
+        },
       },
-      required: ['address']
-    }
-  }
+      required: ['address'],
+    },
+  },
 ];
 
 // In function handler
@@ -294,7 +289,7 @@ if (functionName === 'get_wallet_balance') {
   // Validate address format
   if (!address || !address.startsWith('0x')) {
     return {
-      error: 'Invalid or missing wallet address. Please connect your wallet first.'
+      error: 'Invalid or missing wallet address. Please connect your wallet first.',
     };
   }
 
@@ -351,13 +346,15 @@ export function WalletOperations() {
 ## 🚫 Common Mistakes to Avoid
 
 ### Mistake 1: Using Example Addresses
+
 ```typescript
 // ❌ NEVER DO THIS
-const exampleAddress = "0x1234567890123456789012345678901234567890";
+const exampleAddress = '0x1234567890123456789012345678901234567890';
 const balance = await fetchBalance(exampleAddress);
 ```
 
 ### Mistake 2: Not Checking Connection
+
 ```typescript
 // ❌ WRONG - No validation
 function MyComponent() {
@@ -379,6 +376,7 @@ function MyComponent() {
 ```
 
 ### Mistake 3: Caching Wrong Address
+
 ```typescript
 // ❌ WRONG - Caching initial address
 const [walletAddress] = useState(address);
@@ -390,6 +388,7 @@ const { address } = useAccount();
 ```
 
 ### Mistake 4: Ignoring Network Changes
+
 ```typescript
 // ❌ WRONG - No network validation
 async function swap() {

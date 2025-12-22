@@ -5,11 +5,7 @@
  */
 
 import { createPublicClient, http, formatUnits, erc20Abi } from 'viem';
-import {
-  VIEM_CHAINS,
-  NATIVE_SYMBOLS,
-  getChainName,
-} from '@/lib/constants/blockchain';
+import { VIEM_CHAINS, NATIVE_SYMBOLS, getChainName } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
 
 // SIERRA rate from environment (1 SIERRA = X USDC)
@@ -106,7 +102,7 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
   }
 
   // Get ERC20 token balances using TokenRegistry
-  const tokensForChain = TokenRegistry.getAllTokens(chainId).filter(t => !t.isNative);
+  const tokensForChain = TokenRegistry.getAllTokens(chainId).filter((t) => !t.isNative);
 
   for (const token of tokensForChain) {
     try {
@@ -136,23 +132,25 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
   }
 
   // Separate native token from ERC20 tokens
-  const nativeBalance = balances.find(b => b.currency === nativeSymbol);
-  const tokenBalances = balances.filter(b => b.currency !== nativeSymbol);
+  const nativeBalance = balances.find((b) => b.currency === nativeSymbol);
+  const tokenBalances = balances.filter((b) => b.currency !== nativeSymbol);
 
   // Sort tokens by USD value descending
   tokenBalances.sort((a, b) => b.usdValue - a.usdValue);
 
   const result: WalletBalanceResult = {
-    native: nativeBalance ? {
-      symbol: nativeBalance.currency,
-      balance: nativeBalance.available.toString(),
-      balanceUsd: nativeBalance.usdValue,
-    } : {
-      symbol: nativeSymbol,
-      balance: '0',
-      balanceUsd: 0,
-    },
-    tokens: tokenBalances.map(t => ({
+    native: nativeBalance
+      ? {
+          symbol: nativeBalance.currency,
+          balance: nativeBalance.available.toString(),
+          balanceUsd: nativeBalance.usdValue,
+        }
+      : {
+          symbol: nativeSymbol,
+          balance: '0',
+          balanceUsd: 0,
+        },
+    tokens: tokenBalances.map((t) => ({
       symbol: t.currency,
       address: '',
       balance: t.available.toString(),

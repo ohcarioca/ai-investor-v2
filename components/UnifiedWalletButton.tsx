@@ -24,7 +24,12 @@ export default function UnifiedWalletButton() {
     if (isEvmConnected && !isSolana && currentChain && switchChain) {
       const targetChainId = selectedChainId as 1 | 43114;
       if (currentChain.id !== targetChainId) {
-        console.log('[UnifiedWalletButton] Auto-switching chain from', currentChain.id, 'to', targetChainId);
+        console.log(
+          '[UnifiedWalletButton] Auto-switching chain from',
+          currentChain.id,
+          'to',
+          targetChainId
+        );
         switchChain({ chainId: targetChainId });
       }
     }

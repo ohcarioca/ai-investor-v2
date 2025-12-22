@@ -53,9 +53,7 @@ export function useOptimizedGas(): UseOptimizedGasReturn {
   const [optimizedGas, setOptimizedGas] = useState<OptimizedGas | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nativePrice, setNativePrice] = useState<number>(
-    DEFAULT_NATIVE_PRICES[chainId] || 3500
-  );
+  const [nativePrice, setNativePrice] = useState<number>(DEFAULT_NATIVE_PRICES[chainId] || 3500);
 
   const lastFetchRef = useRef<number>(0);
   const gasEstimator = getGasEstimator();
@@ -66,9 +64,7 @@ export function useOptimizedGas(): UseOptimizedGasReturn {
   const getNetworkStatus = useCallback(
     (baseFeeGwei: number): NetworkStatus => {
       const thresholds =
-        chainId === 43114
-          ? CONGESTION_THRESHOLDS.avalanche
-          : CONGESTION_THRESHOLDS.ethereum;
+        chainId === 43114 ? CONGESTION_THRESHOLDS.avalanche : CONGESTION_THRESHOLDS.ethereum;
 
       if (baseFeeGwei < thresholds.low) return 'low';
       if (baseFeeGwei > thresholds.high) return 'high';
@@ -80,13 +76,10 @@ export function useOptimizedGas(): UseOptimizedGasReturn {
   /**
    * Calculate optimized priority fee based on network status
    */
-  const getOptimizedPriorityFee = useCallback(
-    (networkStatus: NetworkStatus): bigint => {
-      const feeGwei = PRIORITY_FEE_CONFIG[networkStatus];
-      return BigInt(Math.floor(feeGwei * 1e9)); // Convert to Wei
-    },
-    []
-  );
+  const getOptimizedPriorityFee = useCallback((networkStatus: NetworkStatus): bigint => {
+    const feeGwei = PRIORITY_FEE_CONFIG[networkStatus];
+    return BigInt(Math.floor(feeGwei * 1e9)); // Convert to Wei
+  }, []);
 
   /**
    * Fetch native currency price (ETH/AVAX)
@@ -212,8 +205,10 @@ export function useOptimizedGas(): UseOptimizedGasReturn {
       if (!optimizedGas) return null;
 
       // Apply margin based on operation type
-      const { gasLimit: gasWithMargin, margin } =
-        gasEstimator.estimateGasWithMargin(gasLimit, operationType);
+      const { gasLimit: gasWithMargin, margin } = gasEstimator.estimateGasWithMargin(
+        gasLimit,
+        operationType
+      );
 
       // Calculate cost
       const estimatedCostWei = optimizedGas.maxFeePerGas * gasWithMargin;

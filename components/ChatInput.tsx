@@ -10,7 +10,12 @@ interface ChatInputProps {
   isLargeScreen?: boolean;
 }
 
-export default function ChatInput({ onSendMessage, isLoading, sidebarWidth = 384, isLargeScreen = false }: ChatInputProps) {
+export default function ChatInput({
+  onSendMessage,
+  isLoading,
+  sidebarWidth = 384,
+  isLargeScreen = false,
+}: ChatInputProps) {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {

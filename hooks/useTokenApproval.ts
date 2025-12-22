@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
-import {
-  useAccount,
-  useSendTransaction,
-  useWaitForTransactionReceipt,
-} from 'wagmi';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import type { Token, ApprovalStatus } from '@/types/swap';
 import { getGasEstimator } from '@/lib/services/gas/GasEstimator';
 import { useOptimizedGas } from '@/hooks/useOptimizedGas';
@@ -20,9 +16,11 @@ export function useTokenApproval() {
   // Dispatch event when approval transaction is confirmed
   useEffect(() => {
     if (isSuccess && txData) {
-      window.dispatchEvent(new CustomEvent('transaction-completed', {
-        detail: { txHash: txData, type: 'approval' }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('transaction-completed', {
+          detail: { txHash: txData, type: 'approval' },
+        })
+      );
       console.log('[useTokenApproval] Approval transaction completed event dispatched');
     }
   }, [isSuccess, txData]);
@@ -31,9 +29,7 @@ export function useTokenApproval() {
   const { optimizedGas } = useOptimizedGas();
   const gasEstimator = getGasEstimator();
 
-  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus | null>(
-    null
-  );
+  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,9 +46,7 @@ export function useTokenApproval() {
 
       try {
         // Convert amount to base units
-        const amountInBaseUnits = (
-          parseFloat(amount) * Math.pow(10, token.decimals)
-        ).toFixed(0);
+        const amountInBaseUnits = (parseFloat(amount) * Math.pow(10, token.decimals)).toFixed(0);
 
         const response = await fetch('/api/swap/approval', {
           method: 'POST',
@@ -74,9 +68,7 @@ export function useTokenApproval() {
         setApprovalStatus(data.status);
         return data;
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to check approval'
-        );
+        setError(err instanceof Error ? err.message : 'Failed to check approval');
         return null;
       } finally {
         setIsChecking(false);
@@ -145,9 +137,7 @@ export function useTokenApproval() {
         // Send approval transaction via wagmi
         sendTransaction(txParams);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : 'Failed to approve token'
-        );
+        setError(err instanceof Error ? err.message : 'Failed to approve token');
       }
     },
     [address, checkApproval, sendTransaction, gasEstimator, optimizedGas]

@@ -65,7 +65,9 @@ export class BridgeOrchestrator {
     // Step 3: Validate amount matches webhook payload
     const verifiedAmount = verification.details?.amount || 0;
     if (Math.abs(verifiedAmount - payload.amount_usdc) > 0.01) {
-      console.log(`[BridgeOrchestrator] Amount mismatch: verified=${verifiedAmount}, payload=${payload.amount_usdc}`);
+      console.log(
+        `[BridgeOrchestrator] Amount mismatch: verified=${verifiedAmount}, payload=${payload.amount_usdc}`
+      );
       return {
         success: false,
         solanaVerification: verification,

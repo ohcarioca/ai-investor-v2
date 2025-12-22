@@ -13,11 +13,13 @@
 ## Request Format
 
 ### Headers
+
 ```
 Content-Type: application/json
 ```
 
 ### Body
+
 ```json
 {
   "message": "string - mensagem do usuário",
@@ -26,6 +28,7 @@ Content-Type: application/json
 ```
 
 ### Exemplo de Request
+
 ```json
 {
   "message": "Quanto tenho investido em fundos?",
@@ -46,6 +49,7 @@ Content-Type: application/json
 ```
 
 ### Exemplo de Response
+
 ```json
 {
   "response": "Você tem $8,450.00 investidos em fundos USDC. Seu portfólio está rendendo 6.2% APY no momento."
@@ -57,6 +61,7 @@ Content-Type: application/json
 ## Error Handling
 
 ### Client Side
+
 O frontend trata os seguintes casos de erro:
 
 1. **Network Error**: Falha na conexão com o endpoint
@@ -64,6 +69,7 @@ O frontend trata os seguintes casos de erro:
 3. **Invalid Response**: Resposta sem o campo `response`
 
 Quando ocorre um erro, o chat exibe a mensagem:
+
 ```
 "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente."
 ```
@@ -71,6 +77,7 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ### Expected Error Responses
 
 #### 400 Bad Request
+
 ```json
 {
   "error": "Invalid request format",
@@ -79,6 +86,7 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 #### 500 Internal Server Error
+
 ```json
 {
   "error": "Internal server error",
@@ -91,7 +99,9 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ## Exemplos de Uso
 
 ### Exemplo 1: Consulta de Saldo
+
 **Request:**
+
 ```json
 {
   "message": "Qual é meu saldo total?",
@@ -100,6 +110,7 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 **Response:**
+
 ```json
 {
   "response": "Seu saldo total é de $24,563.00, com um crescimento de 12.5% em relação ao mês passado."
@@ -107,7 +118,9 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 ### Exemplo 2: Transferência
+
 **Request:**
+
 ```json
 {
   "message": "Como faço para receber uma transferência bancária?",
@@ -116,6 +129,7 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 **Response:**
+
 ```json
 {
   "response": "Para receber transferências, você precisa fornecer ao pagador suas informações bancárias dedicadas. Gostaria que eu enviasse seus dados bancários por email?"
@@ -123,7 +137,9 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 ### Exemplo 3: Conversão de Moeda
+
 **Request:**
+
 ```json
 {
   "message": "Converter 1000 USDC para BRL",
@@ -132,6 +148,7 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ```
 
 **Response:**
+
 ```json
 {
   "response": "1000 USDC equivalem a R$ 4,925.00 BRL na cotação atual (R$ 4.925 por USDC). Deseja prosseguir com essa conversão?"
@@ -143,9 +160,11 @@ Quando ocorre um erro, o chat exibe a mensagem:
 ## Implementação Frontend
 
 ### Hook useChat
+
 Localização: `hooks/useChat.ts`
 
 O hook gerencia:
+
 - Estado das mensagens
 - Loading state
 - Error handling
@@ -165,7 +184,9 @@ O hook gerencia:
 ## Considerações Futuras
 
 ### Autenticação
+
 Quando autenticação for implementada, o request deve incluir:
+
 ```json
 {
   "message": "mensagem do usuário",
@@ -176,7 +197,9 @@ Quando autenticação for implementada, o request deve incluir:
 ```
 
 ### Context Tracking
+
 Para manter contexto da conversa:
+
 ```json
 {
   "message": "mensagem do usuário",
@@ -196,13 +219,15 @@ Para manter contexto da conversa:
 ```
 
 ### Rich Responses
+
 Para respostas com dados estruturados:
+
 ```json
 {
   "response": "Aqui está um resumo do seu portfólio:",
   "data": {
-    "totalBalance": 24563.00,
-    "usdcBalance": 8450.00,
+    "totalBalance": 24563.0,
+    "usdcBalance": 8450.0,
     "apy": 6.2,
     "growth": 12.5
   },

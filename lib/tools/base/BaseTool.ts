@@ -34,10 +34,7 @@ export abstract class BaseTool implements ITool {
    * Template method pattern: validates then executes
    * Subclasses implement executeImpl for specific logic
    */
-  async execute(
-    params: Record<string, unknown>,
-    context: ToolContext
-  ): Promise<ToolResult> {
+  async execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult> {
     try {
       // 1. Common validation (wallet, address, etc.)
       const validation = this.validateParams(params, context);
@@ -83,10 +80,7 @@ export abstract class BaseTool implements ITool {
    * Common validation for all tools
    * Checks wallet connection if required
    */
-  validateParams(
-    params: Record<string, unknown>,
-    context: ToolContext
-  ): ValidationResult {
+  validateParams(params: Record<string, unknown>, context: ToolContext): ValidationResult {
     // If tool requires wallet, validate connection
     if (this.requiresWallet) {
       return this.validateWalletContext(context);

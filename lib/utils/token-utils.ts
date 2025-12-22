@@ -21,19 +21,12 @@ export interface ExtractedTokenData {
  * Extract token data from OKX swap response
  * Handles different field name formats from OKX API v5 and v6
  */
-export function extractSwapTokenData(
-  swapData: unknown,
-  fromAmount: string
-): ExtractedTokenData {
+export function extractSwapTokenData(swapData: unknown, fromAmount: string): ExtractedTokenData {
   const record = swapData as Record<string, unknown>;
 
   // Handle different field names for token info
-  const fromTokenData = (record.fromToken ||
-    record.fromTokenInfo ||
-    {}) as Record<string, unknown>;
-  const toTokenData = (record.toToken ||
-    record.toTokenInfo ||
-    {}) as Record<string, unknown>;
+  const fromTokenData = (record.fromToken || record.fromTokenInfo || {}) as Record<string, unknown>;
+  const toTokenData = (record.toToken || record.toTokenInfo || {}) as Record<string, unknown>;
 
   // Extract decimals
   const fromDecimals = parseInt((fromTokenData.decimal as string) || '18');
