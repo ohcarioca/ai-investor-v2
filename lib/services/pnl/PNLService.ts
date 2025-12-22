@@ -168,18 +168,14 @@ export class PNLService {
       ? Math.floor((Date.now() / 1000 - firstInvestmentDate) / 86400)
       : 0;
 
-    // Calculate accumulated yield based on APY
-    const accumulatedYieldUsdc = this.calculateAccumulatedYield(
-      costBasisUsdc,
-      holdingPeriodDays,
-      SIERRA_APY_DECIMAL
-    );
+    // Calculate accumulated yield based on APY (per investment)
+    const accumulatedYieldUsdc = this.calculateAccumulatedYield(investments, SIERRA_APY_DECIMAL);
     const accumulatedYieldPercent =
       costBasisUsdc > 0 ? (accumulatedYieldUsdc / costBasisUsdc) * 100 : 0;
 
     // 9. Calculate totals
     const totalPnlUsdc = unrealizedPnlUsdc + realizedPnlUsdc;
-    const totalPnlPercent = netInvestedUsdc > 0 ? (totalPnlUsdc / netInvestedUsdc) * 100 : 0;
+    const totalPnlPercent = totalInvestedUsdc > 0 ? (totalPnlUsdc / totalInvestedUsdc) * 100 : 0;
 
     // 10. Calculate projections
     const projectedAnnualYieldUsdc = currentValueUsdc * SIERRA_APY_DECIMAL;
@@ -407,20 +403,23 @@ export class PNLService {
 
   /**
    * Calculate accumulated yield based on APY over holding period
-   * Uses simple interest approximation for short periods
+   * Calculates yield per investment based on individual holding time
    */
-  private calculateAccumulatedYield(
-    costBasis: number,
-    holdingDays: number,
-    apyDecimal: number
-  ): number {
-    if (costBasis === 0 || holdingDays === 0) return 0;
+  private calculateAccumulatedYield(investments: Investment[], apyDecimal: number): number {
+    if (investments.length === 0) return 0;
 
-    // Daily rate from APY
     const dailyRate = apyDecimal / 365;
+    const now = Date.now() / 1000; // Unix timestamp atual
 
-    // Simple yield calculation
-    return costBasis * dailyRate * holdingDays;
+    let totalYield = 0;
+    for (const inv of investments) {
+      const holdingDays = Math.floor((now - inv.timestamp) / 86400);
+      if (holdingDays > 0) {
+        totalYield += inv.usdcAmount * dailyRate * holdingDays;
+      }
+    }
+
+    return totalYield;
   }
 
   /**

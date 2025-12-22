@@ -88,17 +88,10 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
   const isNeutral = Math.abs(pnlData.totalPnlUsdc) < 0.01;
 
   const pnlColor = isNeutral ? 'text-gray-600' : isPositive ? 'text-green-600' : 'text-red-600';
-  const bgColor = isNeutral ? 'bg-gray-50' : isPositive ? 'bg-green-50' : 'bg-red-50';
-  const borderColor = isNeutral
-    ? 'border-gray-200'
-    : isPositive
-      ? 'border-green-200'
-      : 'border-red-200';
-
   const TrendIcon = isNeutral ? Minus : isPositive ? TrendingUp : TrendingDown;
 
   const formatUsd = (value: number) => {
-    const prefix = value >= 0 ? '+' : '';
+    const prefix = value >= 0 ? '+' : '-';
     return `${prefix}$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
@@ -108,7 +101,7 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
   };
 
   return (
-    <div className={`${bgColor} border ${borderColor} rounded-xl p-5 mb-4`}>
+    <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
       {/* Header */}
       <h3 className="text-sm font-medium text-gray-600 mb-3">Investment Performance</h3>
 
@@ -152,7 +145,7 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
         <div className="flex justify-between">
           <span className="text-gray-500">Accumulated Yield</span>
           <span
-            className={`font-medium ${pnlData.accumulatedYieldUsdc >= 0 ? 'text-green-600' : 'text-gray-900'}`}
+            className={`font-medium ${pnlData.accumulatedYieldUsdc >= 0 ? 'text-green-600' : 'text-red-600'}`}
           >
             {formatUsd(pnlData.accumulatedYieldUsdc)}
           </span>
@@ -165,7 +158,7 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
         <div className="flex justify-between">
           <span className="text-gray-500">Annual Projection ({pnlData.currentApy.toFixed(2)}% APY)</span>
           <span className="font-medium text-purple-600">
-            {formatUsd(pnlData.projectedAnnualYieldUsdc)}
+            ${pnlData.projectedAnnualYieldUsdc.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
         </div>
 
