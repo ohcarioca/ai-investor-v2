@@ -11,7 +11,7 @@ import { createPublicClient, http } from 'viem';
 import { mainnet, avalanche } from 'viem/chains';
 import { getTransactionHistoryService } from '@/lib/services/history/TransactionHistoryService';
 import { fetchWalletBalance } from '@/lib/services/balance';
-import { getSierraPrice, getLastKnownSierraPrice } from './PriceService';
+import { getSierraPrice } from './PriceService';
 import { pnlCache } from '@/lib/cache';
 import type { TokenTransfer } from '@/types/transaction-history';
 import type { PNLResult, Investment, Withdrawal, PNLRequest } from '@/types/pnl';

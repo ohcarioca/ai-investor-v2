@@ -79,14 +79,7 @@ export default function PortfolioOverview({
   const usdcBalance = balance?.balances.find((b) => b.currency === 'USDC');
   const totalUSDC = usdcBalance?.usdValue || 0;
 
-  // Calculate SIERRA value in USD (get from balance data)
-  const sierraBalance = balance?.balances.find((b) => b.currency === 'SIERRA');
-  const totalSierraUSD = sierraBalance?.usdValue || 0;
-
   // Get investment data (APY already comes as percentage from hook)
-  const totalInvestedUSDC = investmentData
-    ? parseFloat(investmentData.total_invested_usdc)
-    : totalSierraUSD;
   const currentAPY = investmentData ? parseFloat(investmentData.apy) : 5.85;
 
   // Combined refresh function
