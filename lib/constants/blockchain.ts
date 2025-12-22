@@ -220,7 +220,7 @@ export const NETWORK_TARGET_TO_CHAIN_ID: Record<'ETH' | 'AVAX', number> = {
  */
 export const BRIDGE_CONFIG = {
   /** Minimum USDC amount for bridge transfer */
-  MIN_AMOUNT_USDC: 1,
+  MIN_AMOUNT_USDC: 0.01,
   /** Maximum USDC amount for bridge transfer */
   MAX_AMOUNT_USDC: 10000,
   /** Required confirmation level for Solana transactions */
