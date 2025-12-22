@@ -43,7 +43,8 @@
       "Bash(npm run lint:*)",
       "Bash(npm run format:write:*)",
       "Bash(npx prettier:*)",
-      "Bash(npm run format:check:*)"
+      "Bash(npm run format:check:*)",
+      "Bash(curl:*)"
     ]
   }
 }

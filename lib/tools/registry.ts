@@ -11,6 +11,7 @@ import {
   GetWalletBalanceTool,
   GetInvestmentDataTool,
   GenerateChartTool,
+  GetPNLDataTool,
 } from './implementations/balance';
 import {
   InvestTool,
@@ -163,6 +164,7 @@ export function createDefaultRegistry(): ToolRegistry {
   registry.register(new GetWalletBalanceTool());
   registry.register(new GetInvestmentDataTool());
   registry.register(new GenerateChartTool());
+  registry.register(new GetPNLDataTool());
 
   // Investment tools
   registry.register(new InvestTool());

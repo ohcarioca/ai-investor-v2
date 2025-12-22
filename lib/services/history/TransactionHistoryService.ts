@@ -59,7 +59,8 @@ const CHAIN_CONFIG: Record<
 
 // Default block range for queries (to avoid timeout)
 const DEFAULT_BLOCK_RANGE = 10000;
-const _MAX_BLOCK_RANGE = 100000;
+// Max blocks per getLogs call (QuickNode limit)
+const MAX_BLOCKS_PER_QUERY = 10000;
 
 export class TransactionHistoryService {
   private chainId: number;
@@ -117,23 +118,29 @@ export class TransactionHistoryService {
     const currentBlock = toBlock || Number(await this.publicClient.getBlockNumber());
     const startBlock = fromBlock || Math.max(0, currentBlock - DEFAULT_BLOCK_RANGE);
 
+    console.log(`[TransactionHistory] Fetching transfers for ${normalizedAddress} from block ${startBlock} to ${currentBlock}`);
+
     // Fetch transfers for each token
     for (const tokenSymbol of tokens) {
       const tokenConfig = this.getTokenConfig(tokenSymbol);
-      if (!tokenConfig) continue;
+      if (!tokenConfig) {
+        console.log(`[TransactionHistory] No config for token ${tokenSymbol} on chain ${this.chainId}`);
+        continue;
+      }
+
+      console.log(`[TransactionHistory] Fetching ${tokenSymbol} at ${tokenConfig.address}`);
 
       try {
         // Fetch incoming transfers (to = wallet)
         if (!direction || direction === 'in') {
-          const incomingLogs = await this.publicClient.getLogs({
-            address: tokenConfig.address as `0x${string}`,
-            event: TRANSFER_EVENT,
-            args: {
-              to: normalizedAddress,
-            },
-            fromBlock: BigInt(startBlock),
-            toBlock: BigInt(currentBlock),
+          const incomingLogs = await this.getLogsChunked({
+            tokenAddress: tokenConfig.address as `0x${string}`,
+            fromBlock: startBlock,
+            toBlock: currentBlock,
+            filterArgs: { to: normalizedAddress },
           });
+
+          console.log(`[TransactionHistory] ${tokenSymbol} incoming logs: ${incomingLogs.length}`);
 
           const incomingTransfers = await this.processLogs(
             incomingLogs,
@@ -147,15 +154,14 @@ export class TransactionHistoryService {
 
         // Fetch outgoing transfers (from = wallet)
         if (!direction || direction === 'out') {
-          const outgoingLogs = await this.publicClient.getLogs({
-            address: tokenConfig.address as `0x${string}`,
-            event: TRANSFER_EVENT,
-            args: {
-              from: normalizedAddress,
-            },
-            fromBlock: BigInt(startBlock),
-            toBlock: BigInt(currentBlock),
+          const outgoingLogs = await this.getLogsChunked({
+            tokenAddress: tokenConfig.address as `0x${string}`,
+            fromBlock: startBlock,
+            toBlock: currentBlock,
+            filterArgs: { from: normalizedAddress },
           });
+
+          console.log(`[TransactionHistory] ${tokenSymbol} outgoing logs: ${outgoingLogs.length}`);
 
           const outgoingTransfers = await this.processLogs(
             outgoingLogs,
@@ -171,6 +177,8 @@ export class TransactionHistoryService {
         // Continue with other tokens
       }
     }
+
+    console.log(`[TransactionHistory] Total transactions found: ${allTransactions.length}`);
 
     // Sort by block number (newest first)
     allTransactions.sort((a, b) => b.blockNumber - a.blockNumber);
@@ -191,6 +199,72 @@ export class TransactionHistoryService {
       chainId: this.chainId,
       cachedAt: Date.now(),
     };
+  }
+
+  /**
+   * Fetch logs in chunks to avoid RPC block range limits
+   * QuickNode limits eth_getLogs to 10,000 blocks per query
+   */
+  private async getLogsChunked(params: {
+    tokenAddress: `0x${string}`;
+    fromBlock: number;
+    toBlock: number;
+    filterArgs: { from?: `0x${string}`; to?: `0x${string}` };
+  }): Promise<
+    Array<{
+      address: `0x${string}`;
+      blockNumber: bigint;
+      transactionHash: `0x${string}`;
+      args: { from?: `0x${string}`; to?: `0x${string}`; value?: bigint };
+    }>
+  > {
+    const { tokenAddress, fromBlock, toBlock, filterArgs } = params;
+    const allLogs: Array<{
+      address: `0x${string}`;
+      blockNumber: bigint;
+      transactionHash: `0x${string}`;
+      args: { from?: `0x${string}`; to?: `0x${string}`; value?: bigint };
+    }> = [];
+
+    // Calculate chunks
+    const totalBlocks = toBlock - fromBlock;
+    const numChunks = Math.ceil(totalBlocks / MAX_BLOCKS_PER_QUERY);
+
+    console.log(
+      `[TransactionHistory] Fetching logs in ${numChunks} chunks (${totalBlocks} blocks total)`
+    );
+
+    // Process chunks sequentially to avoid rate limiting
+    for (let i = 0; i < numChunks; i++) {
+      const chunkFromBlock = fromBlock + i * MAX_BLOCKS_PER_QUERY;
+      const chunkToBlock = Math.min(chunkFromBlock + MAX_BLOCKS_PER_QUERY - 1, toBlock);
+
+      try {
+        const logs = await this.publicClient.getLogs({
+          address: tokenAddress,
+          event: TRANSFER_EVENT,
+          args: filterArgs,
+          fromBlock: BigInt(chunkFromBlock),
+          toBlock: BigInt(chunkToBlock),
+        });
+
+        if (logs.length > 0) {
+          console.log(
+            `[TransactionHistory] Chunk ${i + 1}/${numChunks}: found ${logs.length} logs (blocks ${chunkFromBlock}-${chunkToBlock})`
+          );
+        }
+
+        allLogs.push(...logs);
+      } catch (error) {
+        console.error(
+          `[TransactionHistory] Error in chunk ${i + 1}/${numChunks} (blocks ${chunkFromBlock}-${chunkToBlock}):`,
+          error
+        );
+        // Continue with other chunks
+      }
+    }
+
+    return allLogs;
   }
 
   /**

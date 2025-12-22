@@ -6,9 +6,11 @@ import { useAppKitAccount } from '@reown/appkit/react';
 import { useWalletBalance } from '@/hooks/useWalletBalance';
 import { useSolanaBalance } from '@/hooks/useSolanaBalance';
 import { useInvestmentData } from '@/hooks/useInvestmentData';
+import { usePNLData } from '@/hooks/usePNLData';
 import { useSidebarResize } from '@/hooks/useSidebarResize';
 import { useSelectedNetwork } from '@/contexts/NetworkContext';
 import APYPerformanceChart from '@/components/charts/APYPerformanceChart';
+import PNLCard from '@/components/PNLCard';
 
 interface PortfolioOverviewProps {
   width?: number;
@@ -48,11 +50,13 @@ export default function PortfolioOverview({
   const refetch = isSolana ? refetchSolana : refetchEvm;
   const isConnected = isSolana ? isSolanaConnected : isEvmConnected;
 
+  const { investmentData, isLoading: isLoadingInvestment } = useInvestmentData(true, 90000);
+
   const {
-    investmentData,
-    isLoading: isLoadingInvestment,
-    refetch: refetchInvestment,
-  } = useInvestmentData(true, 90000);
+    pnlData,
+    isLoading: isLoadingPNL,
+    refetch: refetchPNL,
+  } = usePNLData(true, 90000);
   const {
     width: internalWidth,
     isResizing,
@@ -89,7 +93,7 @@ export default function PortfolioOverview({
   const handleRefresh = () => {
     refetch();
     if (!isSolana) {
-      refetchInvestment();
+      refetchPNL();
     }
   };
 
@@ -176,21 +180,8 @@ export default function PortfolioOverview({
               )}
             </div>
 
-            {/* Total Invested Card - Hide for Solana */}
-            {!isSolana && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-600 font-medium">Total Invested</span>
-                </div>
-                <div className="text-2xl font-bold text-gray-900">
-                  {isLoading || isLoadingInvestment ? (
-                    <div className="animate-pulse bg-gray-300 h-8 w-32 rounded" />
-                  ) : (
-                    `$${totalInvestedUSDC.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  )}
-                </div>
-              </div>
-            )}
+            {/* PNL Card - Hide for Solana */}
+            {!isSolana && <PNLCard pnlData={pnlData} isLoading={isLoadingPNL} />}
 
             {/* APY Performance Chart - Hide for Solana */}
             {!isSolana && (
