@@ -3,10 +3,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useAccount, useChainId } from 'wagmi';
 import { useWalletBalance } from './useWalletBalance';
+import { usePNLData } from './usePNLData';
 
-// SIERRA configuration from environment (with defaults)
-// Note: For client-side, we need NEXT_PUBLIC_ prefix
-const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
 // APY is stored as decimal (0.0585 = 5.85%)
 const SIERRA_APY_DECIMAL = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0585');
 
@@ -33,9 +31,14 @@ export function useInvestmentData(
   const chainId = useChainId();
 
   // Use wallet balance hook to get SIERRA balance
-  const { balance, isLoading, refetch: refetchBalance } = useWalletBalance();
+  const { balance, isLoading: balanceLoading, refetch: refetchBalance } = useWalletBalance();
 
-  // Calculate investment data from SIERRA balance
+  // Use PNL data hook to get current SIERRA price
+  const { pnlData, isLoading: pnlLoading } = usePNLData();
+
+  const isLoading = balanceLoading || pnlLoading;
+
+  // Calculate investment data from SIERRA balance and dynamic price
   const investmentData = useMemo<InvestmentData | null>(() => {
     if (!balance || !isConnected) {
       return null;
@@ -48,8 +51,11 @@ export function useInvestmentData(
 
     const sierraBalance = sierraToken ? sierraToken.available : 0;
 
-    // Calculate total invested in USDC
-    const totalInvestedUsdc = sierraBalance * SIERRA_USDC_RATE;
+    // Get current SIERRA rate from PNL data (dynamic from OKX DEX)
+    const sierraRate = pnlData?.currentPricePerSierra ?? 1;
+
+    // Calculate total invested in USDC using dynamic rate
+    const totalInvestedUsdc = sierraBalance * sierraRate;
 
     // Convert decimal APY to percentage (0.0585 → 5.85)
     const apyPercent = SIERRA_APY_DECIMAL * 100;
@@ -58,9 +64,9 @@ export function useInvestmentData(
       total_invested_usdc: totalInvestedUsdc.toFixed(2),
       apy: apyPercent.toFixed(2),
       sierra_balance: sierraBalance.toFixed(2),
-      sierra_rate: SIERRA_USDC_RATE.toFixed(2),
+      sierra_rate: sierraRate.toFixed(4),
     };
-  }, [balance, isConnected]);
+  }, [balance, isConnected, pnlData]);
 
   const fetchInvestmentData = useCallback(async () => {
     if (!address || !isConnected) {

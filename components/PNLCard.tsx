@@ -112,13 +112,24 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
       {/* Header */}
       <h3 className="text-sm font-medium text-gray-600 mb-3">Investment Performance</h3>
 
-      {/* Main PNL Display */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className={`text-2xl font-bold ${pnlColor}`}>{formatUsd(pnlData.totalPnlUsdc)}</span>
-        <span className={`text-sm font-medium ${pnlColor}`}>
-          ({formatPercent(pnlData.totalPnlPercent)})
+      {/* Current Value + Total PNL (side by side) */}
+      <div className="flex items-baseline gap-3 mb-4">
+        <span className="text-2xl font-bold text-gray-900">
+          $
+          {pnlData.currentValueUsdc.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </span>
-        <TrendIcon className={`w-5 h-5 ${pnlColor}`} />
+        <div className="flex items-center gap-1">
+          <span className={`text-sm font-medium ${pnlColor}`}>
+            {formatUsd(pnlData.totalPnlUsdc)}
+          </span>
+          <span className={`text-sm font-medium ${pnlColor}`}>
+            ({formatPercent(pnlData.totalPnlPercent)})
+          </span>
+          <TrendIcon className={`w-4 h-4 ${pnlColor}`} />
+        </div>
       </div>
 
       {/* Details Grid */}
@@ -134,18 +145,6 @@ export default function PNLCard({ pnlData, isLoading }: PNLCardProps) {
           <span className="text-gray-500">Current Price</span>
           <span className="font-medium text-gray-900">
             ${pnlData.currentPricePerSierra.toFixed(4)}
-          </span>
-        </div>
-
-        {/* Current Value */}
-        <div className="flex justify-between">
-          <span className="text-gray-500">Current Value</span>
-          <span className="font-medium text-gray-900">
-            $
-            {pnlData.currentValueUsdc.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            })}
           </span>
         </div>
 

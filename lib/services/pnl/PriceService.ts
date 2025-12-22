@@ -1,39 +1,37 @@
 /**
  * Price Service
  * Fetches real-time SIERRA/USDC price from OKX DEX
+ *
+ * Uses persistent cache - keeps last known price indefinitely
+ * Only updates when OKX returns a successful quote
  */
 
 import { getQuoteFetcher } from '../transaction/QuoteFetcher';
 
-// Fallback rate from environment
-const FALLBACK_SIERRA_RATE = parseFloat(
-  process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814'
-);
-
-// Cache for price to avoid excessive API calls
+// Cache for price - persists until successfully updated
 interface PriceCache {
   price: number;
   timestamp: number;
   chainId: number;
 }
 
-let priceCache: PriceCache | null = null;
-const CACHE_TTL_MS = 60000; // 1 minute cache
+// Separate caches per chain - persist last known prices
+const priceCacheByChain: Map<number, PriceCache> = new Map();
+const CACHE_TTL_MS = 60000; // 1 minute before attempting fresh fetch
 
 /**
  * Get current SIERRA price in USDC from OKX DEX
  * @param chainId Chain ID (1 for Ethereum, 43114 for Avalanche)
  * @returns Price per SIERRA in USDC
+ * @throws Error if no price available (no cache and OKX fails)
  */
 export async function getSierraPrice(chainId: number = 1): Promise<number> {
-  // Check cache first
-  if (
-    priceCache &&
-    priceCache.chainId === chainId &&
-    Date.now() - priceCache.timestamp < CACHE_TTL_MS
-  ) {
-    console.log('[PriceService] Using cached price:', priceCache.price);
-    return priceCache.price;
+  const cachedPrice = priceCacheByChain.get(chainId);
+
+  // Check if cache is fresh (within TTL)
+  if (cachedPrice && Date.now() - cachedPrice.timestamp < CACHE_TTL_MS) {
+    console.log('[PriceService] Using cached price:', cachedPrice.price);
+    return cachedPrice.price;
   }
 
   try {
@@ -57,45 +55,75 @@ export async function getSierraPrice(chainId: number = 1): Promise<number> {
         priceImpact: result.quote.priceImpact,
       });
 
-      // Update cache
-      priceCache = {
+      // Update cache for this chain
+      priceCacheByChain.set(chainId, {
         price,
         timestamp: Date.now(),
         chainId,
-      };
+      });
 
       return price;
     }
 
-    console.warn('[PriceService] Quote failed, using fallback:', result.error);
-    return FALLBACK_SIERRA_RATE;
+    // Quote failed - use last known price if available
+    if (cachedPrice) {
+      console.warn('[PriceService] Quote failed, using last known price:', cachedPrice.price);
+      return cachedPrice.price;
+    }
+
+    throw new Error(`Failed to get SIERRA price: ${result.error || 'Unknown error'}`);
   } catch (error) {
-    console.error('[PriceService] Error fetching price:', error);
-    return FALLBACK_SIERRA_RATE;
+    // Error fetching - use last known price if available
+    if (cachedPrice) {
+      console.warn('[PriceService] Error fetching price, using last known:', cachedPrice.price);
+      return cachedPrice.price;
+    }
+
+    console.error('[PriceService] Error fetching price and no cache available:', error);
+    throw error;
   }
 }
 
 /**
- * Get cached price if available, otherwise fetch fresh
+ * Get cached price if available (any age)
  * Useful for UI that needs immediate response
+ * @param chainId Chain ID (1 for Ethereum, 43114 for Avalanche)
  */
-export function getCachedSierraPrice(): number | null {
-  if (priceCache && Date.now() - priceCache.timestamp < CACHE_TTL_MS) {
-    return priceCache.price;
+export function getCachedSierraPrice(chainId: number = 1): number | null {
+  const cached = priceCacheByChain.get(chainId);
+  return cached?.price ?? null;
+}
+
+/**
+ * Get last known price - returns cached price regardless of age
+ * Falls back to fetching if no cache exists
+ * @param chainId Chain ID (1 for Ethereum, 43114 for Avalanche)
+ */
+export async function getLastKnownSierraPrice(chainId: number = 1): Promise<number> {
+  const cached = priceCacheByChain.get(chainId);
+  if (cached) {
+    return cached.price;
   }
-  return null;
+  // No cache - must fetch
+  return getSierraPrice(chainId);
 }
 
 /**
- * Clear the price cache
+ * Clear the price cache for a specific chain or all chains
+ * @param chainId Optional chain ID to clear, or all if not provided
  */
-export function clearPriceCache(): void {
-  priceCache = null;
+export function clearPriceCache(chainId?: number): void {
+  if (chainId !== undefined) {
+    priceCacheByChain.delete(chainId);
+  } else {
+    priceCacheByChain.clear();
+  }
 }
 
 /**
- * Get fallback price from environment
+ * Check if we have any cached price for a chain
+ * @param chainId Chain ID
  */
-export function getFallbackSierraPrice(): number {
-  return FALLBACK_SIERRA_RATE;
+export function hasCachedPrice(chainId: number = 1): boolean {
+  return priceCacheByChain.has(chainId);
 }

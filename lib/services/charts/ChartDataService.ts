@@ -7,11 +7,11 @@
 
 import { fetchWalletBalance, WalletBalanceResult } from '@/lib/services/balance/BalanceService';
 import { getTransactionHistoryService } from '@/lib/services/history/TransactionHistoryService';
+import { getCachedSierraPrice } from '@/lib/services/pnl/PriceService';
 import type { ChartConfig, ChartDataPoint, DynamicChartType } from '@/lib/tools/base/types';
 
 // SIERRA APY from environment
 const SIERRA_APY = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0585');
-const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
 
 // Default color palette (purple theme)
 const DEFAULT_COLORS = ['#9333ea', '#ec4899', '#10b981', '#3b82f6', '#f59e0b', '#6366f1'];
@@ -281,15 +281,18 @@ export class ChartDataService {
    * Profit/Loss - Area chart showing gains/losses over time
    */
   private async generateProfitLoss(request: ChartRequest): Promise<ChartConfig> {
-    const { period = '1m' } = request;
+    const { period = '1m', chainId } = request;
     const balance = await this.fetchBalance(request);
     const periodConfig = PERIOD_CONFIG[period];
+
+    // Get current SIERRA price from cache
+    const sierraPrice = getCachedSierraPrice(chainId) ?? 1;
 
     // Calculate invested vs current value based on SIERRA holdings
     const sierraToken = balance.tokens.find((t) => t.symbol === 'SIERRA');
     const sierraBalance = sierraToken ? parseFloat(sierraToken.balance) : 0;
-    const investedUsdc = sierraBalance / SIERRA_USDC_RATE; // Original USDC invested
-    const currentValue = sierraBalance * SIERRA_USDC_RATE; // Current value
+    const investedUsdc = sierraBalance / sierraPrice; // Original USDC invested (approximate)
+    const currentValue = sierraBalance * sierraPrice; // Current value
 
     const data = this.generateProfitLossData(
       investedUsdc,

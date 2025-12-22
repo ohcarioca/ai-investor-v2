@@ -7,12 +7,10 @@
 import { createPublicClient, http, formatUnits, erc20Abi } from 'viem';
 import { VIEM_CHAINS, NATIVE_SYMBOLS, getChainName } from '@/lib/constants/blockchain';
 import { TokenRegistry } from '@/lib/services/token/TokenRegistry';
-
-// SIERRA rate from environment (1 SIERRA = X USDC)
-const SIERRA_USDC_RATE = parseFloat(process.env.NEXT_PUBLIC_SIERRA_USDC_RATE || '1.005814');
+import { getCachedSierraPrice } from '@/lib/services/pnl/PriceService';
 
 // Token prices - placeholder (in production use real price oracle)
-const getTokenPrice = (symbol: string): number => {
+const getTokenPrice = (symbol: string, chainId: number): number => {
   switch (symbol) {
     case 'USDC':
       return 1;
@@ -20,8 +18,11 @@ const getTokenPrice = (symbol: string): number => {
       return 3500; // Placeholder ETH price
     case 'AVAX':
       return 14.59;
-    case 'SIERRA':
-      return SIERRA_USDC_RATE; // Use rate from .env
+    case 'SIERRA': {
+      // Use cached price from OKX DEX if available
+      const cachedPrice = getCachedSierraPrice(chainId);
+      return cachedPrice ?? 1; // Default to 1 if no cached price yet
+    }
     default:
       return 0;
   }
@@ -86,7 +87,7 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
       address: address as `0x${string}`,
     });
     const formattedNative = parseFloat(formatUnits(nativeBalance, 18));
-    const nativePrice = getTokenPrice(nativeSymbol);
+    const nativePrice = getTokenPrice(nativeSymbol, chainId);
     const nativeUsdValue = formattedNative * nativePrice;
 
     balances.push({
@@ -114,7 +115,7 @@ export async function fetchWalletBalance(request: BalanceRequest): Promise<Walle
       });
 
       const formattedBalance = parseFloat(formatUnits(tokenBalance, token.decimals));
-      const tokenPrice = getTokenPrice(token.symbol);
+      const tokenPrice = getTokenPrice(token.symbol, chainId);
       const usdValue = formattedBalance * tokenPrice;
 
       balances.push({

@@ -11,7 +11,7 @@ import { createPublicClient, http } from 'viem';
 import { mainnet, avalanche } from 'viem/chains';
 import { getTransactionHistoryService } from '@/lib/services/history/TransactionHistoryService';
 import { fetchWalletBalance } from '@/lib/services/balance';
-import { getSierraPrice, getFallbackSierraPrice } from './PriceService';
+import { getSierraPrice, getLastKnownSierraPrice } from './PriceService';
 import { pnlCache } from '@/lib/cache';
 import type { TokenTransfer } from '@/types/transaction-history';
 import type { PNLResult, Investment, Withdrawal, PNLRequest } from '@/types/pnl';
@@ -123,21 +123,16 @@ export class PNLService {
 
     console.log(`[PNLService] Current SIERRA balance: ${currentSierraBalance}`);
 
-    // 3. Get current SIERRA price from OKX DEX
-    let currentPricePerSierra: number;
-    try {
-      currentPricePerSierra = await getSierraPrice(chainId);
-    } catch {
-      console.warn('[PNLService] Failed to fetch price, using fallback');
-      currentPricePerSierra = getFallbackSierraPrice();
-    }
+    // 3. Get current SIERRA price from OKX DEX (uses persistent cache)
+    const currentPricePerSierra = await getSierraPrice(chainId);
 
     console.log(`[PNLService] Current SIERRA price: $${currentPricePerSierra}`);
 
     // 4. Identify investments and withdrawals by correlating transactions by TX HASH
     const { investments, withdrawals } = this.identifyTransactions(
       history.transactions as TokenTransfer[],
-      walletAddress
+      walletAddress,
+      currentPricePerSierra
     );
 
     console.log(
@@ -238,22 +233,20 @@ export class PNLService {
    * Identify investment and withdrawal transactions
    *
    * Investment types:
-   * 1. Swap: USDC out + SIERRA in (same tx hash) - use actual price
-   * 2. Transfer/Airdrop: SIERRA in without USDC out - use fallback price
+   * 1. Swap: USDC out + SIERRA in (same tx hash) - use actual price from tx
+   * 2. Transfer/Airdrop: SIERRA in without USDC out - use current market price
    *
    * Withdrawal types:
-   * 1. Swap: SIERRA out + USDC in (same tx hash) - use actual price
-   * 2. Transfer: SIERRA out without USDC in - use fallback price
+   * 1. Swap: SIERRA out + USDC in (same tx hash) - use actual price from tx
+   * 2. Transfer: SIERRA out without USDC in - use current market price
    */
   private identifyTransactions(
     transactions: TokenTransfer[],
-    _walletAddress: string
+    _walletAddress: string,
+    currentPrice: number
   ): { investments: Investment[]; withdrawals: Withdrawal[] } {
     const investments: Investment[] = [];
     const withdrawals: Withdrawal[] = [];
-
-    // Get fallback price for non-swap transactions
-    const fallbackPrice = getFallbackSierraPrice();
 
     // Group transactions by TX hash
     const byHash = new Map<string, TokenTransfer[]>();
@@ -325,37 +318,37 @@ export class PNLService {
       // Transfer/Airdrop Investment: SIERRA in without USDC correlation
       if (sierraIn) {
         const sierraReceived = parseFloat(sierraIn.valueFormatted);
-        // Use fallback price as cost basis (assume market price at time of receipt)
-        const usdcAmount = sierraReceived * fallbackPrice;
+        // Use current market price as cost basis (best available estimate)
+        const usdcAmount = sierraReceived * currentPrice;
 
         investments.push({
           hash,
           timestamp: sierraIn.timestamp,
           usdcAmount,
           sierraReceived,
-          pricePerSierra: fallbackPrice,
+          pricePerSierra: currentPrice,
           blockNumber: sierraIn.blockNumber,
         });
 
-        console.log(`[PNLService] Found transfer investment: ${sierraReceived} SIERRA @ $${fallbackPrice.toFixed(4)} (fallback price)`);
+        console.log(`[PNLService] Found transfer investment: ${sierraReceived} SIERRA @ $${currentPrice.toFixed(4)} (current price)`);
       }
 
       // Transfer Withdrawal: SIERRA out without USDC correlation
       if (sierraOut) {
         const sierraAmount = parseFloat(sierraOut.valueFormatted);
-        // Use fallback price for valuation
-        const usdcReceived = sierraAmount * fallbackPrice;
+        // Use current market price for valuation
+        const usdcReceived = sierraAmount * currentPrice;
 
         withdrawals.push({
           hash,
           timestamp: sierraOut.timestamp,
           sierraAmount,
           usdcReceived,
-          pricePerSierra: fallbackPrice,
+          pricePerSierra: currentPrice,
           blockNumber: sierraOut.blockNumber,
         });
 
-        console.log(`[PNLService] Found transfer withdrawal: ${sierraAmount} SIERRA @ $${fallbackPrice.toFixed(4)} (fallback price)`);
+        console.log(`[PNLService] Found transfer withdrawal: ${sierraAmount} SIERRA @ $${currentPrice.toFixed(4)} (current price)`);
       }
     }
 
