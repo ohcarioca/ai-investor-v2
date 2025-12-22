@@ -56,7 +56,7 @@ export default function PortfolioOverview({
     pnlData,
     isLoading: isLoadingPNL,
     refetch: refetchPNL,
-  } = usePNLData(true, 90000);
+  } = usePNLData();
   const {
     width: internalWidth,
     isResizing,

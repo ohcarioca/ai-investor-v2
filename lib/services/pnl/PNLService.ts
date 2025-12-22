@@ -12,6 +12,7 @@ import { mainnet, avalanche } from 'viem/chains';
 import { getTransactionHistoryService } from '@/lib/services/history/TransactionHistoryService';
 import { fetchWalletBalance } from '@/lib/services/balance';
 import { getSierraPrice, getFallbackSierraPrice } from './PriceService';
+import { pnlCache } from '@/lib/cache';
 import type { TokenTransfer } from '@/types/transaction-history';
 import type { PNLResult, Investment, Withdrawal, PNLRequest } from '@/types/pnl';
 
@@ -20,10 +21,46 @@ const SIERRA_APY_DECIMAL = parseFloat(process.env.NEXT_PUBLIC_SIERRA_APY || '0.0
 
 export class PNLService {
   /**
+   * Generate cache key for PNL data
+   */
+  private getCacheKey(walletAddress: string, chainId: number): string {
+    return `pnl:${walletAddress.toLowerCase()}:${chainId}`;
+  }
+
+  /**
+   * Invalidate cached PNL data for a wallet
+   * Call this after transactions complete
+   */
+  invalidateCache(walletAddress: string, chainId?: number): void {
+    const normalizedAddress = walletAddress.toLowerCase();
+    if (chainId) {
+      const key = this.getCacheKey(normalizedAddress, chainId);
+      pnlCache.delete(key);
+      console.log(`[PNLService] Cache invalidated for ${normalizedAddress} on chain ${chainId}`);
+    } else {
+      // Invalidate all chains
+      pnlCache.delete(this.getCacheKey(normalizedAddress, 1));
+      pnlCache.delete(this.getCacheKey(normalizedAddress, 43114));
+      console.log(`[PNLService] Cache invalidated for ${normalizedAddress} on all chains`);
+    }
+  }
+
+  /**
    * Calculate complete PNL metrics for a wallet
+   * Uses cache to avoid expensive recalculations
    */
   async calculatePNL(request: PNLRequest): Promise<PNLResult> {
     const { walletAddress, chainId } = request;
+    const cacheKey = this.getCacheKey(walletAddress, chainId);
+
+    // Check cache first
+    const cached = pnlCache.get(cacheKey) as PNLResult | null;
+    if (cached) {
+      console.log(
+        `[PNLService] Returning cached PNL for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} on chain ${chainId}`
+      );
+      return cached;
+    }
 
     console.log(
       `[PNLService] Calculating PNL for ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)} on chain ${chainId}`
@@ -189,6 +226,10 @@ export class PNLService {
       averageEntryPrice: result.averageEntryPrice.toFixed(4),
       currentPrice: result.currentPricePerSierra.toFixed(4),
     });
+
+    // Cache the result
+    pnlCache.set(cacheKey, result);
+    console.log(`[PNLService] Result cached with key: ${cacheKey}`);
 
     return result;
   }

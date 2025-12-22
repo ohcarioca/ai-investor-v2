@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
-import { useSelectedNetwork, CHAIN_IDS } from '@/contexts/NetworkContext';
+import { useSelectedNetwork } from '@/contexts/NetworkContext';
 import type { PNLResult } from '@/types/pnl';
 
 interface UsePNLDataResult {
@@ -12,7 +12,18 @@ interface UsePNLDataResult {
   refetch: () => Promise<void>;
 }
 
-export function usePNLData(autoRefresh = false, refreshInterval = 90000): UsePNLDataResult {
+/**
+ * Hook for fetching PNL data with smart caching
+ *
+ * PNL is only recalculated at key moments:
+ * - Initial wallet connection
+ * - Network switch (ETH/AVAX)
+ * - After transaction completes (via event)
+ * - Manual refresh (refetch)
+ *
+ * No auto-refresh - uses server-side cache (5 min TTL)
+ */
+export function usePNLData(): UsePNLDataResult {
   const [pnlData, setPnlData] = useState<PNLResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,6 +34,7 @@ export function usePNLData(autoRefresh = false, refreshInterval = 90000): UsePNL
   // Only calculate PNL for EVM chains (ETH and AVAX)
   const chainId = isSolana ? null : selectedChainId;
 
+  // Fetch PNL data (uses server-side cache)
   const fetchPNLData = useCallback(async () => {
     // Skip for Solana or when not connected
     if (!address || !isConnected || chainId === null) {
@@ -58,6 +70,27 @@ export function usePNLData(autoRefresh = false, refreshInterval = 90000): UsePNL
     }
   }, [address, isConnected, chainId]);
 
+  // Invalidate cache and refetch - used for manual refresh and after transactions
+  const invalidateAndRefetch = useCallback(async () => {
+    if (!address || chainId === null) return;
+
+    console.log(`[usePNLData] Invalidating cache and refetching for ${address} on chain ${chainId}`);
+
+    try {
+      // Invalidate server-side cache first
+      await fetch('/api/wallet/pnl', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address, chainId }),
+      });
+    } catch (err) {
+      console.error('[usePNLData] Error invalidating cache:', err);
+    }
+
+    // Then fetch fresh data
+    await fetchPNLData();
+  }, [address, chainId, fetchPNLData]);
+
   // Track last fetched chainId to refetch when network changes
   const lastFetchedChainId = useRef<number | null>(null);
 
@@ -83,34 +116,24 @@ export function usePNLData(autoRefresh = false, refreshInterval = 90000): UsePNL
     }
   }, [isConnected, address, chainId, fetchPNLData]);
 
-  // Auto-refresh
-  useEffect(() => {
-    if (!autoRefresh || !isConnected || !address || chainId === null) return;
-
-    const interval = setInterval(() => {
-      fetchPNLData();
-    }, refreshInterval);
-
-    return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, isConnected, address, chainId, fetchPNLData]);
-
-  // Listen for transaction completed events to refresh PNL
+  // Listen for transaction completed events - invalidate cache then refetch
   useEffect(() => {
     const handleTransactionCompleted = () => {
-      // Delay refresh to allow blockchain to update
+      console.log('[usePNLData] Transaction completed, invalidating cache...');
+      // Delay to allow blockchain to update
       setTimeout(() => {
-        fetchPNLData();
+        invalidateAndRefetch();
       }, 3000);
     };
 
     window.addEventListener('transaction-completed', handleTransactionCompleted);
     return () => window.removeEventListener('transaction-completed', handleTransactionCompleted);
-  }, [fetchPNLData]);
+  }, [invalidateAndRefetch]);
 
   return {
     pnlData,
     isLoading,
     error,
-    refetch: fetchPNLData,
+    refetch: invalidateAndRefetch, // Manual refresh invalidates cache
   };
 }

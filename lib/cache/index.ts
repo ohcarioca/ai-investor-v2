@@ -201,6 +201,16 @@ export const tokenMetadataCache = new SimpleCache<unknown>({
 });
 
 /**
+ * Cache for PNL calculations
+ * Longer TTL - only invalidated on transactions or manual refresh
+ * Key format: pnl:{walletAddress}:{chainId}
+ */
+export const pnlCache = new SimpleCache<unknown>({
+  maxSize: 100,
+  defaultTtl: 5 * 60 * 1000, // 5 minutes
+});
+
+/**
  * Generate a cache key from parameters
  */
 export function generateCacheKey(prefix: string, params: Record<string, unknown>): string {
@@ -220,6 +230,7 @@ export function cleanupAllCaches(): void {
   balanceCache.prune();
   priceCache.prune();
   tokenMetadataCache.prune();
+  pnlCache.prune();
 }
 
 // Auto-cleanup every 5 minutes
