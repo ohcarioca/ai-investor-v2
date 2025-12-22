@@ -173,9 +173,9 @@ export class PNLService {
     const accumulatedYieldPercent =
       costBasisUsdc > 0 ? (accumulatedYieldUsdc / costBasisUsdc) * 100 : 0;
 
-    // 9. Calculate totals
-    const totalPnlUsdc = unrealizedPnlUsdc + realizedPnlUsdc;
-    const totalPnlPercent = totalInvestedUsdc > 0 ? (totalPnlUsdc / totalInvestedUsdc) * 100 : 0;
+    // 9. Calculate totals (only unrealized - current holdings)
+    const totalPnlUsdc = unrealizedPnlUsdc;
+    const totalPnlPercent = costBasisUsdc > 0 ? (totalPnlUsdc / costBasisUsdc) * 100 : 0;
 
     // 10. Calculate projections
     const projectedAnnualYieldUsdc = currentValueUsdc * SIERRA_APY_DECIMAL;
